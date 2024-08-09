@@ -1,7 +1,8 @@
 import { CreateUserDto } from '@/shared/dtos/users/create-user.dto';
+import { UpdateUserDto } from '@/shared/dtos/users/update-user.dto';
 import { CreateUserUseCase } from '@/use-cases/users/create-user';
 import { FindAllUsersUseCase } from '@/use-cases/users/find-all-users';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('users')
@@ -21,4 +22,9 @@ export class UsersController {
   async findAll() {
     return this.findAllUsersUseCase.execute();
   }
+
+  // @Patch()
+  // async update(@Body() data: UpdateUserDto) {
+  //   return this.updateUserUseCase.execute(data);
+  // }
 }

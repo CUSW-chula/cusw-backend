@@ -14,7 +14,9 @@ export class PrismaUsersRepository implements UsersRepository {
   }
 
   async findOne(filter: Partial<UserEntity>): Promise<UserEntity> {
-    return this.prisma.user.findUnique({ where: { id: filter.id } });
+    return this.prisma.user.findUnique({
+      where: { id: filter.id, email: filter.email, name: filter.name },
+    });
   }
 
   async update(id: number, data: Partial<UserEntity>): Promise<UserEntity> {

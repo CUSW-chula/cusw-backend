@@ -27,6 +27,12 @@ import { UsersController } from './users.controller';
         new FindAllUsersUseCase(repository),
       inject: [UsersRepository],
     },
+    // {
+    //   provide: UpdateUsersUseCase,
+    //   useFactory: (repository: UsersRepository) =>
+    //     new UpdateUsersUseCase(repository),
+    //   inject: [UsersRepository],
+    // },
   ],
 })
 export class UsersModule {}
