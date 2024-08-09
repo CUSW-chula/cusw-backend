@@ -4,6 +4,7 @@ import { CreateUserUseCase } from '@/use-cases/users/create-user';
 import { FindAllUsersUseCase } from '@/use-cases/users/find-all-users';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
+import { UpdateUsersUseCase } from '@/use-cases/users/update-user';
 
 describe('UsersController', () => {
   let usersController: UsersController;
@@ -32,6 +33,12 @@ describe('UsersController', () => {
             new FindAllUsersUseCase(repository),
           inject: [UsersRepository],
         },
+        {
+          provide: UpdateUsersUseCase,
+          useFactory: (repository: UsersRepository) =>
+            new UpdateUsersUseCase(repository),
+          inject: [UsersRepository],
+        },
       ],
     }).compile();
 
@@ -51,5 +58,17 @@ describe('UsersController', () => {
     await usersController.create({ name, email, password });
     const users = await usersController.findAll();
     expect(users).toEqual([{ id: 1, name, email }]);
+  });
+
+  it('should update user', async () => {
+    const updatedName = 'Bunnybun bun';
+    await usersController.create({ name, email, password });
+    const users = await usersController.update({
+      id: 1,
+      email,
+      name: updatedName,
+      password,
+    });
+    expect(users).toEqual({ id: 1, name: updatedName, email });
   });
 });

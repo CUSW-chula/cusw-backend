@@ -5,6 +5,7 @@ import { CreateUserUseCase } from '@/use-cases/users/create-user';
 import { FindAllUsersUseCase } from '@/use-cases/users/find-all-users';
 import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
+import { UpdateUsersUseCase } from '@/use-cases/users/update-user';
 
 @Module({
   controllers: [UsersController],
@@ -27,12 +28,12 @@ import { UsersController } from './users.controller';
         new FindAllUsersUseCase(repository),
       inject: [UsersRepository],
     },
-    // {
-    //   provide: UpdateUsersUseCase,
-    //   useFactory: (repository: UsersRepository) =>
-    //     new UpdateUsersUseCase(repository),
-    //   inject: [UsersRepository],
-    // },
+    {
+      provide: UpdateUsersUseCase,
+      useFactory: (repository: UsersRepository) =>
+        new UpdateUsersUseCase(repository),
+      inject: [UsersRepository],
+    },
   ],
 })
 export class UsersModule {}

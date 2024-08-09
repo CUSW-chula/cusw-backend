@@ -5,6 +5,7 @@ import { CreatePostUseCase } from '@/use-cases/posts/create-post';
 import { FindAllPostsUseCase } from '@/use-cases/posts/find-all-posts';
 import { Module } from '@nestjs/common';
 import { PostsController } from './posts.controller';
+import { UpdatePostUseCase } from '@/use-cases/posts/update-post/update-post.use-case';
 
 @Module({
   controllers: [PostsController],
@@ -25,6 +26,12 @@ import { PostsController } from './posts.controller';
       provide: FindAllPostsUseCase,
       useFactory: (repository: PostsRepository) =>
         new FindAllPostsUseCase(repository),
+      inject: [PostsRepository],
+    },
+    {
+      provide: UpdatePostUseCase,
+      useFactory: (repository: PostsRepository) =>
+        new UpdatePostUseCase(repository),
       inject: [PostsRepository],
     },
   ],

@@ -23,6 +23,13 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer()).post('/').expect(201).expect({ id: 1 });
   });
 
+  it('/users (PATCH)', () => {
+    return request(app.getHttpServer())
+      .patch('/')
+      .expect(201)
+      .expect({ id: 1 });
+  });
+
   it('/posts (GET)', () => {
     return request(app.getHttpServer()).get('/').expect(200).expect([]);
   });
