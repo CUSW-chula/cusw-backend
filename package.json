@@ -3,13 +3,33 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "prepare": "husky"
   },
   "dependencies": {
-    "elysia": "latest"
+    "@elysiajs/swagger": "^1.1.1",
+    "@prisma/client": "5.19.1",
+    "elysia": "latest",
+    "ioredis": "^5.4.1"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@commitlint/cli": "^19.4.1",
+    "@commitlint/config-conventional": "^19.4.1",
+    "bun-types": "latest",
+    "cz-git": "^1.9.4",
+    "husky": "^9.1.5",
+    "prettier": "^3.3.3",
+    "pretty-quick": "^4.0.0",
+    "prisma": "^5.19.1",
+    "simple-git-hooks": "^2.11.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pretty-quick --staged"
   },
   "module": "src/index.js"
 }

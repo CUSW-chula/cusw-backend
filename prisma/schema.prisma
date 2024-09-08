@@ -1,0 +1,164 @@
+generator client { 
+  provider = "prisma-client-js" 
+}
+
+datasource db { 
+  provider = "postgresql" 
+  url      = env("DATABASE_URL") 
+}
+
+model User { 
+  id            String           @id @default(cuid()) 
+  name          String 
+  email         String           @unique 
+  projectRoles  ProjectRole[]    // Roles of users in various projects
+  assignedTasks TaskAssignment[] // Tasks assigned to the user
+  createdTasks  Task[]           @relation("CreatedTasks") 
+  uploadedFiles File[]           @relation("UploadedFiles") // Files uploaded by the user
+  comments      Comment[] 
+  activities    Activity[] 
+
+  @@map("users") 
+}
+
+model Project { 
+  id             String           @id @default(cuid()) 
+  title          String 
+  description    String 
+  expectedBudget Float
+  realBudget     Float
+  startDate      DateTime
+  endDate        DateTime
+  projectRoles   ProjectRole[]    // Roles of users in the project
+  tasks          Task[]           @relation("ProjectTasks") // Tasks in the project
+  files          File[]           @relation("ProjectFiles") // Files associated with the project
+  activities     Activity[]       // Activities related to the project
+
+  @@map("projects") 
+}
+
+model ProjectRole { 
+  id         String   @id @default(cuid()) 
+  role       Role 
+  userId     String 
+  projectId  String 
+
+  user       User     @relation(fields: [userId], references: [id]) 
+  project    Project  @relation(fields: [projectId], references: [id]) 
+
+  @@unique([userId, projectId, role]) 
+  @@map("project_roles") 
+}
+
+model Task { 
+  id             String       @id @default(cuid()) 
+  title          String 
+  description    String 
+  status         TaskStatus 
+  projectId      String       // Link to the Project 
+  project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) // Relation to the Project model 
+  tags           Tag[]        @relation("TaskTags") // Many-to-many relation with Tag 
+  subTasks       Task[]       @relation("SubTasks") 
+  parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
+  parentTaskId   String? 
+  expectedBudget Float 
+  realBudget     Float 
+  startDate      DateTime?
+  endDate        DateTime?
+  assignedUsers  TaskAssignment[] // Many-to-many relation with users 
+  createdById    String? 
+  createdBy      User?        @relation("CreatedTasks", fields: [createdById], references: [id]) 
+  comments       Comment[] 
+  activities     Activity[] 
+  files          File[]       @relation("TaskFiles") // Files associated with the task
+
+  @@map("tasks") 
+}
+
+model TaskAssignment { 
+  id        String @id @default(cuid()) 
+  taskId    String 
+  userId    String 
+
+  task      Task   @relation(fields: [taskId], references: [id]) 
+  user      User   @relation(fields: [userId], references: [id]) 
+
+  @@unique([taskId, userId])
+  @@map("task_assignments") 
+}
+
+model Tag { 
+  id     String  @id @default(cuid()) 
+  name   String  @unique 
+  tasks  Task[]  @relation("TaskTags") // Many-to-many relation with Task 
+
+  @@map("tags") 
+}
+
+model Comment { 
+  id        String    @id @default(cuid()) 
+  content   String 
+  taskId    String 
+  authorId  String 
+  createdAt DateTime  @default(now()) // Automatically set timestamp when comment is created
+
+  task      Task   @relation(fields: [taskId], references: [id]) 
+  author    User   @relation(fields: [authorId], references: [id]) 
+
+  @@map("comments") 
+}
+
+model Activity { 
+  id        String      @id @default(cuid()) 
+  action    ActivityAction 
+  detail    String?
+  taskId    String? 
+  projectId String? 
+  userId    String 
+  createdAt DateTime     @default(now()) // Automatically set timestamp when activity is logged
+
+  task      Task?       @relation(fields: [taskId], references: [id]) 
+  project   Project?    @relation(fields: [projectId], references: [id]) 
+  user      User        @relation(fields: [userId], references: [id]) 
+
+  @@map("activities") 
+}
+
+model File { 
+  id         String  @id @default(cuid()) 
+  filePath   String 
+  fileSize   Float     // File size in bytes
+  taskId     String? 
+  projectId  String? 
+  uploadedBy String 
+  uploadedAt DateTime  @default(now()) // Automatically set timestamp when file is uploaded
+  createdAt  DateTime  @default(now()) // Automatically set timestamp when file is created
+
+  task       Task?    @relation("TaskFiles", fields: [taskId], references: [id]) 
+  project    Project? @relation("ProjectFiles", fields: [projectId], references: [id]) 
+  uploader   User     @relation("UploadedFiles", fields: [uploadedBy], references: [id]) 
+
+  @@map("files") 
+}
+
+enum Role { 
+  Admin 
+  Director 
+  ProjectOwner 
+  Member 
+}
+
+enum TaskStatus { 
+  Unassigned 
+  Assigned 
+  UnderReview 
+  InRecheck 
+  Done 
+}
+
+enum ActivityAction { 
+  CREATE 
+  ASSIGNED 
+  DELETE 
+  UPLOAD 
+}
