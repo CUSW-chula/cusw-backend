@@ -3,12 +3,15 @@ import { Elysia } from "elysia";
 import { PrismaClient } from "@prisma/client";
 import { UserController } from "./controller/users.controller";
 import swagger from "@elysiajs/swagger";
+import Redis from "ioredis";
 
 const prisma = new PrismaClient();
+const redis = new Redis();
 
 const app = new Elysia()
   .use(swagger())
   .decorate("db", prisma)
+  .decorate("redis", redis)
   .group("/api", (api) => api.use(UserController))
   .listen(3000);
 

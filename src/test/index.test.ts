@@ -3,13 +3,13 @@ import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
 
 describe("Elysia", () => {
-  it("return a response", async () => {
-    const app = new Elysia().get("/", () => "hi");
+	it("return a response", async () => {
+		const app = new Elysia().get("/", () => "hi");
 
-    const response = await app
-      .handle(new Request("http://localhost/"))
-      .then((res) => res.text());
+		const response = await app
+			.handle(new Request("http://localhost/"))
+			.then((res) => res.text());
 
-    expect(response).toBe("hi");
-  });
+		expect(response).toBe("hi");
+	});
 });
