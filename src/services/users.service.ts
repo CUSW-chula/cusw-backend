@@ -5,7 +5,7 @@ import type Redis from "ioredis";
 export class UserService {
 	private readonly userModel: UserModel;
 	private readonly redis: Redis;
-	private cacheTTL = 60; // Cache TTL in seconds
+	private readonly cacheTTL = 60; // Cache TTL in seconds
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		this.userModel = new UserModel(prisma);
