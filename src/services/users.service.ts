@@ -9,7 +9,7 @@ export class UserService {
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		this.userModel = new UserModel(prisma);
-    this.redis = redis;
+		this.redis = redis;
 	}
 
 	// Fetch all users with Redis caching

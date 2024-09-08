@@ -5,7 +5,7 @@ import type Redis from "ioredis";
 
 interface Context {
 	db: PrismaClient;
-  redis: Redis;
+	redis: Redis;
 }
 
 export const UserController = new Elysia({ prefix: "/users" })
@@ -22,7 +22,11 @@ export const UserController = new Elysia({ prefix: "/users" })
 	)
 	.post(
 		"/",
-		({ body, db, redis }: Context & { body: { name: string; email: string } }) => {
+		({
+			body,
+			db,
+			redis,
+		}: Context & { body: { name: string; email: string } }) => {
 			const userService = new UserService(db, redis);
 			return userService.createUser(body);
 		},
