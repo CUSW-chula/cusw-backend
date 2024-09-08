@@ -1,4 +1,3 @@
-// eslint.config.mjs
 import globals from "globals";
 import tsEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
@@ -59,6 +58,27 @@ export default [
         { max: 50, skipBlankLines: true, skipComments: true },
       ],
       complexity: ["warn", 10],
+
+      // Naming conventions
+      "@typescript-eslint/naming-convention": [
+        "warn",
+        {
+          selector: "variable",
+          format: ["snake_case"],
+          filter: {
+            regex: "^[a-z_]+$",
+            match: true,
+          },
+        },
+        {
+          selector: "function",
+          format: ["camelCase"],
+        },
+        {
+          selector: "typeLike",
+          format: ["PascalCase"],
+        },
+      ],
     },
     settings: {
       "import/resolver": {
