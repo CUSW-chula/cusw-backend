@@ -15,5 +15,6 @@ export abstract class BaseModel<T, K> {
 
   protected getModel() {
     return this.prisma;
+    
   }
 }
