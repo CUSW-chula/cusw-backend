@@ -9,14 +9,14 @@ const prisma = new PrismaClient();
 const redis = new Redis();
 
 const app = new Elysia()
-  .use(swagger())
-  .decorate("db", prisma)
-  .decorate("redis", redis)
-  .group("/api", (api) => api.use(user_controller))
-  .listen(3000);
+	.use(swagger())
+	.decorate("db", prisma)
+	.decorate("redis", redis)
+	.group("/api", (api) => api.use(user_controller))
+	.listen(3000);
 
 console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
 
 console.log("Swagger·documentation·available·at·http://localhost:3000/swagger");
