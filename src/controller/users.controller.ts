@@ -8,7 +8,7 @@ interface Context {
 	redis: Redis;
 }
 
-export const user_controller = new Elysia({ prefix: "/users" })
+export const UserController = new Elysia({ prefix: "/users" })
 	.get("/", ({ db, redis }: Context) => {
 		const user_service = new UserService(db, redis);
 		return user_service.getAllUsers();
