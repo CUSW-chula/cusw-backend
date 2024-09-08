@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import type { DefaultArgs } from "@prisma/client/runtime/library";
 
 export abstract class BaseModel<T, K> {
   private readonly prisma: PrismaClient;
@@ -13,8 +14,8 @@ export abstract class BaseModel<T, K> {
   abstract update(id: K, data: Partial<T>): Promise<T>;
   abstract delete(id: K): Promise<T>;
 
-  protected getModel() {
+  protected getModel(): PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>{
     return this.prisma;
-    
+
   }
 }

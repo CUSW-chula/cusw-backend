@@ -8,8 +8,9 @@
     "db:studio": "bunx prisma studio",
     "postinstall": "bunx prisma generate",
     "prepare": "husky",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
@@ -18,24 +19,25 @@
     "ioredis": "^5.4.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
     "@commitlint/cli": "^19.4.1",
     "@commitlint/config-conventional": "^19.4.1",
+    "@eslint/js": "^9.10.0",
     "bun-types": "latest",
     "cz-conventional-changelog": "^3.3.0",
     "cz-git": "^1.9.4",
     "eslint": "^9.10.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.9.0",
     "husky": "^9.1.5",
     "lint-staged": "^15.2.10",
-    "prettier": "^3.3.3",
-    "pretty-quick": "^4.0.0",
-    "prisma": "^5.19.1"
+    "prisma": "^5.19.1",
+    "typescript-eslint": "^8.4.0"
   },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "module": "src/index.js"
+  "module": "src/index.js",
+  "type": "module"
 }

@@ -1,11 +1,12 @@
 import { User as UserModel } from "../models/users.model";
-import { PrismaClient, User } from "@prisma/client";
+import type { PrismaClient, User } from "@prisma/client";
 import Redis from "ioredis";
 
 const redis = new Redis(); // Initialize Redis client
 
 export class UserService {
   private readonly userModel: UserModel;
+  // private readonly redis: Redis;
   private cacheTTL = 60; // Cache TTL in seconds
 
   constructor(prisma: PrismaClient) {
@@ -18,7 +19,7 @@ export class UserService {
 
     // Check if data exists in Redis
     const cachedUsers = await redis.get(cacheKey);
-    if (cachedUsers) {
+    if (cachedUsers !== null) {
       return JSON.parse(cachedUsers) as User[]; // Return cached data
     }
 
@@ -37,7 +38,7 @@ export class UserService {
 
     // Check if data exists in Redis
     const cachedUser = await redis.get(cacheKey);
-    if (cachedUser) {
+    if (cachedUser !== null) {
       return JSON.parse(cachedUser) as User; // Return cached data
     }
 

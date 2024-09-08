@@ -1,2 +1,2 @@
-bun lint-staged
-bun pretty-quick --staged
+bun run lint:fix
+bunx biome format --write ./src
