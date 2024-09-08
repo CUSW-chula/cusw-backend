@@ -1,6 +1,6 @@
 import { User as UserModel } from "../models/users.model";
 import type { PrismaClient, User } from "@prisma/client";
-import Redis from "ioredis";
+import type Redis from "ioredis";
 
 export class UserService {
 	private readonly userModel: UserModel;
