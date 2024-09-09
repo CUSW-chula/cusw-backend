@@ -1,4 +1,4 @@
-import { Project as PrismaProject } from "@prisma/client";
+import type { Project as PrismaProject } from "@prisma/client";
 import { BaseModel } from "./model";
 
 export class Project extends BaseModel<PrismaProject, string> {
@@ -13,7 +13,7 @@ export class Project extends BaseModel<PrismaProject, string> {
 	}
 
 	async create(data: Partial<PrismaProject>): Promise<PrismaProject> {
-		const created_project = await this.getModel().project.create({
+		const createdProject = await this.getModel().project.create({
 			data: {
 				title: data.title ?? "",
 				description: data.description ?? "",
@@ -23,25 +23,25 @@ export class Project extends BaseModel<PrismaProject, string> {
 				realBudget: data.realBudget ?? 0,
 			},
 		});
-		return created_project;
+		return createdProject;
 	}
 
 	async update(
 		id: string,
 		data: Partial<PrismaProject>,
 	): Promise<PrismaProject> {
-		const updated_user = await this.getModel().project.update({
+		const updatedUser = await this.getModel().project.update({
 			where: {
 				id: id,
 			},
 			data: data,
 		});
-		return updated_user;
+		return updatedUser;
 	}
 	async delete(id: string): Promise<PrismaProject> {
-		const deleted_user = await this.getModel().project.delete({
+		const deletedUser = await this.getModel().project.delete({
 			where: { id },
 		});
-		return deleted_user;
+		return deletedUser;
 	}
 }

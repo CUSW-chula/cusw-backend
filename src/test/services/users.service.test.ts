@@ -1,8 +1,7 @@
-/* eslint-disable max-lines-per-function */
 import { describe, expect, it, jest } from "bun:test";
 import { UserService } from "../../services/users.service";
-import { PrismaClient } from "@prisma/client";
-import Redis from "ioredis";
+import type { PrismaClient } from "@prisma/client";
+import type Redis from "ioredis";
 
 // Mock PrismaClient and Redis
 const mockPrisma = {

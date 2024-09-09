@@ -3,97 +3,87 @@ import type { PrismaClient, User } from "@prisma/client";
 import type Redis from "ioredis";
 
 export class UserService {
-	private readonly user_model: UserModel;
+	private readonly userModel: UserModel;
 	private readonly redis: Redis;
-	private readonly cache_ttl = 60; // Cache TTL in seconds
+	private readonly cacheTTL = 60; // Cache TTL in seconds
 
 	constructor(prisma: PrismaClient, redis: Redis) {
-		this.user_model = new UserModel(prisma);
+		this.userModel = new UserModel(prisma);
 		this.redis = redis;
 	}
 
 	// Fetch all users with Redis caching
 	async getAllUsers(): Promise<User[]> {
-		const cache_key = "users:all";
+		const cacheKey = "users:all";
 
 		// Check if data exists in Redis
-		const cached_users = await this.redis.get(cache_key);
-		if (cached_users !== null) {
-			return JSON.parse(cached_users) as User[]; // Return cached data
+		const cachedUsers = await this.redis.get(cacheKey);
+		if (cachedUsers !== null) {
+			return JSON.parse(cachedUsers) as User[]; // Return cached data
 		}
 
 		// If not cached, fetch from DB
-		const users = await this.user_model.findAll();
+		const users = await this.userModel.findAll();
 
 		// Cache the result in Redis
-		await this.redis.set(
-			cache_key,
-			JSON.stringify(users),
-			"EX",
-			this.cache_ttl,
-		);
+		await this.redis.set(cacheKey, JSON.stringify(users), "EX", this.cacheTTL);
 
 		return users;
 	}
 
 	// Fetch a user by ID with Redis caching
 	async getUserById(id: string): Promise<User | null> {
-		const cache_key = `users:${id}`;
+		const cacheKey = `users:${id}`;
 
 		// Check if data exists in Redis
-		const cached_user = await this.redis.get(cache_key);
-		if (cached_user !== null) {
-			return JSON.parse(cached_user) as User; // Return cached data
+		const cachedUser = await this.redis.get(cacheKey);
+		if (cachedUser !== null) {
+			return JSON.parse(cachedUser) as User; // Return cached data
 		}
 
 		// If not cached, fetch from DB
-		const user = await this.user_model.findById(id);
+		const user = await this.userModel.findById(id);
 
 		// Cache the result in Redis
 		if (user) {
-			await this.redis.set(
-				cache_key,
-				JSON.stringify(user),
-				"EX",
-				this.cache_ttl,
-			);
+			await this.redis.set(cacheKey, JSON.stringify(user), "EX", this.cacheTTL);
 		}
 
 		return user;
 	}
 
 	// Create a new user (invalidate cache)
-	async createUser(user_data: { name: string; email: string }): Promise<User> {
-		const new_user = await this.user_model.create(user_data);
+	async createUser(userData: { name: string; email: string }): Promise<User> {
+		const newUser = await this.userModel.create(userData);
 
 		// Invalidate the cache for all users
 		await this.redis.del("users:all");
 
-		return new_user;
+		return newUser;
 	}
 
 	// Update an existing user (invalidate cache)
 	async updateUser(
 		id: string,
-		user_data: Partial<{ name: string; email: string }>,
+		userData: Partial<{ name: string; email: string }>,
 	): Promise<User> {
-		const updated_user = await this.user_model.update(id, user_data);
+		const updatedUser = await this.userModel.update(id, userData);
 
 		// Invalidate the cache for this specific user and all users
 		await this.redis.del(`users:${id}`);
 		await this.redis.del("users:all");
 
-		return updated_user;
+		return updatedUser;
 	}
 
 	// Delete a user (invalidate cache)
 	async deleteUser(id: string): Promise<User> {
-		const deleted_user = await this.user_model.delete(id);
+		const deletedUser = await this.userModel.delete(id);
 
 		// Invalidate the cache for this specific user and all users
 		await this.redis.del(`users:${id}`);
 		await this.redis.del("users:all");
 
-		return deleted_user;
+		return deletedUser;
 	}
 }

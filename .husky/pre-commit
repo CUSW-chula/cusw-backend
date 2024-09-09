@@ -1,2 +1,2 @@
 bun run lint:fix
-bunx biome format --write ./src
+bun run format:fix

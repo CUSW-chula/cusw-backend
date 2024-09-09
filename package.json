@@ -9,8 +9,10 @@
     "postinstall": "bunx prisma generate",
     "prepare": "husky",
     "commit": "git-cz",
-    "lint": "eslint \"src/**/*.ts\"",
-    "lint:fix": "eslint \"src/**/*.ts\" --fix"
+    "lint": "bunx biome lint ./src",
+    "lint:fix": "bunx biome lint --write ./src",
+    "format": "bunx biome format ./src",
+    "format:fix": "bunx biome format --write ./src"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
@@ -22,7 +24,6 @@
     "@biomejs/biome": "^1.8.3",
     "@commitlint/cli": "^19.4.1",
     "@commitlint/config-conventional": "^19.4.1",
-    "@eslint/js": "^9.10.0",
     "bun-types": "latest",
     "cz-conventional-changelog": "^3.3.0",
     "cz-git": "^1.9.4",
