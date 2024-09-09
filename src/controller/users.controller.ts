@@ -11,13 +11,13 @@ interface Context {
 export const UserController = new Elysia({ prefix: "/users" })
 	.get("/", ({ db, redis }: Context) => {
 		const userService = new UserService(db, redis);
-		return userService.getAllUsers();
+		return userService.findAll();
 	})
 	.get(
 		"/:id",
 		({ params: { id }, db, redis }: Context & { params: { id: string } }) => {
 			const userService = new UserService(db, redis);
-			return userService.getUserById(id);
+			return userService.findById(id);
 		},
 	)
 	.post(
@@ -28,7 +28,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 			redis,
 		}: Context & { body: { name: string; email: string } }) => {
 			const userService = new UserService(db, redis);
-			return userService.createUser(body);
+			return userService.create(body);
 		},
 		{
 			body: t.Object({

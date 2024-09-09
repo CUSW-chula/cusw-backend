@@ -1,7 +1,7 @@
 import type { Project as PrismaProject } from "@prisma/client";
-import { BaseModel } from "./model";
+import { BaseModel } from "../core/model.core";
 
-export class Project extends BaseModel<PrismaProject, string> {
+export class Project extends BaseModel<PrismaProject> {
 	async findAll(): Promise<PrismaProject[]> {
 		const projects = await this.getModel().project.findMany();
 		return projects;

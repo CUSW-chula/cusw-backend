@@ -1,7 +1,7 @@
 import type { User as PrismaUser } from "@prisma/client";
-import { BaseModel } from "./model";
+import { BaseModel } from "../core/model.core";
 
-export class User extends BaseModel<PrismaUser, string> {
+export class User extends BaseModel<PrismaUser> {
 	async findAll(): Promise<PrismaUser[]> {
 		const users = await this.getModel().user.findMany();
 		return users;

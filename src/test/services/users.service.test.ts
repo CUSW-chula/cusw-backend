@@ -35,7 +35,7 @@ describe("UserService", () => {
 				]),
 			);
 
-			const users = await userService.getAllUsers();
+			const users = await userService.findAll();
 			expect(users).toEqual([
 				{
 					id: "1",
@@ -54,7 +54,7 @@ describe("UserService", () => {
 				{ id: "1", name: "User 1", email: "bunnybunbun37204" },
 			]);
 
-			const users = await userService.getAllUsers();
+			const users = await userService.findAll();
 			expect(users).toEqual([
 				{
 					id: "1",
@@ -81,7 +81,7 @@ describe("UserService", () => {
 				JSON.stringify({ id: "1", name: "User 1", email: "bunnybunbun37204" }),
 			);
 
-			const user = await userService.getUserById("1");
+			const user = await userService.findById("1");
 			expect(user).toEqual({
 				id: "1",
 				name: "User 1",
@@ -100,7 +100,7 @@ describe("UserService", () => {
 				email: "bunnybunbun37204",
 			});
 
-			const user = await userService.getUserById("1");
+			const user = await userService.findById("1");
 			expect(user).toEqual({
 				id: "1",
 				name: "User 1",
@@ -118,7 +118,7 @@ describe("UserService", () => {
 				email: "newuser@example.com",
 			});
 
-			const newUser = await userService.createUser({
+			const newUser = await userService.create({
 				name: "New User",
 				email: "newuser@example.com",
 			});
@@ -141,7 +141,7 @@ describe("UserService", () => {
 				email: "updateduser@example.com",
 			});
 
-			const updatedUser = await userService.updateUser("1", {
+			const updatedUser = await userService.update("1", {
 				name: "Updated User",
 			});
 			expect(updatedUser).toEqual({
@@ -166,7 +166,7 @@ describe("UserService", () => {
 				email: "deleteduser@example.com",
 			});
 
-			const deletedUser = await userService.deleteUser("1");
+			const deletedUser = await userService.delete("1");
 			expect(deletedUser).toEqual({
 				id: "1",
 				name: "Deleted User",
