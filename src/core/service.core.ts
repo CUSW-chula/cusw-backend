@@ -27,11 +27,4 @@ export abstract class BaseService<T> {
 	protected async invalidateCache(cacheKey: string): Promise<void> {
 		await this.redis.del(cacheKey);
 	}
-
-	// Abstract methods to be implemented by concrete services
-	abstract findAll(): Promise<T[]>;
-	abstract findById(id: string): Promise<T | null>;
-	abstract create(data: T): Promise<T>;
-	abstract update(id: string, data: Partial<T>): Promise<T>;
-	abstract delete(id: string): Promise<T>;
 }

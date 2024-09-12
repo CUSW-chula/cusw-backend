@@ -1,4 +1,4 @@
-import { User as UserModel } from "../models/users.model";
+import { UserModel } from "../models/users.model";
 import type { PrismaClient, User } from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
@@ -12,7 +12,7 @@ export class UserService extends BaseService<User> {
 	}
 
 	// Fetch all users with caching
-	async findAll(): Promise<User[]> {
+	async getAllUsers(): Promise<User[]> {
 		const cacheKey = "users:all";
 		const cachedUsers = await this.getFromCache(cacheKey);
 		if (cachedUsers) return cachedUsers as User[];
@@ -23,7 +23,7 @@ export class UserService extends BaseService<User> {
 	}
 
 	// Fetch user by ID with caching
-	async findById(id: string): Promise<User | null> {
+	async getUserById(id: string): Promise<User | null> {
 		const cacheKey = `users:${id}`;
 		const cachedUser = await this.getFromCache(cacheKey);
 		if (cachedUser) return cachedUser as User;
@@ -34,14 +34,17 @@ export class UserService extends BaseService<User> {
 	}
 
 	// Create a new user and invalidate cache
-	async create(userData: { name: string; email: string }): Promise<User> {
+	async createNewUser(userData: {
+		name: string;
+		email: string;
+	}): Promise<User> {
 		const newUser = await this.userModel.create(userData);
 		await this.invalidateCache("users:all");
 		return newUser;
 	}
 
 	// Update user and invalidate cache
-	async update(
+	async updateUserDetail(
 		id: string,
 		userData: Partial<{ name: string; email: string }>,
 	): Promise<User> {
@@ -52,7 +55,7 @@ export class UserService extends BaseService<User> {
 	}
 
 	// Delete user and invalidate cache
-	async delete(id: string): Promise<User> {
+	async deleteUserById(id: string): Promise<User> {
 		const deletedUser = await this.userModel.delete(id);
 		await this.invalidateCache(`users:${id}`);
 		await this.invalidateCache("users:all");

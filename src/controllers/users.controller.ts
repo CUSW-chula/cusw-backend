@@ -1,23 +1,17 @@
 import { Elysia, t } from "elysia";
 import { UserService } from "../services/users.service";
-import type { PrismaClient } from "@prisma/client";
-import type Redis from "ioredis";
-
-interface Context {
-	db: PrismaClient;
-	redis: Redis;
-}
+import { Context } from "../shared/interfaces.shared";
 
 export const UserController = new Elysia({ prefix: "/users" })
 	.get("/", ({ db, redis }: Context) => {
 		const userService = new UserService(db, redis);
-		return userService.findAll();
+		return userService.getAllUsers();
 	})
 	.get(
 		"/:id",
 		({ params: { id }, db, redis }: Context & { params: { id: string } }) => {
 			const userService = new UserService(db, redis);
-			return userService.findById(id);
+			return userService.getUserById(id);
 		},
 	)
 	.post(
@@ -28,7 +22,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 			redis,
 		}: Context & { body: { name: string; email: string } }) => {
 			const userService = new UserService(db, redis);
-			return userService.create(body);
+			return userService.createNewUser(body);
 		},
 		{
 			body: t.Object({
