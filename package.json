@@ -16,23 +16,23 @@
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
-    "@prisma/client": "5.19.1",
+    "@prisma/client": "5.20.0",
     "elysia": "latest",
     "ioredis": "^5.4.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
-    "@commitlint/cli": "^19.4.1",
-    "@commitlint/config-conventional": "^19.4.1",
+    "@biomejs/biome": "^1.9.2",
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
     "bun-types": "latest",
     "cz-conventional-changelog": "^3.3.0",
-    "cz-git": "^1.9.4",
-    "eslint": "^9.10.0",
+    "cz-git": "^1.10.0",
+    "eslint": "^9.11.1",
     "globals": "^15.9.0",
-    "husky": "^9.1.5",
+    "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
-    "prisma": "^5.19.1",
-    "typescript-eslint": "^8.4.0"
+    "prisma": "^5.20.0",
+    "typescript-eslint": "^8.7.0"
   },
   "config": {
     "commitizen": {

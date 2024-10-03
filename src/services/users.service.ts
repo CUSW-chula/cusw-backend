@@ -11,6 +11,12 @@ export class UserService extends BaseService<User> {
 		this.userModel = new UserModel(prisma);
 	}
 
+	// Email validation method
+	private validateEmail(email: string): boolean {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return emailRegex.test(email);
+	}
+
 	// Fetch all users with caching
 	async getAllUsers(): Promise<User[]> {
 		const cacheKey = "users:all";
@@ -33,21 +39,29 @@ export class UserService extends BaseService<User> {
 		return user;
 	}
 
-	// Create a new user and invalidate cache
+	// Create a new user with email validation and invalidate cache
 	async createNewUser(userData: {
 		name: string;
 		email: string;
 	}): Promise<User> {
+		if (!this.validateEmail(userData.email)) {
+			throw new Error("Invalid email format");
+		}
+
 		const newUser = await this.userModel.create(userData);
 		await this.invalidateCache("users:all");
 		return newUser;
 	}
 
-	// Update user and invalidate cache
+	// Update user with email validation and invalidate cache
 	async updateUserDetail(
 		id: string,
 		userData: Partial<{ name: string; email: string }>,
 	): Promise<User> {
+		if (userData.email && !this.validateEmail(userData.email)) {
+			throw new Error("Invalid email format");
+		}
+
 		const updatedUser = await this.userModel.update(id, userData);
 		await this.invalidateCache(`users:${id}`);
 		await this.invalidateCache("users:all");

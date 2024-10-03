@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { ProjectService } from "../services/projects.service";
-import { Context } from "../shared/interfaces.shared";
+import { type Context } from "../shared/interfaces.shared";
 
 export const ProjectController = new Elysia({ prefix: "/projects" })
 	.get("/", ({ db, redis }: Context) => {
