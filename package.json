@@ -18,7 +18,8 @@
     "@elysiajs/swagger": "^1.1.1",
     "@prisma/client": "5.20.0",
     "elysia": "latest",
-    "ioredis": "^5.4.1"
+    "ioredis": "^5.4.1",
+    "minio": "^8.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.2",
