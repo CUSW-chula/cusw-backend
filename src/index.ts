@@ -3,18 +3,18 @@ import { PrismaClient } from "@prisma/client";
 import { UserController } from "./controllers/users.controller";
 import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
-import * as Minio from 'minio';
+import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
 
 const prisma = new PrismaClient();
 const redis = new Redis();
 const minioClient = new Minio.Client({
-	endPoint: 'localhost',
+	endPoint: "localhost",
 	port: 9000,
 	useSSL: true,
 	accessKey: process.env.MINIO_ACCESS_KEY ?? "",
 	secretKey: process.env.MINIO_SECRET_KEY ?? "",
-  })
+});
 
 const app = new Elysia()
 	.use(swagger())
