@@ -21,6 +21,20 @@ services:
     volumes:
       - redis_data:/data
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"  # For MinIO Console
+    command: server /data --console-address ":9001"
+
 volumes:
   postgres_data:
   redis_data:
+  minio_data:
