@@ -64,6 +64,7 @@ model Task {
   parentTaskId   String? 
   expectedBudget Float 
   realBudget     Float 
+  usedBudget     Float
   startDate      DateTime?
   endDate        DateTime?
   assignedUsers  TaskAssignment[] // Many-to-many relation with users 
