@@ -27,6 +27,7 @@ model Project {
   description    String 
   expectedBudget Float
   realBudget     Float
+  usedBudget     Float
   startDate      DateTime
   endDate        DateTime
   projectRoles   ProjectRole[]    // Roles of users in the project
