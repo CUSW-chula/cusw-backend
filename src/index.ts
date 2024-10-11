@@ -5,6 +5,7 @@ import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
+import { CommentController } from "./controllers/comment.controllers";
 
 const prisma = new PrismaClient();
 const redis = new Redis();
@@ -24,14 +25,15 @@ const app = new Elysia()
 	.group("/api", (api) => {
 		api.use(ProjectController);
 		api.use(UserController);
+		api.use(CommentController);
 		return api;
 	})
-	.listen(3000);
+	.listen(4000);
 
 console.info(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
 
 console.info(
-	"Swagger·documentation·available·at·http://localhost:3000/swagger",
+	"Swagger·documentation·available·at·http://localhost:4000/swagger",
 );
