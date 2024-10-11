@@ -21,6 +21,7 @@ export class ProjectModel extends BaseModel<PrismaProject> {
 				endDate: data.endDate ?? new Date(),
 				expectedBudget: data.expectedBudget ?? 0,
 				realBudget: data.realBudget ?? 0,
+				usedBudget: data.usedBudget ?? 0,
 			},
 		});
 		return createdProject;
