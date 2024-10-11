@@ -2,7 +2,6 @@ import { Elysia } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { type Context } from "../shared/interfaces.shared";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { Project } from "@prisma/client";
 
 export const ProjectController = new Elysia({ prefix: "/projects" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -21,8 +20,7 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const project = await projectService.getProjectById(id);
 
 			// This is example how to use Socket
-			const websocket = new WebSocket<Project>();
-			if (project !== null) websocket.broadcast(project);
+			if (project !== null) WebSocket.broadcast(project);
 			return project;
 		},
 	);
