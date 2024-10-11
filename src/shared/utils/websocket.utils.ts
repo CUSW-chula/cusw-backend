@@ -6,14 +6,14 @@ export class WebSocket {
 
 	// Broadcast function to send data to all connected clients
 	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		static broadcast = (data: any) => {
+	static broadcast = (data: any) => {
 		WebSocket.wss.clients.forEach((client) => {
 			if (client.readyState === client.OPEN) {
 				client.send(JSON.stringify(data));
 			}
-            if (client.readyState === client.CLOSED) {
-                client.close();
-            }
+			if (client.readyState === client.CLOSED) {
+				client.close();
+			}
 		});
 	};
 }
