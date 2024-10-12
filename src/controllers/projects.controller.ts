@@ -20,7 +20,7 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const project = await projectService.getProjectById(id);
 
 			// This is example how to use Socket
-			if (project !== null) WebSocket.broadcast(project);
+			if (project !== null) WebSocket.broadcast("project", project);
 			return project;
 		},
 	);
