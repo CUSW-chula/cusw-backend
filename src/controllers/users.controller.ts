@@ -62,7 +62,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 				) {
 					return {
 						status: 400,
-						body: { error: "Invalid email format" },
+						body: { error: error.message },
 					};
 				}
 				// Handle unexpected errors
