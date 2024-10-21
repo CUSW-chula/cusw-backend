@@ -1,12 +1,30 @@
 version: "3.8"
 
 services:
+  app:
+    build:
+      context: .  # The current directory where your Dockerfile is located
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    env_file:
+      - .env  # Environment variables for your app (make sure it includes DB, Redis, MinIO configs)
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    ports:
+      - "4000:4000"  # Your app runs on port 4000
+    volumes:
+      - .:/app  # Mount your current directory for live reloading (optional during dev)
+    command: ["bun", "src/index.ts"]  # Start your Bun app
+
   postgres:
     image: postgres:latest
     container_name: postgres
     restart: always
     env_file:
-      - .env
+      - .env  # Load your DB credentials (e.g., POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -26,12 +44,12 @@ services:
     container_name: minio
     restart: always
     env_file:
-      - .env
+      - .env  # Include MINIO credentials (e.g., MINIO_ROOT_USER, MINIO_ROOT_PASSWORD)
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"  # For MinIO Console
+      - "9000:9000"  # MinIO service port
+      - "9001:9001"  # MinIO Console port
     command: server /data --console-address ":9001"
 
 volumes:

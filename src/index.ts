@@ -26,7 +26,7 @@ const app = new Elysia()
 		api.use(UserController);
 		return api;
 	})
-	.listen(3000);
+	.listen(4000);
 
 console.info(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
