@@ -77,6 +77,6 @@ jobs:
           echo "Running lint checks..."
           bun run lint  # Run lint using Bun
       - name: Unit test
-        run: /
+        run: |
           echo "Running unit test..."
           bun run test
