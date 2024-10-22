@@ -35,6 +35,7 @@ export class TaskService extends BaseService<Task> {
 
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
 		return task;
 	}
 
