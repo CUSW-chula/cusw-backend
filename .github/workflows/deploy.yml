@@ -79,4 +79,4 @@ jobs:
       - name: Unit test
         run: |
           echo "Running unit test..."
-          bun run test
+          bun test
