@@ -5,6 +5,7 @@ import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
+import { TaskController } from "./controllers/tasks.controller";
 
 const prisma = new PrismaClient();
 const redis = new Redis();
@@ -24,6 +25,7 @@ const app = new Elysia()
 	.group("/api", (api) => {
 		api.use(ProjectController);
 		api.use(UserController);
+		api.use(TaskController);
 		return api;
 	})
 	.listen(4000);
