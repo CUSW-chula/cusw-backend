@@ -40,7 +40,7 @@ export class CommentModel extends BaseModel<PrismaComment> {
 		const updatedComment = await this.getModel().comment.update({
 			where: { id },
 			data: {
-				content: data.content ?? '',
+				content: data.content ?? "",
 				createdAt: data.createdAt ?? new Date(),
 			},
 		});

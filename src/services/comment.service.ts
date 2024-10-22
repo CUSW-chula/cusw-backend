@@ -49,16 +49,16 @@ export class CommentService extends BaseService<Comment> {
 		return deleteComment;
 	}
 
-	async editComment(id: string , authorId: string): Promise<Comment> {
+	async editComment(id: string, authorId: string): Promise<Comment> {
 		const isUserExist = await this.userModel.findById(authorId);
 		if (!isUserExist) {
-			throw new Error("User not found")
+			throw new Error("User not found");
 		}
 		const comment = await this.commentModel.findById(id);
 		if (!comment) throw new Error("Comment not found");
 		if (authorId !== comment.authorId)
 			throw new Error("This is not your comment");
-		const editComment = await this.commentModel.update(id,comment);
+		const editComment = await this.commentModel.update(id, comment);
 		return editComment;
 	}
 }
