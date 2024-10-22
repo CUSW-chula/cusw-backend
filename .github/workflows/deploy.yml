@@ -72,6 +72,10 @@ jobs:
         run: |
           bun --version  # Check if Bun is installed correctly
 
+      - name: Bun installation
+        run: |
+          bun install   # Check if Bun is installed correctly    
+
       - name: Lint code
         run: |
           echo "Running lint checks..."
