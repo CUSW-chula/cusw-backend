@@ -63,7 +63,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					body.userId,
 				);
-				WebSocket.broadcast("assigned", unAssignTask);
+				WebSocket.broadcast("unassigned", unAssignTask);
 				return unAssignTask;
 			} catch (error) {
 				return {
