@@ -20,7 +20,8 @@
     "@prisma/client": "5.20.0",
     "elysia": "latest",
     "ioredis": "^5.4.1",
-    "minio": "^8.0.1"
+    "minio": "^8.0.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.2",

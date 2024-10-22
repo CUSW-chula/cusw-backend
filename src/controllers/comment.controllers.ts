@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { CommentService } from "../services/comment.service";
 import { type Context } from "../shared/interfaces.shared";
 import { PrismaClient, type Comment } from "@prisma/client";
+import { WebSocket } from "../shared/utils/websocket.utils";
 
 export const CommentController = new Elysia({ prefix: "/comments" })
 	.get(
@@ -36,6 +37,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 		async ({ body, db, redis }: Context & { body: Comment }) => {
 			const commentService = new CommentService(db, redis);
 			try {
+				WebSocket.broadcast("comment", body);
 				return await commentService.addComment(body);
 			} catch (_error) {
 				// Handle unexpected errors

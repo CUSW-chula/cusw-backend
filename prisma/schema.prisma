@@ -33,8 +33,7 @@ model Project {
   projectRoles   ProjectRole[]    // Roles of users in the project
   tasks          Task[]           @relation("ProjectTasks") // Tasks in the project
   files          File[]           @relation("ProjectFiles") // Files associated with the project
-  activities     Activity[]       // Activities related to the project
-
+  
   @@map("projects") 
 }
 
@@ -115,12 +114,10 @@ model Activity {
   action    ActivityAction 
   detail    String?
   taskId    String? 
-  projectId String? 
   userId    String 
   createdAt DateTime     @default(now()) // Automatically set timestamp when activity is logged
 
   task      Task?       @relation(fields: [taskId], references: [id]) 
-  project   Project?    @relation(fields: [projectId], references: [id]) 
   user      User        @relation(fields: [userId], references: [id]) 
 
   @@map("activities") 

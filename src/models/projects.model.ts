@@ -1,18 +1,18 @@
-import type { Project as PrismaProject } from "@prisma/client";
+import type { Project } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
 
-export class ProjectModel extends BaseModel<PrismaProject> {
-	async findAll(): Promise<PrismaProject[]> {
+export class ProjectModel extends BaseModel<Project> {
+	async findAll(): Promise<Project[]> {
 		const projects = await this.getModel().project.findMany();
 		return projects;
 	}
 
-	async findById(id: string): Promise<PrismaProject | null> {
+	async findById(id: string): Promise<Project | null> {
 		const project = await this.getModel().project.findUnique({ where: { id } });
 		return project;
 	}
 
-	async create(data: Partial<PrismaProject>): Promise<PrismaProject> {
+	async create(data: Partial<Project>): Promise<Project> {
 		const createdProject = await this.getModel().project.create({
 			data: {
 				title: data.title ?? "",
@@ -21,16 +21,13 @@ export class ProjectModel extends BaseModel<PrismaProject> {
 				endDate: data.endDate ?? new Date(),
 				expectedBudget: data.expectedBudget ?? 0,
 				realBudget: data.realBudget ?? 0,
-				usedBudget: data.usedBudget ?? 0.0,
+				usedBudget: data.usedBudget ?? 0,
 			},
 		});
 		return createdProject;
 	}
 
-	async update(
-		id: string,
-		data: Partial<PrismaProject>,
-	): Promise<PrismaProject> {
+	async update(id: string, data: Partial<Project>): Promise<Project> {
 		const updatedUser = await this.getModel().project.update({
 			where: {
 				id: id,
@@ -39,7 +36,7 @@ export class ProjectModel extends BaseModel<PrismaProject> {
 		});
 		return updatedUser;
 	}
-	async delete(id: string): Promise<PrismaProject> {
+	async delete(id: string): Promise<Project> {
 		const deletedUser = await this.getModel().project.delete({
 			where: { id },
 		});
