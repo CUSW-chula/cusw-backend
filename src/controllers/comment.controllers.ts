@@ -22,7 +22,6 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				}),
 				headers: { "Content-Type": "application/json" },
 			});
-
 		},
 	})
 	// Get user by ID with try-catch for error handling
