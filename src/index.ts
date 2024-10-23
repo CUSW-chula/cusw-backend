@@ -21,7 +21,13 @@ const minioClient = new Minio.Client({
 
 const app = new Elysia()
 	.use(swagger())
-	.use(cors())
+	.use(
+		cors({
+			origin: ["http://localhost:3000"],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			credentials: true,
+		}),
+	)
 	.decorate("db", prisma)
 	.decorate("redis", redis)
 	.decorate("minio", minioClient)
