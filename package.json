@@ -15,6 +15,7 @@
     "format:fix": "bunx biome format --write ./src"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.1.1",
     "@elysiajs/stream": "^1.1.0",
     "@elysiajs/swagger": "^1.1.1",
     "@prisma/client": "5.20.0",

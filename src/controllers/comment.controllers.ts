@@ -37,8 +37,9 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 		async ({ body, db, redis }: Context & { body: Comment }) => {
 			const commentService = new CommentService(db, redis);
 			try {
-				WebSocket.broadcast("comment", body);
-				return await commentService.addComment(body);
+				const comment = await commentService.addComment(body);
+				WebSocket.broadcast("comment", comment);
+				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
 				// Handle unexpected errors
 				return {
@@ -52,6 +53,60 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				content: t.String(),
 				authorId: t.String(),
 				taskId: t.String(),
+			}),
+		},
+	)
+	.delete(
+		"/",
+		async ({ body, db, redis }: Context & { body: Comment }) => {
+			const commentService = new CommentService(db, redis);
+			try {
+				const comment = await commentService.deleteComment(
+					body.id,
+					body.authorId,
+				);
+				WebSocket.broadcast("comment-delete", comment);
+				return { status: 200, body: { message: "Success" } };
+			} catch (_error) {
+				// Handle unexpected errors
+				return {
+					status: 500,
+					body: { error: "Internal Server Error" },
+				};
+			}
+		},
+		{
+			body: t.Object({
+				id: t.String(),
+				authorId: t.String(),
+			}),
+		},
+	)
+	.patch(
+		"/",
+		async ({ body, db, redis }: Context & { body: Comment }) => {
+			const commentService = new CommentService(db, redis);
+			try {
+				const comment = await commentService.editComment(
+					body.id,
+					body.authorId,
+					body.content,
+				);
+				WebSocket.broadcast("comment-edit", comment);
+				return { status: 200, body: { message: "Success" } };
+			} catch (_error) {
+				// Handle unexpected errors
+				return {
+					status: 500,
+					body: { error: "Internal Server Error" },
+				};
+			}
+		},
+		{
+			body: t.Object({
+				id: t.String(),
+				authorId: t.String(),
+				content: t.String(),
 			}),
 		},
 	);
