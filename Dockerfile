@@ -5,6 +5,8 @@ WORKDIR /app
 COPY package.json .
 
 RUN bun install
+RUN bun run db:push
+RUN bunx prisma generate
 
 COPY src src
 COPY tsconfig.json .
