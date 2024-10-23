@@ -5,6 +5,8 @@ import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
+import { CommentController } from "./controllers/comment.controllers";
+import cors from "@elysiajs/cors";
 import { TaskController } from "./controllers/tasks.controller";
 
 const prisma = new PrismaClient();
@@ -19,6 +21,7 @@ const minioClient = new Minio.Client({
 
 const app = new Elysia()
 	.use(swagger())
+	.use(cors())
 	.decorate("db", prisma)
 	.decorate("redis", redis)
 	.decorate("minio", minioClient)
@@ -26,6 +29,7 @@ const app = new Elysia()
 		api.use(ProjectController);
 		api.use(UserController);
 		api.use(TaskController);
+		api.use(CommentController);
 		return api;
 	})
 	.listen(4000);
