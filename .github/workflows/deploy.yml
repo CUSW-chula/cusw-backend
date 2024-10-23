@@ -74,7 +74,7 @@ jobs:
 
       - name: Bun installation
         run: |
-          bun install   # Check if Bun is installed correctly    
+          bun install  # Check if Bun is installed correctly
 
       - name: Lint code
         run: |

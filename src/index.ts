@@ -7,6 +7,7 @@ import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
 import { CommentController } from "./controllers/comment.controllers";
 import cors from "@elysiajs/cors";
+import { TaskController } from "./controllers/tasks.controller";
 
 const prisma = new PrismaClient();
 const redis = new Redis();
@@ -27,6 +28,7 @@ const app = new Elysia()
 	.group("/api", (api) => {
 		api.use(ProjectController);
 		api.use(UserController);
+		api.use(TaskController);
 		api.use(CommentController);
 		return api;
 	})
