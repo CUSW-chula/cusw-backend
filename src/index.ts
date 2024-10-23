@@ -23,8 +23,11 @@ const app = new Elysia()
 	.use(swagger())
 	.use(
 		cors({
-			origin: ["http://localhost:3000", "http://cusw-workspace.sa.chula.ac.th/"],
-			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			origin: [
+				"http://localhost:3000",
+				"http://cusw-workspace.sa.chula.ac.th/",
+			],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
 			credentials: true,
 		}),
 	)
