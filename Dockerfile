@@ -3,17 +3,19 @@ FROM oven/bun:1.1.30
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (e.g., openssl)
-RUN apt-get update && apt-get install -y openssl
-
-# Copy package.json to avoid unnecessary cache busting
+# Copy package.json first for better cache utilization
 COPY package.json ./
 
-# Copy the local node_modules (with Prisma client already generated)
-COPY node_modules ./node_modules
+# Install dependencies
+RUN bun install
+RUN apt-get install -y openssl
 
-# Copy Prisma schema, application files, and other required files
+# Copy prisma schema and push the database schema
 COPY prisma ./prisma
+RUN bun run db:push
+RUN bunx prisma generate
+
+# Copy the remaining application files
 COPY tsconfig.json ./
 COPY src ./src
 
