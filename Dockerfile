@@ -18,8 +18,8 @@ COPY src ./src
 # Uncomment the following line if you have public assets to copy
 # COPY public ./public
 
-# Run Prisma commands (db push and generate) after copying necessary files
-RUN bun run db:push && bunx prisma generate
+# Add logs to check if prisma generate works correctly
+RUN bun run db:push && bunx prisma generate && echo "Prisma generated successfully"
 
 # Expose the application port
 EXPOSE 4000
