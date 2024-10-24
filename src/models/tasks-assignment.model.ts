@@ -14,6 +14,15 @@ export class TasksAssignmentModel extends BaseModel<TaskAssignment> {
 		return taskAssignment;
 	}
 
+	async findByTaskId(taskId: string): Promise<TaskAssignment[] | null> {
+		const taskAssignment = await this.getModel().taskAssignment.findMany({
+			where: {
+				taskId: taskId,
+			},
+		});
+		return taskAssignment;
+	}
+
 	async findByTaskIdAndUserId(
 		taskId: string,
 		userId: string,

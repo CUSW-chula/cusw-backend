@@ -1,5 +1,5 @@
 import { TasksModel } from "../models/tasks.model";
-import type { PrismaClient, Task, TaskAssignment } from "@prisma/client";
+import type { PrismaClient, Task, TaskAssignment, User } from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -37,6 +37,28 @@ export class TaskService extends BaseService<Task> {
 		if (!task) throw new Error("Task not found");
 		await this.setToCache(cacheKey, task);
 		return task;
+	}
+
+	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {
+		// Check if task exists
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		// Retrieve task assignments
+		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
+		if (!taskAssignments || taskAssignments.length === 0)
+			throw new Error("No users assigned to this task");
+
+		// Get all users assigned to the task concurrently
+		const usersInTask = await Promise.all(
+			taskAssignments.map(async (taskAssignment) => {
+				const user = await this.userModel.findById(taskAssignment.userId);
+				return user || null; // Return null if user not found
+			}),
+		);
+
+		// Filter out any null results (users not found)
+		return usersInTask.filter((user) => user !== null) as User[];
 	}
 
 	async assigningTaskToUser(

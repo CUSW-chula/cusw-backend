@@ -2,6 +2,8 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
+import { User } from "@prisma/client";
+import { UserService } from "../services/users.service";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -21,20 +23,35 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return task;
 		},
 	)
+	.get(
+		"/getassign/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const users: User[] =
+				await taskService.getAsignUserInTaskByTaskId(taskId);
+			return users;
+		},
+	)
 	.post(
-		"/",
+		"/assign",
 		async ({
 			body,
 			db,
 			redis,
 		}: Context & { body: { taskId: string; userId: string } }) => {
 			const taskService = new TaskService(db, redis);
+			const userService = new UserService(db, redis);
 			try {
 				const assignTask = await taskService.assigningTaskToUser(
 					body.taskId,
 					body.userId,
 				);
-				WebSocket.broadcast("assigned", assignTask);
+				const usersAssign = await userService.getUserById(assignTask.userId);
+				WebSocket.broadcast("assigned", usersAssign);
 				return assignTask;
 			} catch (error) {
 				return {
@@ -51,19 +68,21 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		},
 	)
 	.delete(
-		"/",
+		"/unassigned",
 		async ({
 			body,
 			db,
 			redis,
 		}: Context & { body: { taskId: string; userId: string } }) => {
 			const taskService = new TaskService(db, redis);
+			const userService = new UserService(db, redis);
 			try {
 				const unAssignTask = await taskService.unAssigningTaskToUser(
 					body.taskId,
 					body.userId,
 				);
-				WebSocket.broadcast("unassigned", unAssignTask);
+				const unAssignUser = await userService.getUserById(unAssignTask.userId);
+				WebSocket.broadcast("unassigned", unAssignUser);
 				return unAssignTask;
 			} catch (error) {
 				return {
