@@ -25,6 +25,7 @@ const app = new Elysia()
 		cors({
 			origin: ["http://localhost:3000", "http://cusw-workspace.sa.chula.ac.th"],
 			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+			credentials: true,
 		}),
 	)
 	.decorate("db", prisma)
