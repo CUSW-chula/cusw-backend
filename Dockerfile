@@ -1,18 +1,28 @@
-FROM oven/bun
+FROM oven/bun:latest
 
+# Set working directory
 WORKDIR /app
 
-COPY prisma prisma
-COPY package.json .
+# Copy package.json first for better cache utilization
+COPY package.json ./
 
+# Install dependencies
 RUN bun install
+
+# Copy prisma schema and push the database schema
+COPY prisma ./prisma
 RUN bun run db:push
 RUN bunx prisma generate
 
-COPY src src
-COPY tsconfig.json .
-# COPY public public
+# Copy the remaining application files
+COPY tsconfig.json ./
+COPY src ./src
 
-CMD ["bun", "src/index.ts"]
+# Uncomment the following line if you have public assets to copy
+# COPY public ./public
 
+# Expose the application port
 EXPOSE 4000
+
+# Command to run the application
+CMD ["bun", "run", "src/index.ts"]
