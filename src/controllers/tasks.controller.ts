@@ -97,4 +97,50 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				userId: t.String(),
 			}),
 		},
+	)
+	.post(
+		"/emoji",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { taskId: string; userId: string; emoji: string };
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const addEmoji = await taskService.addEmojiOnTask(
+					body.taskId,
+					body.userId,
+					body.emoji,
+				);
+				WebSocket.broadcast("addEmoji", addEmoji);
+				return addEmoji;
+			} catch (error) {
+				return {
+					status: 500,
+					body: { error: error },
+				};
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				userId: t.String(),
+				emoji: t.String(),
+			}),
+		},
+	)
+	//didnt done
+	.get(
+		"/emoji",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskById(id);
+			return task;
+		},
 	);

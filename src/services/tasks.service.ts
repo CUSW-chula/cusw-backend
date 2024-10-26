@@ -1,19 +1,28 @@
 import { TasksModel } from "../models/tasks.model";
-import type { PrismaClient, Task, TaskAssignment, User } from "@prisma/client";
+import type {
+	EmojiTaskUser,
+	PrismaClient,
+	Task,
+	TaskAssignment,
+	User,
+} from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
+import { EmojiModel } from "../models/emoji.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
 	private readonly userModel: UserModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
+	private readonly emojiModel: EmojiModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
 		this.taskModel = new TasksModel(prisma);
 		this.userModel = new UserModel(prisma);
+		this.emojiModel = new EmojiModel(prisma);
 		this.taskAssignmentModel = new TasksAssignmentModel(prisma);
 	}
 
@@ -104,5 +113,29 @@ export class TaskService extends BaseService<Task> {
 			taskAssignment.id,
 		);
 		return unAssigningTaskToUser;
+	}
+	async addEmojiOnTask(
+		emoji: string,
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
+			taskId,
+			userId,
+		);
+		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		const addEmojiOnTask = await this.emojiModel.create({
+			emoji: emoji,
+			taskId: taskId,
+			userId: userId,
+		});
+
+		return addEmojiOnTask;
 	}
 }
