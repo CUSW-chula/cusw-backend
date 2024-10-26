@@ -1,6 +1,6 @@
 generator client { 
-  provider = "prisma-client-js"
-   binaryTargets = ["native", "debian-openssl-1.1.x"] 
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"] 
 }
 
 datasource db { 
@@ -17,9 +17,23 @@ model User {
   createdTasks  Task[]           @relation("CreatedTasks") 
   uploadedFiles File[]           @relation("UploadedFiles") 
   comments      Comment[] 
-  activities    Activity[] 
+  activities    Activity[]
+  emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
+
 
   @@map("users") 
+}
+
+model EmojiTaskUser {
+  id     String @id @default(cuid())
+  emoji  String
+  userId String
+  taskId String
+
+  user User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@map("emoji_task_users")
 }
 
 model Project { 
@@ -52,14 +66,14 @@ model ProjectRole {
 }
 
 model Task { 
-  id             String       @id @default(cuid()) 
+  id             String           @id @default(cuid()) 
   title          String 
   description    String 
   status         TaskStatus 
   projectId      String       
-  project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) 
-  subTasks       Task[]       @relation("SubTasks") 
-  parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
+  project        Project        @relation("ProjectTasks", fields: [projectId], references: [id]) 
+  subTasks       Task[]         @relation("SubTasks") 
+  parentTask     Task?          @relation("SubTasks", fields: [parentTaskId], references: [id]) 
   parentTaskId   String? 
   expectedBudget Float 
   realBudget     Float 
@@ -68,13 +82,14 @@ model Task {
   endDate        DateTime?
   assignedUsers  TaskAssignment[] 
   createdById    String? 
-  createdBy      User?        @relation("CreatedTasks", fields: [createdById], references: [id]) 
+  createdBy      User?          @relation("CreatedTasks", fields: [createdById], references: [id]) 
   comments       Comment[] 
   activities     Activity[] 
-  files          File[]       @relation("TaskFiles") 
+  files          File[]         @relation("TaskFiles") 
+  tags           TaskTag[]
+  emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
 
   @@map("tasks") 
-  TaskTag TaskTag[]
 }
 
 model TaskAssignment { 
@@ -92,9 +107,9 @@ model TaskAssignment {
 model Tag { 
   id     String  @id @default(cuid()) 
   name   String  @unique 
+  tasks  TaskTag[]
 
   @@map("tags") 
-  TaskTag TaskTag[]
 }
 
 model Comment { 
@@ -141,7 +156,7 @@ model File {
   @@map("files") 
 }
 
-// New join table for the many-to-many relationship between Task and Tag
+// Join table for many-to-many relationship between Task and Tag
 model TaskTag { 
   id       String @id @default(cuid()) 
   taskId   String 
