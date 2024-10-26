@@ -150,7 +150,6 @@ model TaskTag {
   task     Task   @relation(fields: [taskId], references: [id]) 
   tag      Tag    @relation(fields: [tagId], references: [id]) 
 
-  @@unique([taskId, tagId])
   @@map("task_tags") 
 }
 
