@@ -51,7 +51,7 @@ export class TagService extends BaseService<Tag> {
 		// Get all users assigned to the task concurrently
 		const tagsInTask = await Promise.all(
 			taskTag.map(async (taskTag) => {
-				const tag = await this.tagModel.findById(taskTag.taskId);
+				const tag = await this.tagModel.findById(taskTag.tagId);
 				return tag || null; // Return null if user not found
 			}),
 		);
@@ -113,7 +113,7 @@ export class TagService extends BaseService<Tag> {
 		if (!isTaskExist) throw new Error("Task not found");
 
 		// Assigning userTaskAssignment
-		const taskTag = await this.taskTagModel.findByTaskIdAndTagId(tagId, taskId);
+		const taskTag = await this.taskTagModel.findByTaskIdAndTagId(taskId, tagId);
 		if (!taskTag)
 			throw new Error("Unexpected error tasks assignment not found");
 		const unAssigningTagToTask = await this.taskTagModel.delete(taskTag.id);

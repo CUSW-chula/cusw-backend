@@ -3,6 +3,7 @@ import { Context } from "../shared/interfaces.shared";
 import { TagService } from "../services/tag.service";
 import { Tag, Task } from "@prisma/client";
 import { TaskService } from "../services/tasks.service";
+import { WebSocket } from "../shared/utils/websocket.utils";
 
 export const TagController = new Elysia({ prefix: "/tags" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -23,7 +24,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 		},
 	)
 	.get(
-		"/getassign/:taskId",
+		"/getassigntag/:taskId",
 		async ({
 			params: { taskId },
 			db,
@@ -36,7 +37,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 	)
 
 	.get(
-		"/getassign/:tagId",
+		"/getassigntask/:tagId",
 		async ({
 			params: { tagId },
 			db,
@@ -85,13 +86,13 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { taskId: string; userId: string } }) => {
+		}: Context & { body: { taskId: string; tagId: string } }) => {
 			const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
 			try {
 				const unAssignTag = await tagService.unAssigningTagToTask(
 					body.taskId,
-					body.userId,
+					body.tagId,
 				);
 				const unAssignTask = await taskService.getTaskById(unAssignTag.taskId);
 				WebSocket.broadcast("unassigned", unAssignTask);
@@ -106,7 +107,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 		{
 			body: t.Object({
 				taskId: t.String(),
-				userId: t.String(),
+				tagId: t.String(),
 			}),
 		},
 	);

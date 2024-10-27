@@ -1,4 +1,4 @@
-import type { Tag, TaskTag } from "@prisma/client";
+import type { Tag } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
 
 export class TagModel extends BaseModel<Tag> {

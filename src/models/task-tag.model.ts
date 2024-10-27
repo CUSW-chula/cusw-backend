@@ -1,9 +1,5 @@
 import type { TaskTag } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
-import type { Tag } from "@prisma/client";
-import type { Task } from "@prisma/client";
-import type { TagModel } from "./tag.model";
-import type { TasksModel } from "./tasks.model";
 
 export class TaskTagModel extends BaseModel<TaskTag> {
 	async findAll(): Promise<TaskTag[]> {
