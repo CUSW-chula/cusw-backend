@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { User } from "@prisma/client";
+import { EmojiTaskUser, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
@@ -109,13 +109,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
-				const addEmoji = await taskService.addEmojiOnTask(
-					body.taskId,
-					body.userId,
+				const newEmoji = await taskService.addEmojiOnTask(
 					body.emoji,
+					body.userId,
+					body.taskId,
 				);
-				WebSocket.broadcast("addEmoji", addEmoji);
-				return addEmoji;
+				WebSocket.broadcast("addEmoji", newEmoji);
+				return newEmoji;
 			} catch (error) {
 				return {
 					status: 500,
@@ -131,16 +131,45 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			}),
 		},
 	)
-	//didnt done
 	.get(
-		"/emoji",
+		"/emoji/:taskId",
 		async ({
-			params: { id },
+			params: { taskId },
 			db,
 			redis,
-		}: Context & { params: { id: string } }) => {
+		}: Context & { params: { taskId: string } }) => {
 			const taskService = new TaskService(db, redis);
-			const task = await taskService.getTaskById(id);
-			return task;
+			const emoji: EmojiTaskUser[] =
+				await taskService.getAllEmojiByTaskId(taskId);
+			return emoji;
+		},
+	)
+	.patch(
+		"/emoji",
+		async ({ body, db, redis }: Context & { body: EmojiTaskUser }) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const emoji = await taskService.updateEmojiByTaskId(
+					body.id,
+					body.emoji,
+					body.userId,
+					body.taskId,
+				);
+				WebSocket.broadcast("updateEmoji", emoji);
+				return { status: 200, body: { message: "Success", emoji } };
+			} catch (_error) {
+				return {
+					status: 500,
+					body: { error: _error },
+				};
+			}
+		},
+		{
+			body: t.Object({
+				id: t.String(),
+				emoji: t.String(),
+				userId: t.String(),
+				taskId: t.String(),
+			}),
 		},
 	);

@@ -129,6 +129,7 @@ export class TaskService extends BaseService<Task> {
 			taskId,
 			userId,
 		);
+
 		if (!taskAssignment) throw new Error("Unexpected error User not found");
 		const addEmojiOnTask = await this.emojiModel.create({
 			emoji: emoji,
@@ -137,5 +138,42 @@ export class TaskService extends BaseService<Task> {
 		});
 
 		return addEmojiOnTask;
+	}
+	async getAllEmojiByTaskId(taskId: string): Promise<EmojiTaskUser[]> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojiOnTasks = await this.emojiModel.findAllByTaskId(taskId);
+		if (!emojiOnTasks || emojiOnTasks.length === 0)
+			throw new Error("No emoji add to this task");
+		return emojiOnTasks;
+	}
+
+	async updateEmojiByTaskId(
+		id: string,
+		newEmoji: string,
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findById(id);
+		if (!emojis) throw new Error("emoji not found");
+
+		if (userId !== emojis.userId) throw new Error("This is not your emoji");
+
+		const newEmojis: EmojiTaskUser = {
+			id: emojis.id,
+			emoji: newEmoji,
+			taskId: emojis.taskId,
+			userId: emojis.userId,
+		};
+		const updatedEmoji = await this.emojiModel.update(id, newEmojis);
+		return updatedEmoji;
 	}
 }
