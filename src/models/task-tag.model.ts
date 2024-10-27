@@ -12,12 +12,11 @@ export class TaskTagModel extends BaseModel<TaskTag> {
 		});
 		return taskTags;
 	}
-	async create(data: TaskTag): Promise<TaskTag> {
+	async create(data: Partial<TaskTag>): Promise<TaskTag> {
 		const createdTaskTags = await this.getModel().taskTag.create({
 			data: {
-				id: data.id,
-				taskId: data.taskId,
-				tagId: data.tagId,
+				taskId: data.taskId ?? "",
+				tagId: data.tagId ?? "",
 			},
 		});
 		return createdTaskTags;

@@ -54,12 +54,13 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { id: string; taskId: string; tagId: string } }) => {
+		}: Context & {
+			body: { tagid: string; taskId: string; tagId: string };
+		}) => {
 			//const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
 			try {
 				const assignTag = await tagService.assigningTagToTask(
-					body.id,
 					body.taskId,
 					body.tagId,
 				);
@@ -67,9 +68,17 @@ export const TagController = new Elysia({ prefix: "/tags" })
 				WebSocket.broadcast("tags", assignTags);
 				return assignTags;
 			} catch (error) {
+				// Handle email validation error
+				if (error instanceof Error) {
+					return {
+						status: 400,
+						body: { error: error.message },
+					};
+				}
+				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: error },
+					body: { error: "Internal Server Error" },
 				};
 			}
 		},
@@ -98,9 +107,17 @@ export const TagController = new Elysia({ prefix: "/tags" })
 				WebSocket.broadcast("unassigned", unAssignTask);
 				return unAssignTag;
 			} catch (error) {
+				// Handle email validation error
+				if (error instanceof Error) {
+					return {
+						status: 400,
+						body: { error: error.message },
+					};
+				}
+				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: error },
+					body: { error: "Internal Server Error" },
 				};
 			}
 		},

@@ -81,11 +81,7 @@ export class TagService extends BaseService<Tag> {
 		return tagsInTask.filter((task) => task !== null) as Task[];
 	}
 
-	async assigningTagToTask(
-		id: string,
-		taskId: string,
-		tagId: string,
-	): Promise<TaskTag> {
+	async assigningTagToTask(taskId: string, tagId: string): Promise<TaskTag> {
 		// First step check if user exists
 		const isTagExist = await this.tagModel.findById(tagId);
 		if (!isTagExist) throw new Error("Tag not found");
@@ -94,11 +90,15 @@ export class TagService extends BaseService<Tag> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 
+		const tagExist = await this.taskTagModel.findByTaskIdAndTagId(
+			taskId,
+			tagId,
+		);
+		if (tagExist) throw new Error("Duplicate Tag");
 		// Assigning userTaskAssignment
 		const assignTagToTask = await this.taskTagModel.create({
-			id: id,
-			taskId: taskId,
 			tagId: tagId,
+			taskId: taskId,
 		});
 		return assignTagToTask;
 	}
