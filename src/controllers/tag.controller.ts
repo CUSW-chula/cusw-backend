@@ -96,15 +96,14 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			db,
 			redis,
 		}: Context & { body: { taskId: string; tagId: string } }) => {
-			const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
 			try {
-				const unAssignTag = await tagService.unAssigningTagToTask(
+				const unAssignTaskTag = await tagService.unAssigningTagToTask(
 					body.taskId,
 					body.tagId,
 				);
-				const unAssignTask = await taskService.getTaskById(unAssignTag.taskId);
-				WebSocket.broadcast("unassigned", unAssignTask);
+				const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
+				WebSocket.broadcast("unassigned-Tag", unAssignTag);
 				return unAssignTag;
 			} catch (error) {
 				// Handle email validation error
