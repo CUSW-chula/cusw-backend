@@ -118,6 +118,8 @@ model Comment {
   taskId    String 
   authorId  String 
   createdAt DateTime  @default(now()) 
+  isDelete  Boolean   @default(false)
+  editTime  DateTime?
 
   task      Task   @relation(fields: [taskId], references: [id]) 
   author    User   @relation(fields: [authorId], references: [id]) 
