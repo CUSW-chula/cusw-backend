@@ -96,7 +96,10 @@ export class TagService extends BaseService<Tag> {
 		if (!isTaskExist) throw new Error("Task not found");
 
 		// Check for duplicate tag assignment
-		const tagExist = await this.taskTagModel.findByTaskIdAndTagId(taskId, tagId);
+		const tagExist = await this.taskTagModel.findByTaskIdAndTagId(
+			taskId,
+			tagId,
+		);
 		if (tagExist) throw new Error("Duplicate Tag");
 
 		// Assign the tag to the task
