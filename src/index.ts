@@ -8,6 +8,7 @@ import { ProjectController } from "./controllers/projects.controller";
 import { CommentController } from "./controllers/comment.controllers";
 import cors from "@elysiajs/cors";
 import { TaskController } from "./controllers/tasks.controller";
+import { TagController } from "./controllers/tag.controller";
 
 const prisma = new PrismaClient();
 const redis = new Redis();
@@ -36,6 +37,7 @@ const app = new Elysia()
 		api.use(UserController);
 		api.use(TaskController);
 		api.use(CommentController);
+		api.use(TagController);
 		return api;
 	})
 	.listen(4000);
