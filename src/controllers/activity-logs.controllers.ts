@@ -1,7 +1,6 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import { ActivityService } from "../services/activity-logs.service";
 import { type Context } from "../shared/interfaces.shared";
-import { type Activity } from "@prisma/client";
 import { WebSocket } from "../shared/utils/websocket.utils";
 
 export const ActivityController = new Elysia({ prefix: "/activities" }).get(
@@ -15,18 +14,19 @@ export const ActivityController = new Elysia({ prefix: "/activities" }).get(
 		try {
 			const activities = await activityService.getActivityById(id);
 			WebSocket.broadcast("activity", activities);
-			if (!activities) {
+			return activities;
+		} catch (error) {
+			// Handle email validation error
+			if (error instanceof Error) {
 				return {
 					status: 404,
-					body: { error: "Activities not found" },
+					body: { error: error.message },
 				};
 			}
-			return activities;
-		} catch (_error) {
 			// Handle unexpected errors
 			return {
 				status: 500,
-				body: { error: _error },
+				body: { error: "Internal Server Error" },
 			};
 		}
 	},

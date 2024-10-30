@@ -6,7 +6,7 @@ import type {
 import { BaseModel } from "../core/model.core";
 
 export class ActivityLogsModel extends BaseModel<PrismaActivity> {
-	update(
+	async update(
 		id: string,
 		data: Partial<{
 			id: string;
@@ -24,11 +24,14 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		userId: string;
 		createdAt: Date;
 	}> {
-		throw new Error("Method not implemented.");
+		const updatedActivity = await this.getModel().activity.update({
+			where: { id },
+			data,
+		});
+		return updatedActivity;
 	}
-	delete(
-		id: string,
-	): Promise<{
+
+	async delete(id: string): Promise<{
 		id: string;
 		action: $Enums.ActivityAction;
 		detail: string | null;
@@ -36,18 +39,22 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		userId: string;
 		createdAt: Date;
 	}> {
-		throw new Error("Method not implemented.");
+		const deletedActivity = await this.getModel().activity.delete({
+			where: { id },
+		});
+		return deletedActivity;
 	}
+
 	async findAll(): Promise<PrismaActivity[]> {
 		const activities = await this.getModel().activity.findMany();
 		return activities;
 	}
 
 	async findById(id: string): Promise<PrismaActivity | null> {
-		const activities = await this.getModel().activity.findUnique({
+		const activity = await this.getModel().activity.findUnique({
 			where: { id },
 		});
-		return activities;
+		return activity;
 	}
 
 	async findByTaskId(taskId: string): Promise<PrismaActivity[] | null> {
