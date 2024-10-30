@@ -12,7 +12,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 			// Handle unexpected errors
 			return {
 				status: 500,
-				body: { error: "Internal Server Error" },
+				body: { error: _error },
 			};
 		}
 	})
@@ -38,7 +38,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: "Internal Server Error" },
+					body: { error: _error },
 				};
 			}
 		},

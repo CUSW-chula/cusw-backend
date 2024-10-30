@@ -2,7 +2,7 @@
 
 
 ## Model Service Controller Pattern
-### Sequence diagrams
+### UML diagrams
 - **Client** sends a request to the **Controller**. 
 - The **Controller** forwards the request to the **Service** for business logic processing.
  - **Service** requests data from the **Model**. 

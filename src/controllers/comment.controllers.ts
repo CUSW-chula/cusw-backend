@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
 import { CommentService } from "../services/comment.service";
 import { type Context } from "../shared/interfaces.shared";
-import { PrismaClient, type Comment } from "@prisma/client";
+import { type Comment } from "@prisma/client";
 import { WebSocket } from "../shared/utils/websocket.utils";
 
 export const CommentController = new Elysia({ prefix: "/comments" })
@@ -26,7 +26,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: "Internal Server Error" },
+					body: { error: _error },
 				};
 			}
 		},
@@ -44,7 +44,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: "Internal Server Error" },
+					body: { error: _error },
 				};
 			}
 		},
@@ -71,7 +71,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: "Internal Server Error" },
+					body: { error: _error },
 				};
 			}
 		},
@@ -98,7 +98,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				// Handle unexpected errors
 				return {
 					status: 500,
-					body: { error: "Internal Server Error" },
+					body: { error: _error },
 				};
 			}
 		},

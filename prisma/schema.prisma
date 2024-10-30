@@ -1,5 +1,6 @@
 generator client { 
-  provider = "prisma-client-js" 
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"] 
 }
 
 datasource db { 
@@ -11,14 +12,28 @@ model User {
   id            String           @id @default(cuid()) 
   name          String 
   email         String           @unique 
-  projectRoles  ProjectRole[]    // Roles of users in various projects
-  assignedTasks TaskAssignment[] // Tasks assigned to the user
+  projectRoles  ProjectRole[]    
+  assignedTasks TaskAssignment[] 
   createdTasks  Task[]           @relation("CreatedTasks") 
-  uploadedFiles File[]           @relation("UploadedFiles") // Files uploaded by the user
+  uploadedFiles File[]           @relation("UploadedFiles") 
   comments      Comment[] 
-  activities    Activity[] 
+  activities    Activity[]
+  emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
+
 
   @@map("users") 
+}
+
+model EmojiTaskUser {
+  id     String @id @default(cuid())
+  emoji  String
+  userId String
+  taskId String
+
+  user User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@map("emoji_task_users")
 }
 
 model Project { 
@@ -30,9 +45,9 @@ model Project {
   usedBudget     Float
   startDate      DateTime
   endDate        DateTime
-  projectRoles   ProjectRole[]    // Roles of users in the project
-  tasks          Task[]           @relation("ProjectTasks") // Tasks in the project
-  files          File[]           @relation("ProjectFiles") // Files associated with the project
+  projectRoles   ProjectRole[]    
+  tasks          Task[]           @relation("ProjectTasks") 
+  files          File[]           @relation("ProjectFiles") 
   
   @@map("projects") 
 }
@@ -51,27 +66,28 @@ model ProjectRole {
 }
 
 model Task { 
-  id             String       @id @default(cuid()) 
+  id             String           @id @default(cuid()) 
   title          String 
   description    String 
   status         TaskStatus 
-  projectId      String       // Link to the Project 
-  project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) // Relation to the Project model 
-  tags           Tag[]        @relation("TaskTags") // Many-to-many relation with Tag 
-  subTasks       Task[]       @relation("SubTasks") 
-  parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
+  projectId      String       
+  project        Project        @relation("ProjectTasks", fields: [projectId], references: [id]) 
+  subTasks       Task[]         @relation("SubTasks") 
+  parentTask     Task?          @relation("SubTasks", fields: [parentTaskId], references: [id]) 
   parentTaskId   String? 
   expectedBudget Float 
   realBudget     Float 
   usedBudget     Float
   startDate      DateTime?
   endDate        DateTime?
-  assignedUsers  TaskAssignment[] // Many-to-many relation with users 
+  assignedUsers  TaskAssignment[] 
   createdById    String? 
-  createdBy      User?        @relation("CreatedTasks", fields: [createdById], references: [id]) 
+  createdBy      User?          @relation("CreatedTasks", fields: [createdById], references: [id]) 
   comments       Comment[] 
   activities     Activity[] 
-  files          File[]       @relation("TaskFiles") // Files associated with the task
+  files          File[]         @relation("TaskFiles") 
+  tags           TaskTag[]
+  emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
 
   @@map("tasks") 
 }
@@ -91,7 +107,7 @@ model TaskAssignment {
 model Tag { 
   id     String  @id @default(cuid()) 
   name   String  @unique 
-  tasks  Task[]  @relation("TaskTags") // Many-to-many relation with Task 
+  tasks  TaskTag[]
 
   @@map("tags") 
 }
@@ -101,7 +117,9 @@ model Comment {
   content   String 
   taskId    String 
   authorId  String 
-  createdAt DateTime  @default(now()) // Automatically set timestamp when comment is created
+  createdAt DateTime  @default(now()) 
+  isDelete  Boolean   @default(false)
+  editTime  DateTime?
 
   task      Task   @relation(fields: [taskId], references: [id]) 
   author    User   @relation(fields: [authorId], references: [id]) 
@@ -115,7 +133,7 @@ model Activity {
   detail    String?
   taskId    String? 
   userId    String 
-  createdAt DateTime     @default(now()) // Automatically set timestamp when activity is logged
+  createdAt DateTime     @default(now()) 
 
   task      Task?       @relation(fields: [taskId], references: [id]) 
   user      User        @relation(fields: [userId], references: [id]) 
@@ -126,18 +144,30 @@ model Activity {
 model File { 
   id         String  @id @default(cuid()) 
   filePath   String 
-  fileSize   Float     // File size in bytes
+  fileSize   Float   
   taskId     String? 
   projectId  String? 
   uploadedBy String 
-  uploadedAt DateTime  @default(now()) // Automatically set timestamp when file is uploaded
-  createdAt  DateTime  @default(now()) // Automatically set timestamp when file is created
+  uploadedAt DateTime  @default(now()) 
+  createdAt  DateTime  @default(now()) 
 
   task       Task?    @relation("TaskFiles", fields: [taskId], references: [id]) 
   project    Project? @relation("ProjectFiles", fields: [projectId], references: [id]) 
   uploader   User     @relation("UploadedFiles", fields: [uploadedBy], references: [id]) 
 
   @@map("files") 
+}
+
+// Join table for many-to-many relationship between Task and Tag
+model TaskTag { 
+  id       String @id @default(cuid()) 
+  taskId   String 
+  tagId    String 
+
+  task     Task   @relation(fields: [taskId], references: [id]) 
+  tag      Tag    @relation(fields: [tagId], references: [id]) 
+
+  @@map("task_tags") 
 }
 
 enum Role { 

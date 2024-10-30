@@ -7,6 +7,8 @@ import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
 import { CommentController } from "./controllers/comment.controllers";
 import cors from "@elysiajs/cors";
+import { TaskController } from "./controllers/tasks.controller";
+import { TagController } from "./controllers/tag.controller";
 
 const prisma = new PrismaClient();
 const redis = new Redis();
@@ -20,14 +22,22 @@ const minioClient = new Minio.Client({
 
 const app = new Elysia()
 	.use(swagger())
-	.use(cors())
+	.use(
+		cors({
+			origin: ["http://localhost:3000", "http://cusw-workspace.sa.chula.ac.th"],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+			credentials: true,
+		}),
+	)
 	.decorate("db", prisma)
 	.decorate("redis", redis)
 	.decorate("minio", minioClient)
 	.group("/api", (api) => {
 		api.use(ProjectController);
 		api.use(UserController);
+		api.use(TaskController);
 		api.use(CommentController);
+		api.use(TagController);
 		return api;
 	})
 	.listen(4000);
