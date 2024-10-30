@@ -62,7 +62,7 @@ export class FilesService extends BaseService<File> {
 		const fileBuffer = Buffer.from(arrBuf);
 
 		// Get the MIME type based on the file extension
-		const contentType = mime.lookup(fileName) || "application/octet-stream";
+		const contentType = mime.lookup(file.name) || "application/octet-stream";
 
 		await this.minIoClient.putObject(
 			bucketName,
