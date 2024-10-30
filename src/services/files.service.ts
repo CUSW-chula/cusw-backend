@@ -3,6 +3,8 @@ import { BaseService } from "../core/service.core";
 import { FilesModel } from "../models/files.model";
 import * as Minio from "minio";
 import Redis from "ioredis";
+import mime from "mime-types"; // Import mime-types library to get the content type by extension
+import { BunFile } from "bun";
 
 export class FilesService extends BaseService<File> {
 	private readonly fileModel: FilesModel;
@@ -38,42 +40,51 @@ export class FilesService extends BaseService<File> {
 		return file;
 	}
 
-	async uploadFileByTaskId(
-		taskId: string,
-		fileName: string,
-		fileSize: number,
-		file: string,
-		projectId: string,
-		authorId: string,
-	): Promise<File | null> {
-		const bucketName = "cusw-workspace";
-		const randomString = (Math.random() + 1).toString(36).substring(7);
-		const fileKey = `${projectId}/${randomString}/${taskId}/${fileName}`;
-		await this.minIoClient.putObject(bucketName, fileKey, file);
-
-		const savedFile = await this.fileModel.create({
-			taskId: taskId,
-			createdAt: new Date(),
-			filePath: fileKey,
-			fileSize: fileSize,
-			projectId: projectId,
-			uploadedBy: authorId,
-		});
-
-		return savedFile;
-	}
-
-	async getPublicFileUrl(
-		filePath: string,
-		expirySeconds: number = 3600,
-	): Promise<string> {
+	private async getPublicFileUrl(filePath: string): Promise<string> {
 		const bucketName = "cusw-workspace";
 		const url = await this.minIoClient.presignedUrl(
 			"GET",
 			bucketName,
 			filePath,
-			expirySeconds,
 		);
 		return url;
+	}
+
+	async uploadFileByTaskId(
+		taskId: string,
+		file: Blob,
+		projectId: string,
+		authorId: string,
+	): Promise<File | null> {
+		const bucketName = "cusw-workspace";
+		const fileKey = `${projectId}-${taskId}-${file.name}`;
+		const arrBuf = await file.arrayBuffer();
+		const fileBuffer = Buffer.from(arrBuf);
+
+		// Get the MIME type based on the file extension
+		const contentType = mime.lookup(fileName) || "application/octet-stream";
+
+		await this.minIoClient.putObject(
+			bucketName,
+			fileKey,
+			fileBuffer,
+			file.size,
+			{
+				"Content-Type": contentType,
+			},
+		);
+
+		const fileUrl = await this.getPublicFileUrl(fileKey);
+
+		const savedFile = await this.fileModel.create({
+			taskId: taskId,
+			createdAt: new Date(),
+			filePath: fileUrl,
+			fileSize: file.size,
+			projectId: projectId,
+			uploadedBy: authorId,
+		});
+
+		return savedFile;
 	}
 }

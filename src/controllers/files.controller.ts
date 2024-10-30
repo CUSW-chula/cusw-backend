@@ -29,45 +29,18 @@ export const FileController = new Elysia({ prefix: "/file" })
 			}
 		},
 	)
-	.get(
-		"/view/:filePath",
-		async ({
-			params: { filePath },
-			db,
-			redis,
-			minio,
-		}: Context & { params: { filePath: string } }) => {
-			const fileService = new FilesService(db, redis, minio);
-			try {
-				const fileUrl = await fileService.getPublicFileUrl(filePath);
-				if (!fileUrl) {
-					return {
-						status: 404,
-						body: { error: "File URL not found" },
-					};
-				}
-				return fileUrl;
-			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
-			}
-		},
-	)
 	.post(
 		"/",
 		async ({
-			body: { taskId, fileName, fileSize, file, projectId, authorId },
+			body: { taskId, file, projectId, authorId },
 			db,
 			redis,
 			minio,
 		}: Context & {
 			body: {
 				taskId: string;
-				fileName: string;
 				fileSize: number;
-				file: string;
+				file: Blob;
 				projectId: string;
 				authorId: string;
 			};
@@ -76,8 +49,6 @@ export const FileController = new Elysia({ prefix: "/file" })
 			try {
 				const savedFile = await fileService.uploadFileByTaskId(
 					taskId,
-					fileName,
-					fileSize,
 					file,
 					projectId,
 					authorId,
@@ -100,8 +71,7 @@ export const FileController = new Elysia({ prefix: "/file" })
 			body: t.Object({
 				taskId: t.String(),
 				fileName: t.String(),
-				fileSize: t.Number(),
-				file: t.String(),
+				file: t.File(),
 				projectId: t.String(),
 				authorId: t.String(),
 			}),
