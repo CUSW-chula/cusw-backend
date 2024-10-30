@@ -70,7 +70,6 @@ export const FileController = new Elysia({ prefix: "/file" })
 		{
 			body: t.Object({
 				taskId: t.String(),
-				fileName: t.String(),
 				file: t.File(),
 				projectId: t.String(),
 				authorId: t.String(),
