@@ -67,7 +67,6 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 	async create(data: Partial<PrismaActivity>): Promise<PrismaActivity> {
 		const createdActivity = await this.getModel().activity.create({
 			data: {
-				id: data.id ?? "",
 				userId: data.userId ?? "",
 				taskId: data.taskId ?? "",
 				createdAt: data.createdAt ?? new Date(),
