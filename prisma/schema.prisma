@@ -118,6 +118,8 @@ model Comment {
   taskId    String 
   authorId  String 
   createdAt DateTime  @default(now()) 
+  isDelete  Boolean   @default(false)
+  editTime  DateTime?
 
   task      Task   @relation(fields: [taskId], references: [id]) 
   author    User   @relation(fields: [authorId], references: [id]) 
@@ -146,7 +148,6 @@ model File {
   taskId     String? 
   projectId  String? 
   uploadedBy String 
-  uploadedAt DateTime  @default(now()) 
   createdAt  DateTime  @default(now()) 
 
   task       Task?    @relation("TaskFiles", fields: [taskId], references: [id]) 
@@ -165,7 +166,6 @@ model TaskTag {
   task     Task   @relation(fields: [taskId], references: [id]) 
   tag      Tag    @relation(fields: [tagId], references: [id]) 
 
-  @@unique([taskId, tagId])
   @@map("task_tags") 
 }
 
