@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { FilesService } from "../services/files.service";
+import { WebSocket } from "../shared/utils/websocket.utils";
 
 export const FileController = new Elysia({ prefix: "/file" })
 	.get(
@@ -50,6 +51,7 @@ export const FileController = new Elysia({ prefix: "/file" })
 				if (!savedFile) {
 					return Response.json("file couldn't be saved", { status: 500 });
 				}
+				WebSocket.broadcast("add-file", savedFile);
 				return savedFile;
 			} catch (_error) {
 				const error = _error as Error;
@@ -80,6 +82,7 @@ export const FileController = new Elysia({ prefix: "/file" })
 			const fileService = new FilesService(db, redis, minio);
 			try {
 				const removeFile = await fileService.removeFileByFileId(fileId);
+				WebSocket.broadcast("remove-file", removeFile);
 				return removeFile;
 			} catch (_error) {
 				const error = _error as Error;

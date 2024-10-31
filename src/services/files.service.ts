@@ -90,6 +90,7 @@ export class FilesService extends BaseService<File> {
 	}
 
 	async removeFileByFileId(fileId: string): Promise<File> {
+		const cacheKey = "files:all";
 		const file = await this.fileModel.findById(fileId);
 		if (!file) throw new Error("File not found");
 
@@ -97,6 +98,7 @@ export class FilesService extends BaseService<File> {
 		await this.minIoClient.removeObject(bucketName, file.fileName);
 
 		const removeFile = await this.fileModel.delete(file.id);
+		await this.invalidateCache(cacheKey);
 		return removeFile;
 	}
 }
