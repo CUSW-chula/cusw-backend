@@ -4,7 +4,7 @@ import { FilesModel } from "../models/files.model";
 import * as Minio from "minio";
 import Redis from "ioredis";
 import mime from "mime-types"; // Import mime-types library to get the content type by extension
-import { BunFile } from "bun";
+import { BunFile, file } from "bun";
 
 export class FilesService extends BaseService<File> {
 	private readonly fileModel: FilesModel;
@@ -80,11 +80,23 @@ export class FilesService extends BaseService<File> {
 			taskId: taskId,
 			createdAt: new Date(),
 			filePath: fileUrl,
+			fileName: file.name,
 			fileSize: file.size,
 			projectId: projectId,
 			uploadedBy: authorId,
 		});
 
 		return savedFile;
+	}
+
+	async removeFileByFileId(fileId: string): Promise<File> {
+		const file = await this.fileModel.findById(fileId);
+		if (!file) throw new Error("File not found");
+
+		const bucketName = "cusw-workspace";
+		await this.minIoClient.removeObject(bucketName, file.fileName);
+
+		const removeFile = await this.fileModel.delete(file.id);
+		return removeFile;
 	}
 }

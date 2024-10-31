@@ -15,17 +15,12 @@ export const FileController = new Elysia({ prefix: "/file" })
 			try {
 				const files = await fileService.getFileByTaskId(id);
 				if (!files) {
-					return {
-						status: 404,
-						body: { error: "Files not found" },
-					};
+					return Response.json("file not found", { status: 404 });
 				}
 				return files;
 			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 	)
@@ -39,7 +34,6 @@ export const FileController = new Elysia({ prefix: "/file" })
 		}: Context & {
 			body: {
 				taskId: string;
-				fileSize: number;
 				file: Blob;
 				projectId: string;
 				authorId: string;
@@ -54,17 +48,12 @@ export const FileController = new Elysia({ prefix: "/file" })
 					authorId,
 				);
 				if (!savedFile) {
-					return {
-						status: 500,
-						body: { error: "File could not be saved" },
-					};
+					return Response.json("file couldn't be saved", { status: 500 });
 				}
 				return savedFile;
 			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -73,6 +62,33 @@ export const FileController = new Elysia({ prefix: "/file" })
 				file: t.File(),
 				projectId: t.String(),
 				authorId: t.String(),
+			}),
+		},
+	)
+	.delete(
+		"/",
+		async ({
+			body: { fileId },
+			db,
+			redis,
+			minio,
+		}: Context & {
+			body: {
+				fileId: string;
+			};
+		}) => {
+			const fileService = new FilesService(db, redis, minio);
+			try {
+				const removeFile = await fileService.removeFileByFileId(fileId);
+				return removeFile;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				fileId: t.String(),
 			}),
 		},
 	);

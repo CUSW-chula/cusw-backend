@@ -53,11 +53,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				const usersAssign = await userService.getUserById(assignTask.userId);
 				WebSocket.broadcast("assigned", usersAssign);
 				return assignTask;
-			} catch (error) {
-				return {
-					status: 500,
-					body: { error: error },
-				};
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -84,11 +82,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				const unAssignUser = await userService.getUserById(unAssignTask.userId);
 				WebSocket.broadcast("unassigned", unAssignUser);
 				return unAssignTask;
-			} catch (error) {
-				return {
-					status: 500,
-					body: { error: error },
-				};
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{

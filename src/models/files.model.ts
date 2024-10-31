@@ -26,6 +26,7 @@ export class FilesModel extends BaseModel<File> {
 			data: {
 				filePath: data.filePath ?? "",
 				fileSize: data.fileSize ?? 0,
+				fileName: data.fileName ?? "",
 				createdAt: data.createdAt ?? new Date(),
 				taskId: data.taskId ?? "",
 				projectId: data.projectId,
@@ -44,11 +45,8 @@ export class FilesModel extends BaseModel<File> {
 	}
 
 	async delete(id: string): Promise<File> {
-		const deletedComment = await this.getModel().file.update({
+		const deletedComment = await this.getModel().file.delete({
 			where: { id },
-			data: {
-				id: id,
-			},
 		});
 		return deletedComment;
 	}
