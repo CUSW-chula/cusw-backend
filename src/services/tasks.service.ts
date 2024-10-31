@@ -150,7 +150,6 @@ export class TaskService extends BaseService<Task> {
 	}
 
 	async updateEmojiByTaskId(
-		id: string,
 		newEmoji: string,
 		userId: string,
 		taskId: string,
@@ -162,18 +161,34 @@ export class TaskService extends BaseService<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 
-		const emojis = await this.emojiModel.findById(id);
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
 		if (!emojis) throw new Error("emoji not found");
 
 		if (userId !== emojis.userId) throw new Error("This is not your emoji");
 
-		const newEmojis: EmojiTaskUser = {
-			id: emojis.id,
+		const newEmojis = {
 			emoji: newEmoji,
 			taskId: emojis.taskId,
 			userId: emojis.userId,
 		};
-		const updatedEmoji = await this.emojiModel.update(id, newEmojis);
+		const updatedEmoji = await this.emojiModel.update(emojis.id, newEmojis);
 		return updatedEmoji;
+	}
+
+	async checkEmojiUserIdAndByTaskId(
+		taskId: string,
+		userId: string,
+	): Promise<Boolean> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+
+		if (emojis === null) return false;
+		else return true;
 	}
 }

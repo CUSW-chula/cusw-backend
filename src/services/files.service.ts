@@ -3,6 +3,8 @@ import { BaseService } from "../core/service.core";
 import { FilesModel } from "../models/files.model";
 import * as Minio from "minio";
 import Redis from "ioredis";
+import mime from "mime-types"; // Import mime-types library to get the content type by extension
+import { BunFile, file } from "bun";
 
 export class FilesService extends BaseService<File> {
 	private readonly fileModel: FilesModel;
@@ -38,24 +40,48 @@ export class FilesService extends BaseService<File> {
 		return file;
 	}
 
+	private async getPublicFileUrl(filePath: string): Promise<string> {
+		const bucketName = "cusw-workspace";
+		const url = await this.minIoClient.presignedUrl(
+			"GET",
+			bucketName,
+			filePath,
+		);
+		return url;
+	}
+
 	async uploadFileByTaskId(
 		taskId: string,
-		fileName: string,
-		fileSize: number,
-		file: string,
+		file: Blob,
 		projectId: string,
 		authorId: string,
 	): Promise<File | null> {
 		const bucketName = "cusw-workspace";
-		const randomString = (Math.random() + 1).toString(36).substring(7);
-		const fileKey = `${projectId}/${randomString}/${taskId}/${fileName}`;
-		await this.minIoClient.putObject(bucketName, fileKey, file);
+		const fileKey = `${projectId}-${taskId}-${file.name}`;
+		const arrBuf = await file.arrayBuffer();
+		const fileBuffer = Buffer.from(arrBuf);
+
+		// Get the MIME type based on the file extension
+		const contentType = mime.lookup(file.name) || "application/octet-stream";
+
+		await this.minIoClient.putObject(
+			bucketName,
+			fileKey,
+			fileBuffer,
+			file.size,
+			{
+				"Content-Type": contentType,
+			},
+		);
+
+		const fileUrl = await this.getPublicFileUrl(fileKey);
 
 		const savedFile = await this.fileModel.create({
 			taskId: taskId,
 			createdAt: new Date(),
-			filePath: fileKey,
-			fileSize: fileSize,
+			filePath: fileUrl,
+			fileName: file.name,
+			fileSize: file.size,
 			projectId: projectId,
 			uploadedBy: authorId,
 		});
@@ -63,17 +89,14 @@ export class FilesService extends BaseService<File> {
 		return savedFile;
 	}
 
-	async getPublicFileUrl(
-		filePath: string,
-		expirySeconds: number = 3600,
-	): Promise<string> {
+	async removeFileByFileId(fileId: string): Promise<File> {
+		const file = await this.fileModel.findById(fileId);
+		if (!file) throw new Error("File not found");
+
 		const bucketName = "cusw-workspace";
-		const url = await this.minIoClient.presignedUrl(
-			"GET",
-			bucketName,
-			filePath,
-			expirySeconds,
-		);
-		return url;
+		await this.minIoClient.removeObject(bucketName, file.fileName);
+
+		const removeFile = await this.fileModel.delete(file.id);
+		return removeFile;
 	}
 }

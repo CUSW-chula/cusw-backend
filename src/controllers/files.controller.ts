@@ -15,59 +15,26 @@ export const FileController = new Elysia({ prefix: "/file" })
 			try {
 				const files = await fileService.getFileByTaskId(id);
 				if (!files) {
-					return {
-						status: 404,
-						body: { error: "Files not found" },
-					};
+					return Response.json("file not found", { status: 404 });
 				}
 				return files;
 			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
-			}
-		},
-	)
-	.get(
-		"/view/:filePath",
-		async ({
-			params: { filePath },
-			db,
-			redis,
-			minio,
-		}: Context & { params: { filePath: string } }) => {
-			const fileService = new FilesService(db, redis, minio);
-			try {
-				const fileUrl = await fileService.getPublicFileUrl(filePath);
-				if (!fileUrl) {
-					return {
-						status: 404,
-						body: { error: "File URL not found" },
-					};
-				}
-				return fileUrl;
-			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 	)
 	.post(
 		"/",
 		async ({
-			body: { taskId, fileName, fileSize, file, projectId, authorId },
+			body: { taskId, file, projectId, authorId },
 			db,
 			redis,
 			minio,
 		}: Context & {
 			body: {
 				taskId: string;
-				fileName: string;
-				fileSize: number;
-				file: string;
+				file: Blob;
 				projectId: string;
 				authorId: string;
 			};
@@ -76,34 +43,52 @@ export const FileController = new Elysia({ prefix: "/file" })
 			try {
 				const savedFile = await fileService.uploadFileByTaskId(
 					taskId,
-					fileName,
-					fileSize,
 					file,
 					projectId,
 					authorId,
 				);
 				if (!savedFile) {
-					return {
-						status: 500,
-						body: { error: "File could not be saved" },
-					};
+					return Response.json("file couldn't be saved", { status: 500 });
 				}
 				return savedFile;
 			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
 			body: t.Object({
 				taskId: t.String(),
-				fileName: t.String(),
-				fileSize: t.Number(),
-				file: t.String(),
+				file: t.File(),
 				projectId: t.String(),
 				authorId: t.String(),
+			}),
+		},
+	)
+	.delete(
+		"/",
+		async ({
+			body: { fileId },
+			db,
+			redis,
+			minio,
+		}: Context & {
+			body: {
+				fileId: string;
+			};
+		}) => {
+			const fileService = new FilesService(db, redis, minio);
+			try {
+				const removeFile = await fileService.removeFileByFileId(fileId);
+				return removeFile;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				fileId: t.String(),
 			}),
 		},
 	);

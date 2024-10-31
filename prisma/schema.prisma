@@ -146,6 +146,7 @@ model File {
   filePath   String 
   fileSize   Float   
   taskId     String? 
+  fileName   String
   projectId  String? 
   uploadedBy String 
   createdAt  DateTime  @default(now()) 

@@ -21,6 +21,19 @@ export class EmojiModel extends BaseModel<EmojiTaskUser> {
 		return emoji;
 	}
 
+	async findByUserIdAndTaskId(
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser | null> {
+		const emoji = await this.getModel().emojiTaskUser.findFirst({
+			where: {
+				userId: userId,
+				taskId: taskId,
+			},
+		});
+		return emoji;
+	}
+
 	async create(data: Partial<EmojiTaskUser>): Promise<EmojiTaskUser> {
 		const createdEmoji = await this.getModel().emojiTaskUser.create({
 			data: {
