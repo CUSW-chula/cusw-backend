@@ -26,7 +26,12 @@ export class ActivityService extends BaseService<Activity> {
 		return activity;
 	}
 
-	async postActivity(taskId: string, action: $Enums.ActivityAction, detail: string, userId: string): Promise<Activity> {
+	async postActivity(
+		taskId: string,
+		action: $Enums.ActivityAction,
+		detail: string,
+		userId: string,
+	): Promise<Activity> {
 		const isTaskIdExist = await this.taskModel.findById(taskId);
 		if (!isTaskIdExist) throw new Error("Task not found");
 		const isUserExist = await this.userModel.findById(userId);

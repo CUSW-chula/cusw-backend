@@ -62,7 +62,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					$Enums.ActivityAction.ASSIGNED,
 					"to " + getUserName.name,
-					body.userId
+					body.userId,
 				);
 				WebSocket.broadcast("activity", assignActivity);
 				return assignTask;
@@ -105,7 +105,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					$Enums.ActivityAction.UNASSIGNED,
 					"to " + getUserName.name,
-					body.userId
+					body.userId,
 				);
 				WebSocket.broadcast("activity", unassignActivity);
 				return unAssignTask;
