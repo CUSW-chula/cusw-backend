@@ -66,11 +66,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				WebSocket.broadcast("activity", assignActivity);
 				return assignTask;
-			} catch (error) {
-				return {
-					status: 500,
-					body: { error: error },
-				};
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -109,11 +107,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				WebSocket.broadcast("activity", unassignActivity);
 				return unAssignTask;
-			} catch (error) {
-				return {
-					status: 500,
-					body: { error: error },
-				};
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
