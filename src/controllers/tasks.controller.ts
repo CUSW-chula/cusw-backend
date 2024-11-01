@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { User } from "@prisma/client";
+import { $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 import { TaskStatus, type Task } from "@prisma/client";
 
@@ -50,7 +50,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				expectedBudget: number;
 				realBudget: number;
 				usedBudget: number;
-				status: string;
+				status: $Enums.TaskStatus;
 				parentTaskId: string;
 				projectId: string;
 				createdById: string;
@@ -60,7 +60,19 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
-				const task = await taskService.createTask(body);
+				const task = await taskService.createTask(
+					body.title,
+					body.description,
+					body.projectId,
+					body.parentTaskId,
+					body.startDate,
+					body.endDate,
+					body.createdById,
+					body.status,
+					body.expectedBudget,
+					body.realBudget,
+					body.usedBudget,
+				);
 				WebSocket.broadcast("task", task);
 
 				return { status: 200, body: { message: "Success" } };
@@ -82,6 +94,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				parentTaskId: t.String(),
 				projectId: t.String(),
 				createdById: t.String(),
+				startDate: t.Date(),
+				endDate: t.Date(),
 			}),
 		},
 	)

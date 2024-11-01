@@ -1,5 +1,11 @@
 import { TasksModel } from "../models/tasks.model";
-import type { PrismaClient, Task, TaskAssignment, User } from "@prisma/client";
+import type {
+	$Enums,
+	PrismaClient,
+	Task,
+	TaskAssignment,
+	User,
+} from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -106,14 +112,40 @@ export class TaskService extends BaseService<Task> {
 		return unAssigningTaskToUser;
 	}
 
-	async createTask(data: Partial<Task>): Promise<Task> {
-		const createdById = data.createdById ?? "";
+	async createTask(
+		title: string,
+		description: string,
+		projectId: string,
+		parentTaskId: string | null,
+		startDate: Date,
+		endDate: Date,
+		createdById: string,
+		status: $Enums.TaskStatus,
+		expectedBudget: number,
+		realBudget: number,
+		usedBudget: number,
+	): Promise<Task> {
 		const isUserExist = await this.userModel.findById(createdById);
 		if (!isUserExist) {
 			throw new Error("User not found");
 		}
 
-		if (data.title !== null) return await this.taskModel.create(data);
+		if (title !== null) {
+			const newTask = {
+				title: title,
+				description: description,
+				createdById: createdById,
+				startDate: startDate,
+				endDate: endDate,
+				status: status,
+				parentTaskId: parentTaskId !== "" ? parentTaskId : undefined,
+				expectedBudget: expectedBudget,
+				usedBudget: usedBudget,
+				realBudget: realBudget,
+				projectId: projectId,
+			};
+			return await this.taskModel.create(newTask);
+		}
 		throw new Error("Title cann't be null");
 	}
 }

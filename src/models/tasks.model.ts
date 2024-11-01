@@ -21,7 +21,7 @@ export class TasksModel extends BaseModel<Task> {
 				realBudget: data.realBudget ?? 0.0,
 				usedBudget: data.usedBudget ?? 0.0,
 				status: data.status ?? TaskStatus.Unassigned,
-				parentTaskId: data.parentTaskId ?? "",
+				parentTaskId: data.parentTaskId ,
 				projectId: data.projectId ?? "",
 				createdById: data.createdById ?? "",
 				startDate: data.startDate ?? new Date(),
