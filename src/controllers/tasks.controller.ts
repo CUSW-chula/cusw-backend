@@ -24,6 +24,18 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		},
 	)
 	.get(
+		"/textedit/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const textedit = await taskService.getTexteditByTaskId(id);
+			return textedit;
+		},
+	)
+	.get(
 		"/getassign/:taskId",
 		async ({
 			params: { taskId },
@@ -112,11 +124,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				WebSocket.broadcast("addEmoji", newEmoji);
 				return newEmoji;
-			} catch (error) {
-				return {
-					status: 500,
-					body: { error: error },
-				};
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -170,10 +180,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				WebSocket.broadcast("updateEmoji", emoji);
 				return { status: 200, body: { message: "Success", emoji } };
 			} catch (_error) {
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{

@@ -48,6 +48,17 @@ export class TaskService extends BaseService<Task> {
 		return task;
 	}
 
+	async getTexteditByTaskId(
+		taskId: string,
+	): Promise<{ title: string; description: string }> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return {
+			title: task.title,
+			description: task.description,
+		};
+	}
+
 	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {
 		// Check if task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
