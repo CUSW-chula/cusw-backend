@@ -112,10 +112,8 @@ export class TaskService extends BaseService<Task> {
 		if (!isUserExist) {
 			throw new Error("User not found");
 		}
-		
+
 		if (data.title !== null) return await this.taskModel.create(data);
 		throw new Error("Title cann't be null");
 	}
-
-	
 }

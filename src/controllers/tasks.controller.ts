@@ -43,10 +43,10 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
-		}: Context & { 
-			body: { 
-				title: string; 
-				description: string; 
+		}: Context & {
+			body: {
+				title: string;
+				description: string;
 				expectedBudget: number;
 				realBudget: number;
 				usedBudget: number;
@@ -56,13 +56,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				createdById: string;
 				startDate: Date;
 				endDate: Date;
-			} 
+			};
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
 				const task = await taskService.createTask(body);
 				WebSocket.broadcast("task", task);
-				
+
 				return { status: 200, body: { message: "Success" } };
 			} catch (error) {
 				return {
@@ -83,7 +83,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				projectId: t.String(),
 				createdById: t.String(),
 			}),
-		}
+		},
 	)
 	.post(
 		"/assign",

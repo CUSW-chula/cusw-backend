@@ -67,7 +67,7 @@ export class CommentService extends BaseService<Comment> {
 			authorId: comment.authorId,
 			createdAt: comment.createdAt,
 			isDelete: comment.isDelete,
-			editTime: comment.editTime
+			editTime: comment.editTime,
 		};
 		if (authorId !== comment.authorId)
 			throw new Error("This is not your comment");

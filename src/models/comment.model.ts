@@ -51,10 +51,10 @@ export class CommentModel extends BaseModel<PrismaComment> {
 		const deletedComment = await this.getModel().comment.update({
 			where: { id },
 			data: {
-				content: '',
-				isDelete: true,  
-				editTime: new Date(), 
-			  },
+				content: "",
+				isDelete: true,
+				editTime: new Date(),
+			},
 		});
 		return deletedComment;
 	}
