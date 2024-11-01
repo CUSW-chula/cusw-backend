@@ -1,5 +1,11 @@
 import { TasksModel } from "../models/tasks.model";
-import type { PrismaClient, Task, TaskAssignment, User } from "@prisma/client";
+import type {
+	PrismaClient,
+	Task,
+	TaskAssignment,
+	TaskStatus,
+	User,
+} from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -104,5 +110,24 @@ export class TaskService extends BaseService<Task> {
 			taskAssignment.id,
 		);
 		return unAssigningTaskToUser;
+	}
+
+	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+		const taskStatus = isTaskExist.status;
+		return taskStatus;
+	}
+
+	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const newTask = {
+			status: newTaskStatus,
+		};
+
+		const changedStatusTask = await this.taskModel.update(taskId, newTask);
+		return changedStatusTask;
 	}
 }

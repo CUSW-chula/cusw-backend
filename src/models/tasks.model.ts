@@ -37,6 +37,7 @@ export class TasksModel extends BaseModel<Task> {
 		});
 		return updatedTask;
 	}
+
 	async delete(id: string): Promise<Task> {
 		const deletedTask = await this.getModel().task.delete({
 			where: { id },

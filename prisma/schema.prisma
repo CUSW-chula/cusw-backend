@@ -161,7 +161,7 @@ enum Role {
   Member 
 }
 
-enum TaskStatus { 
+enum TaskStatus {
   Unassigned 
   Assigned 
   UnderReview 
