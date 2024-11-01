@@ -105,4 +105,17 @@ export class TaskService extends BaseService<Task> {
 		);
 		return unAssigningTaskToUser;
 	}
+
+	async createTask(data: Partial<Task>): Promise<Task> {
+		const createdById = data.createdById ?? "";
+		const isUserExist = await this.userModel.findById(createdById);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		
+		if (data.title !== null) return await this.taskModel.create(data);
+		throw new Error("Title cann't be null");
+	}
+
+	
 }

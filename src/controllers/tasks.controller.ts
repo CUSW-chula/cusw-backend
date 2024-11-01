@@ -4,6 +4,7 @@ import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
 import { User } from "@prisma/client";
 import { UserService } from "../services/users.service";
+import { TaskStatus, type Task } from "@prisma/client";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -35,6 +36,54 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				await taskService.getAsignUserInTaskByTaskId(taskId);
 			return users;
 		},
+	)
+	.post(
+		"/",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & { 
+			body: { 
+				title: string; 
+				description: string; 
+				expectedBudget: number;
+				realBudget: number;
+				usedBudget: number;
+				status: string;
+				parentTaskId: string;
+				projectId: string;
+				createdById: string;
+				startDate: Date;
+				endDate: Date;
+			} 
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const task = await taskService.createTask(body);
+				WebSocket.broadcast("task", task);
+				
+				return { status: 200, body: { message: "Success" } };
+			} catch (error) {
+				return {
+					status: 500,
+					body: { error: (error as Error).message || "Internal Server Error" },
+				};
+			}
+		},
+		{
+			body: t.Object({
+				title: t.String(),
+				description: t.String(),
+				expectedBudget: t.Number(),
+				realBudget: t.Number(),
+				usedBudget: t.Number(),
+				status: t.String(),
+				parentTaskId: t.String(),
+				projectId: t.String(),
+				createdById: t.String(),
+			}),
+		}
 	)
 	.post(
 		"/assign",
