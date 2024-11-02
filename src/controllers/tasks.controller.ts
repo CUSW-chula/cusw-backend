@@ -140,13 +140,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.advance,
 					body.expense,
 				);
-				return Response.json("Success", {status: 200});
+				return Response.json("Success", { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {
-					return Response.json(error.message, {status: 400});
+					return Response.json(error.message, { status: 400 });
 				}
 				// Handle unexpected errors
-				return Response.json("Internal server error", {status: 500});
+				return Response.json("Internal server error", { status: 500 });
 			}
 		},
 		{
@@ -166,13 +166,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			try {
 				await taskService.getTaskById(body.taskID);
 				await taskService.deleteMoney(body.taskID, 0, 0, 0);
-				return Response.json("Success", {status: 200});
+				return Response.json("Success", { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {
-					return Response.json(error.message, {status: 400});
+					return Response.json(error.message, { status: 400 });
 				}
 				// Handle unexpected errors
-				return Response.json("Internal Server error", {status: 500});
+				return Response.json("Internal Server error", { status: 500 });
 			}
 		},
 		{
@@ -204,7 +204,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.advance,
 					body.expense,
 				);
-				return Response.json(taskService, {status: 200});
+				return Response.json(taskService, { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {
 					return {
