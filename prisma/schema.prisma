@@ -197,5 +197,6 @@ enum ActivityAction {
   CREATE 
   ASSIGNED 
   DELETE 
-  UPLOAD 
+  UPLOAD
+  UNASSIGNED 
 }
