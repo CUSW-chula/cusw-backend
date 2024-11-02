@@ -1,4 +1,4 @@
-import { TaskStatus, type Task } from "@prisma/client";
+import { TaskStatus, BudgetStatus, type Task } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
 
 export class TasksModel extends BaseModel<Task> {
@@ -18,10 +18,10 @@ export class TasksModel extends BaseModel<Task> {
 				id: id,
 			},
 			include: {
-				subTasks: true
-			}
+				subTasks: true,
+			},
 		});
-		if (tasks) return tasks.subTasks
+		if (tasks) return tasks.subTasks;
 		return null;
 	}
 
@@ -30,9 +30,10 @@ export class TasksModel extends BaseModel<Task> {
 			data: {
 				title: data.title ?? "",
 				description: data.description ?? "",
-				expectedBudget: data.expectedBudget ?? 0.0,
-				realBudget: data.realBudget ?? 0.0,
-				usedBudget: data.usedBudget ?? 0.0,
+				statusBudgets: data.statusBudgets ?? BudgetStatus.Initial,
+				budget: data.budget ?? 0.0,
+				advance: data.advance ?? 0.0,
+				expense: data.expense ?? 0.0,
 				status: data.status ?? TaskStatus.Unassigned,
 				parentTaskId: data.parentTaskId ?? "",
 				projectId: data.projectId ?? "",

@@ -60,10 +60,11 @@ model Task {
   project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) 
   subTasks       Task[]       @relation("SubTasks") 
   parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
-  parentTaskId   String? 
-  expectedBudget Float 
-  realBudget     Float 
-  usedBudget     Float
+  parentTaskId   String?
+  statusBudgets  BudgetStatus 
+  budget         Float 
+  advance        Float 
+  expense        Float
   startDate      DateTime?
   endDate        DateTime?
   assignedUsers  TaskAssignment[] 
@@ -167,6 +168,13 @@ enum TaskStatus {
   UnderReview 
   InRecheck 
   Done 
+}
+
+enum BudgetStatus { 
+  Initial
+  Added
+  SubTasksAdded
+  ParentTaskAdded
 }
 
 enum ActivityAction { 
