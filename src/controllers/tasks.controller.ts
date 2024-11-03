@@ -13,6 +13,30 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		return tasks;
 	})
 	.get(
+		"/project/:projectid",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskByProjectId(id);
+			return task;
+		},
+	)
+	.get(
+		"/parent/:parentid",
+		async ({
+			params: { parentid },
+			db,
+			redis,
+		}: Context & { params: { parentid: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskByParentTaskId(parentid);
+			return task;
+		},
+	)
+	.get(
 		"/:id",
 		async ({
 			params: { id },

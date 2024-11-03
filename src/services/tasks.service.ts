@@ -34,6 +34,28 @@ export class TaskService extends BaseService<Task> {
 		return tasks;
 	}
 
+	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
+		const cacheKey = `tasks:project:${projectIdId}`;
+		const cacheTask = await this.getFromCache(cacheKey);
+		if (cacheTask) return cacheTask as Task[];
+
+		const task = await this.taskModel.findByProjectId(projectIdId);
+		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
+		return task;
+	}
+
+	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
+		const cacheKey = `tasks:parent:${parentTaskId}`;
+		const cacheTask = await this.getFromCache(cacheKey);
+		if (cacheTask) return cacheTask as Task[];
+
+		const task = await this.taskModel.findByParentTaskId(parentTaskId);
+		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
+		return task;
+	}
+
 	async getTaskById(taskId: string): Promise<Task> {
 		const cacheKey = `tasks:${taskId}`;
 		const cacheTask = await this.getFromCache(cacheKey);
@@ -144,6 +166,9 @@ export class TaskService extends BaseService<Task> {
 				realBudget: realBudget,
 				projectId: projectId,
 			};
+			await this.invalidateCache("tasks:all");
+			await this.invalidateCache(`tasks:project:${projectId}`);
+			await this.invalidateCache(`tasks:parent:${parentTaskId}`);
 			return await this.taskModel.create(newTask);
 		}
 		throw new Error("Title cann't be null");

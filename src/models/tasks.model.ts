@@ -12,6 +12,25 @@ export class TasksModel extends BaseModel<Task> {
 		return task;
 	}
 
+	async findByProjectId(projectId: string): Promise<Task[]> {
+		const tasks = await this.getModel().task.findMany({
+			where: { projectId },
+		});
+		return tasks;
+	}
+
+	async findByParentTaskId(parentTaskId: string): Promise<Task[]> {
+		const tasks = await this.getModel().task.findMany({
+			where: { 
+				parentTaskId: parentTaskId,				
+			 },
+			 include: {
+				subTasks: true,
+			 }
+		});
+		return tasks;
+	}
+
 	async create(data: Partial<Task>): Promise<Task> {
 		const createdProject = await this.getModel().task.create({
 			data: {
