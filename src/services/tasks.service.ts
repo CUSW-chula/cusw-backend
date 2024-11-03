@@ -60,6 +60,73 @@ export class TaskService extends BaseService<Task> {
 		};
 	}
 
+	async updateTexteditByTaskId(
+		taskId: string,
+		userId: string,
+		title: string,
+		description: string,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
+		if (!taskAssignments || taskAssignments.length === 0)
+			throw new Error("No users assigned to this task");
+
+		const newTextedit = {
+			title: title,
+			description: description,
+		};
+		const newText = await this.taskModel.update(taskId, newTextedit);
+		return newText;
+	}
+
+	async addTexteditOnTask(
+		taskId: string,
+		userId: string,
+		title: string,
+		description: string,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
+			taskId,
+			userId,
+		);
+
+		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		const addTexteditOnTask = await this.taskModel.update(taskId, {
+			title: title,
+			description: description,
+		});
+
+		return addTexteditOnTask;
+	}
+
+	async checkTextUserIdAndByTaskId(
+		taskId: string,
+		userId: string,
+	): Promise<Boolean> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+
+		if (emojis === null) return false;
+		else return true;
+	}
+
 	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {
 		// Check if task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
@@ -68,7 +135,7 @@ export class TaskService extends BaseService<Task> {
 		// Retrieve task assignments
 		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
 		if (!taskAssignments || taskAssignments.length === 0)
-			throw new Error("No users assigned to this task");
+			throw new Error("Did not assigned");
 
 		// Get all users assigned to the task concurrently
 		const usersInTask = await Promise.all(

@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { EmojiTaskUser, User } from "@prisma/client";
+import { EmojiTaskUser, Task, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
@@ -35,6 +35,84 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return textedit;
 		},
 	)
+	.post(
+		"/textedit",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskId: string;
+				userId: string;
+				title: string;
+				description: string;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const addTextedit = await taskService.addTexteditOnTask(
+					body.taskId,
+					body.userId,
+					body.title,
+					body.description,
+				);
+				WebSocket.broadcast("edited", addTextedit);
+				return addTextedit;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				userId: t.String(),
+				title: t.String(),
+				description: t.String(),
+			}),
+		},
+	)
+
+	.patch(
+		"/textedit",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskId: string;
+				userId: string;
+				title: string;
+				description: string;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const textedit = await taskService.updateTexteditByTaskId(
+					body.taskId,
+					body.userId,
+					body.title,
+					body.description,
+				);
+				WebSocket.broadcast("updateTextedit", textedit);
+				return { status: 200, body: { message: "Success", textedit } };
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				userId: t.String(),
+				title: t.String(),
+				description: t.String(),
+			}),
+		},
+	)
+
 	.get(
 		"/getassign/:taskId",
 		async ({
