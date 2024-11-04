@@ -41,15 +41,20 @@ export class CommentModel extends BaseModel<PrismaComment> {
 			where: { id },
 			data: {
 				content: data.content ?? "",
-				createdAt: data.createdAt ?? new Date(),
+				editTime: data.editTime ?? new Date(),
 			},
 		});
 		return updatedComment;
 	}
 
 	async delete(id: string): Promise<PrismaComment> {
-		const deletedComment = await this.getModel().comment.delete({
+		const deletedComment = await this.getModel().comment.update({
 			where: { id },
+			data: {
+				content: "",
+				isDelete: true,
+				editTime: new Date(),
+			},
 		});
 		return deletedComment;
 	}

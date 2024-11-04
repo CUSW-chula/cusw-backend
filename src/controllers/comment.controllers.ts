@@ -16,18 +16,13 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 			try {
 				const comments = await commentService.getCommentByTaskId(id);
 				if (!comments) {
-					return {
-						status: 404,
-						body: { error: "Comments not found" },
-					};
+					return Response.json("Comment not found", { status: 404 });
 				}
 				return comments;
 			} catch (_error) {
 				// Handle unexpected errors
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 	)
@@ -42,10 +37,8 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
 				// Handle unexpected errors
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -69,10 +62,8 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
 				// Handle unexpected errors
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -96,10 +87,8 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
 				// Handle unexpected errors
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
