@@ -203,15 +203,24 @@ export class TaskService extends BaseService<Task> {
     if (!task) throw new Error("Task not found");
 
     //Second step check if task money isn't empty
-    if (!areAllBudgetsEmptyOrZero([task.budget, task.expense, task.advance]))
-      throw new Error("Budget are not empty.");
+    if (!areAllBudgetsEmptyOrZero([task.budget, task.expense, task.advance])) {
+      const updateMoney = await this.taskModel.update(taskID, {
+        budget: budget,
+        advance: advance,
+        expense: expense,
+      });
+      return updateMoney;
+    }
 
     //Third step check if input money isn't only one value
     if (!isOneBudgetValue(budgetList))
       throw new Error("Only one budget value should be present.");
 
     //Fourth step check if another task aleady have budget value
-    if (task.statusBudgets !== BudgetStatus.Initial)
+    if (
+      task.statusBudgets === BudgetStatus.ParentTaskAdded ||
+      task.statusBudgets === BudgetStatus.SubTasksAdded
+    )
       throw new Error(
         "The parent task or subtask already has an assigned budget."
       );
@@ -225,25 +234,25 @@ export class TaskService extends BaseService<Task> {
     return addMoney;
   }
 
-  async updateMoney(
-    taskID: string,
-    budget: number,
-    advance: number,
-    expense: number
-  ): Promise<Task> {
-    const task = await this.taskModel.findById(taskID);
-    if (!task) throw new Error("Task not found");
+//   async updateMoney(
+//     taskID: string,
+//     budget: number,
+//     advance: number,
+//     expense: number
+//   ): Promise<Task> {
+//     const task = await this.taskModel.findById(taskID);
+//     if (!task) throw new Error("Task not found");
 
-    if (task.statusBudgets !== BudgetStatus.Added)
-      throw new Error("Task wasn't assigned");
+//     if (task.statusBudgets !== BudgetStatus.Added)
+//       throw new Error("Task wasn't assigned");
 
-    const updateMoney = await this.taskModel.update(taskID, {
-      budget: budget,
-      advance: advance,
-      expense: expense,
-    });
-    return updateMoney;
-  }
+//     const updateMoney = await this.taskModel.update(taskID, {
+//       budget: budget,
+//       advance: advance,
+//       expense: expense,
+//     });
+//     return updateMoney;
+//   }
 
   async deleteMoney(
     taskID: string,
