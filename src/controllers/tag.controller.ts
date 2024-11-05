@@ -71,7 +71,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 				const tagAddActivity = await activityService.postActivity(
 					body.taskId,
 					$Enums.ActivityAction.ADDED,
-					"a " + getTagName.name + "tag",
+					getTagName.name + "tag",
 					body.tagId,
 				);
 				WebSocket.broadcast("activity", tagAddActivity);
@@ -108,7 +108,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 				const tagUnassignActivity = await activityService.postActivity(
 					body.taskId,
 					$Enums.ActivityAction.REMOVED,
-					"a " + getTagName.name + "tag",
+					getTagName.name + "tag",
 					body.tagId,
 				);
 				WebSocket.broadcast("activity", tagUnassignActivity);

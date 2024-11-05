@@ -57,8 +57,8 @@ export const FileController = new Elysia({ prefix: "/file" })
 				WebSocket.broadcast("add-file", savedFile);
 				const uploadActivity = await activityService.postActivity(
 					taskId,
-					$Enums.ActivityAction.UPLOAD,
-					"this file. ",
+					$Enums.ActivityAction.UPLOADED,
+					savedFile.fileName,
 					authorId,
 				);
 				WebSocket.broadcast("activity", uploadActivity);
@@ -102,8 +102,8 @@ export const FileController = new Elysia({ prefix: "/file" })
 				}
 				const removeActivity = await activityService.postActivity(
 					removeFile.taskId,
-					$Enums.ActivityAction.DELETE,
-					"this file.",
+					$Enums.ActivityAction.DELETED,
+					removeFile.fileName,
 					removeFile.uploadedBy,
 				);
 				WebSocket.broadcast("activity", removeActivity);
