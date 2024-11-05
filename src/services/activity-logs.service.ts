@@ -11,7 +11,7 @@ export class ActivityService extends BaseService<Activity> {
 	private readonly taskModel: TasksModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
-		super(redis, 60); // 60 seconds
+		super(redis, 10); // 10 seconds
 		this.activityModel = new ActivityLogsModel(prisma);
 		this.userModel = new UserModel(prisma);
 		this.taskModel = new TasksModel(prisma);
