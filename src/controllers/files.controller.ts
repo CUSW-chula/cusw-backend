@@ -2,6 +2,8 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { FilesService } from "../services/files.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
+import { ActivityService } from "../services/activity-logs.service";
+import { $Enums } from "@prisma/client";
 
 export const FileController = new Elysia({ prefix: "/file" })
 	.get(
@@ -41,6 +43,7 @@ export const FileController = new Elysia({ prefix: "/file" })
 			};
 		}) => {
 			const fileService = new FilesService(db, redis, minio);
+			const activityService = new ActivityService(db, redis);
 			try {
 				const savedFile = await fileService.uploadFileByTaskId(
 					taskId,
@@ -52,6 +55,13 @@ export const FileController = new Elysia({ prefix: "/file" })
 					return Response.json("file couldn't be saved", { status: 500 });
 				}
 				WebSocket.broadcast("add-file", savedFile);
+				const uploadActivity = await activityService.postActivity(
+					taskId,
+					$Enums.ActivityAction.UPLOAD,
+					"this file. ",
+					authorId,
+				);
+				WebSocket.broadcast("activity", uploadActivity);
 				return savedFile;
 			} catch (_error) {
 				const error = _error as Error;
@@ -80,9 +90,23 @@ export const FileController = new Elysia({ prefix: "/file" })
 			};
 		}) => {
 			const fileService = new FilesService(db, redis, minio);
+			const activityService = new ActivityService(db, redis);
 			try {
 				const removeFile = await fileService.removeFileByFileId(fileId);
+				if (!removeFile) {
+					return Response.json("file couldn't be removed", { status: 500 });
+				}
 				WebSocket.broadcast("remove-file", removeFile);
+				if (!removeFile.taskId) {
+					throw new Error("Task ID is null");
+				}
+				const removeActivity = await activityService.postActivity(
+					removeFile.taskId,
+					$Enums.ActivityAction.DELETE,
+					"this file.",
+					removeFile.uploadedBy,
+				);
+				WebSocket.broadcast("activity", removeActivity);
 				return removeFile;
 			} catch (_error) {
 				const error = _error as Error;
