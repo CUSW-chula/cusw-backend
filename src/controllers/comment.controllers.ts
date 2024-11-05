@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Cookie, Elysia, t } from "elysia";
 import { CommentService } from "../services/comment.service";
 import { type Context } from "../shared/interfaces.shared";
 import { type Comment } from "@prisma/client";
@@ -11,8 +11,14 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 			params: { id },
 			db,
 			redis,
-		}: Context & { params: { id: string } }) => {
+			cookie: { session },
+		}: Context & {
+			params: { id: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const commentService = new CommentService(db, redis);
+			const userId = session.value;
+			console.info(userId);
 			try {
 				const comments = await commentService.getCommentByTaskId(id);
 				if (!comments) {
@@ -29,10 +35,16 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 	// Create a new user with try-catch for error handling
 	.post(
 		"/",
-		async ({ body, db, redis }: Context & { body: Comment }) => {
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & { body: Comment; cookie: { session: Cookie<string> } }) => {
 			const commentService = new CommentService(db, redis);
+			const userId = session.value;
 			try {
-				const comment = await commentService.addComment(body);
+				const comment = await commentService.addComment(body, userId);
 				WebSocket.broadcast("comment", comment);
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
@@ -44,7 +56,6 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 		{
 			body: t.Object({
 				content: t.String(),
-				authorId: t.String(),
 				taskId: t.String(),
 			}),
 		},
