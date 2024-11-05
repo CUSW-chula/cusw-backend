@@ -1,6 +1,5 @@
 generator client { 
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x"] 
 }
 
 datasource db { 
@@ -71,13 +70,14 @@ model Task {
   description    String 
   status         TaskStatus 
   projectId      String       
-  project        Project        @relation("ProjectTasks", fields: [projectId], references: [id]) 
-  subTasks       Task[]         @relation("SubTasks") 
-  parentTask     Task?          @relation("SubTasks", fields: [parentTaskId], references: [id]) 
-  parentTaskId   String? 
-  expectedBudget Float 
-  realBudget     Float 
-  usedBudget     Float
+  project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) 
+  subTasks       Task[]       @relation("SubTasks") 
+  parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
+  parentTaskId   String?
+  statusBudgets  BudgetStatus 
+  budget         Float 
+  advance        Float 
+  expense        Float
   startDate      DateTime?
   endDate        DateTime?
   assignedUsers  TaskAssignment[] 
@@ -185,10 +185,17 @@ enum TaskStatus {
   Done 
 }
 
+enum BudgetStatus { 
+  Initial
+  Added
+  SubTasksAdded
+  ParentTaskAdded
+}
+
 enum ActivityAction { 
   CREATE 
   ASSIGNED 
   DELETE 
   UPLOAD
-  UNASSIGNED
+  UNASSIGNED 
 }

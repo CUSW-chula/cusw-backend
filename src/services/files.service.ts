@@ -4,7 +4,6 @@ import { FilesModel } from "../models/files.model";
 import * as Minio from "minio";
 import Redis from "ioredis";
 import mime from "mime-types"; // Import mime-types library to get the content type by extension
-import { BunFile, file } from "bun";
 
 export class FilesService extends BaseService<File> {
 	private readonly fileModel: FilesModel;
@@ -56,6 +55,7 @@ export class FilesService extends BaseService<File> {
 		projectId: string,
 		authorId: string,
 	): Promise<File | null> {
+		const cacheKey = `files:${taskId}`;
 		const bucketName = "cusw-workspace";
 		const fileKey = `${projectId}-${taskId}-${file.name}`;
 		const arrBuf = await file.arrayBuffer();
@@ -85,6 +85,8 @@ export class FilesService extends BaseService<File> {
 			projectId: projectId,
 			uploadedBy: authorId,
 		});
+
+		this.invalidateCache(cacheKey);
 
 		return savedFile;
 	}
