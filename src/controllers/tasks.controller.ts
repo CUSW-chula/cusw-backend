@@ -24,19 +24,31 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		},
 	)
 	.get(
-		"/textedit/:id",
+		"/title/:id",
 		async ({
 			params: { id },
 			db,
 			redis,
 		}: Context & { params: { id: string } }) => {
 			const taskService = new TaskService(db, redis);
-			const textedit = await taskService.getTexteditByTaskId(id);
-			return textedit;
+			const title = await taskService.getTitleByTaskId(id);
+			return title;
 		},
 	)
-	.post(
-		"/textedit",
+	.get(
+		"/description/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const description = await taskService.getDescriptionByTaskId(id);
+			return description;
+		},
+	)
+	.patch(
+		"/title",
 		async ({
 			body,
 			db,
@@ -46,19 +58,17 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				taskId: string;
 				userId: string;
 				title: string;
-				description: string;
 			};
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
-				const addTextedit = await taskService.addTexteditOnTask(
+				const updateTitle = await taskService.updateTitleByTaskId(
 					body.taskId,
 					body.userId,
 					body.title,
-					body.description,
 				);
-				WebSocket.broadcast("edited", addTextedit);
-				return addTextedit;
+				WebSocket.broadcast("title edited", updateTitle);
+				return updateTitle;
 			} catch (_error) {
 				const error = _error as Error;
 				return Response.json(error.message, { status: 500 });
@@ -69,13 +79,12 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				taskId: t.String(),
 				userId: t.String(),
 				title: t.String(),
-				description: t.String(),
 			}),
 		},
 	)
 
 	.patch(
-		"/textedit",
+		"/description",
 		async ({
 			body,
 			db,
@@ -84,20 +93,18 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: {
 				taskId: string;
 				userId: string;
-				title: string;
 				description: string;
 			};
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
-				const textedit = await taskService.updateTexteditByTaskId(
+				const updateDescription = await taskService.updateDescriptionByTaskId(
 					body.taskId,
 					body.userId,
-					body.title,
 					body.description,
 				);
-				WebSocket.broadcast("updateTextedit", textedit);
-				return { status: 200, body: { message: "Success", textedit } };
+				WebSocket.broadcast("description edited", updateDescription);
+				return updateDescription;
 			} catch (_error) {
 				const error = _error as Error;
 				return Response.json(error.message, { status: 500 });
@@ -107,7 +114,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: t.Object({
 				taskId: t.String(),
 				userId: t.String(),
-				title: t.String(),
 				description: t.String(),
 			}),
 		},

@@ -49,22 +49,28 @@ export class TaskService extends BaseService<Task> {
 		return task;
 	}
 
-	async getTexteditByTaskId(
-		taskId: string,
-	): Promise<{ title: string; description: string }> {
+	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new Error("Task not found");
 		return {
 			title: task.title,
+		};
+	}
+
+	async getDescriptionByTaskId(
+		taskId: string,
+	): Promise<{ description: string }> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return {
 			description: task.description,
 		};
 	}
 
-	async updateTexteditByTaskId(
+	async updateTitleByTaskId(
 		taskId: string,
 		userId: string,
 		title: string,
-		description: string,
 	): Promise<Task> {
 		const isUserExist = await this.userModel.findById(userId);
 		if (!isUserExist) throw new Error("User not found");
@@ -76,18 +82,16 @@ export class TaskService extends BaseService<Task> {
 		if (!taskAssignments || taskAssignments.length === 0)
 			throw new Error("No users assigned to this task");
 
-		const newTextedit = {
+		const newTitle = {
 			title: title,
-			description: description,
 		};
-		const newText = await this.taskModel.update(taskId, newTextedit);
-		return newText;
+		const updateTitles = await this.taskModel.update(taskId, newTitle);
+		return updateTitles;
 	}
 
-	async addTexteditOnTask(
+	async updateDescriptionByTaskId(
 		taskId: string,
 		userId: string,
-		title: string,
 		description: string,
 	): Promise<Task> {
 		const isUserExist = await this.userModel.findById(userId);
@@ -102,12 +106,12 @@ export class TaskService extends BaseService<Task> {
 		);
 
 		if (!taskAssignment) throw new Error("Unexpected error User not found");
-		const addTexteditOnTask = await this.taskModel.update(taskId, {
-			title: title,
+		const newTitle = {
 			description: description,
-		});
+		};
+		const updateDescription = await this.taskModel.update(taskId, newTitle);
 
-		return addTexteditOnTask;
+		return updateDescription;
 	}
 
 	async checkTextUserIdAndByTaskId(
