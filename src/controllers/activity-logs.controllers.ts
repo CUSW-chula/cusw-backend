@@ -19,8 +19,8 @@ export const ActivityController = new Elysia({ prefix: "/activities" }).get(
 			WebSocket.broadcast("activity", activities);
 			return activities;
 		} catch (_error) {
-				const error = _error as Error;
-				return Response.json(error.message, { status: 500 });
+			const error = _error as Error;
+			return Response.json(error.message, { status: 500 });
 		}
 	},
 );

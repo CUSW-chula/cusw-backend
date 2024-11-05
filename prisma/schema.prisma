@@ -193,7 +193,7 @@ enum BudgetStatus {
 }
 
 enum ActivityAction { 
-  CREATED 
+  CREATED
   ASSIGNED 
   DELETED 
   UPLOADED

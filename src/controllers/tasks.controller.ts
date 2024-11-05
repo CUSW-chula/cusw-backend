@@ -52,16 +52,15 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					body.userId,
 				);
-				const getUserName = await userService.getUserById(body.userId);
 				const usersAssign = await userService.getUserById(assignTask.userId);
-				if (!getUserName) {
+				if (!usersAssign) {
 					throw new Error("User not found");
 				}
 				WebSocket.broadcast("assigned", usersAssign);
 				const assignActivity = await activityService.postActivity(
 					body.taskId,
 					$Enums.ActivityAction.ASSIGNED,
-					"to " + getUserName.name,
+					"this task to " + usersAssign.name,
 					body.userId,
 				);
 				WebSocket.broadcast("activity", assignActivity);
@@ -94,15 +93,14 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.userId,
 				);
 				const unAssignUser = await userService.getUserById(unAssignTask.userId);
-				const getUserName = await userService.getUserById(body.userId);
-				if (!getUserName) {
+				if (!unAssignUser) {
 					throw new Error("User not found");
 				}
 				WebSocket.broadcast("unassigned", unAssignUser);
 				const unassignActivity = await activityService.postActivity(
 					body.taskId,
 					$Enums.ActivityAction.UNASSIGNED,
-					"to " + getUserName.name,
+					"this task from " + unAssignUser.name,
 					body.userId,
 				);
 				WebSocket.broadcast("activity", unassignActivity);

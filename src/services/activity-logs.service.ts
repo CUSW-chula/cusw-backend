@@ -17,23 +17,12 @@ export class ActivityService extends BaseService<Activity> {
 		this.taskModel = new TasksModel(prisma);
 	}
 
-	async getActivityById(Id: string): Promise<Activity> {
-		const cacheKey = `activity:${Id}`;
-		const cacheActivity = await this.getFromCache(cacheKey);
-		if (cacheActivity) return cacheActivity as Activity;
-
-		const activity = await this.activityModel.findById(Id);
-		if (!activity) throw new Error("Activity not found");
-		await this.setToCache(cacheKey, activity);
-		return activity;
-	}
-
-	async getActivityByTaskId(taskId: string): Promise<Activity[]> {
-		const cacheKey = `activity:task:${taskId}`;
+	async getActivityById(id: string): Promise<Activity[]> {
+		const cacheKey = `activity:${id}`;
 		const cacheActivity = await this.getFromCache(cacheKey);
 		if (cacheActivity) return cacheActivity as Activity[];
 
-		const activity = await this.activityModel.findByTaskId(taskId);
+		const activity = await this.activityModel.findByTaskId(id);
 		if (!activity) throw new Error("Activity not found");
 		await this.setToCache(cacheKey, activity);
 		return activity;
@@ -47,18 +36,18 @@ export class ActivityService extends BaseService<Activity> {
 	): Promise<Activity> {
 		const isTaskIdExist = await this.taskModel.findById(taskId);
 		if (!isTaskIdExist) throw new Error("Task not found");
+
 		const isUserExist = await this.userModel.findById(userId);
 		if (!isUserExist) throw new Error("User not found");
 
 		const activity = await this.activityModel.create({
-			action: action,
-			detail: detail,
-			taskId: taskId,
-			userId: userId,
+			action,
+			detail,
+			taskId,
+			userId,
 			createdAt: new Date(),
 		});
-		await this.setToCache(`activity:${activity.id}`, activity);
-		await this.setToCache(`activity:task:${taskId}`, activity);
-		return await this.activityModel.create(activity);
+		await this.invalidateCache(`activity:${activity.id}`);
+		return activity;
 	}
 }

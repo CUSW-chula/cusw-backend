@@ -2,7 +2,6 @@ import { Elysia, t } from "elysia";
 import { Context } from "../shared/interfaces.shared";
 import { TagService } from "../services/tag.service";
 import { $Enums, Tag, Task } from "@prisma/client";
-import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
 import { ActivityService } from "../services/activity-logs.service";
 
