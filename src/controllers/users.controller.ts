@@ -9,11 +9,8 @@ export const UserController = new Elysia({ prefix: "/users" })
 		try {
 			return await userService.getAllUsers();
 		} catch (_error) {
-			// Handle unexpected errors
-			return {
-				status: 500,
-				body: { error: _error },
-			};
+			const error = _error as Error;
+			return Response.json(error.message, { status: 500 });
 		}
 	})
 	// Get user by ID with try-catch for error handling
@@ -35,11 +32,8 @@ export const UserController = new Elysia({ prefix: "/users" })
 				}
 				return user;
 			} catch (_error) {
-				// Handle unexpected errors
-				return {
-					status: 500,
-					body: { error: _error },
-				};
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 	)
@@ -54,22 +48,9 @@ export const UserController = new Elysia({ prefix: "/users" })
 			const userService = new UserService(db, redis);
 			try {
 				return await userService.createNewUser(body);
-			} catch (error) {
-				// Handle email validation error
-				if (
-					error instanceof Error &&
-					error.message === "Invalid email format"
-				) {
-					return {
-						status: 400,
-						body: { error: error.message },
-					};
-				}
-				// Handle unexpected errors
-				return {
-					status: 500,
-					body: { error: "Internal Server Error" },
-				};
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 400 });
 			}
 		},
 		{

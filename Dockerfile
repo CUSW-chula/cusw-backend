@@ -8,7 +8,9 @@ COPY package.json ./
 
 # Install dependencies
 RUN bun install
-RUN apt-get install -y openssl
+
+# Update package list and install openssl
+RUN apt-get update && apt-get install -y openssl
 
 # Copy prisma schema and push the database schema
 COPY prisma ./prisma
