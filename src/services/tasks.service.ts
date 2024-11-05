@@ -1,6 +1,7 @@
 import { TasksModel } from "../models/tasks.model";
 import {
 	BudgetStatus,
+	TaskStatus,
 	type PrismaClient,
 	type Task,
 	type TaskAssignment,
