@@ -135,4 +135,91 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				newTaskStatus: t.String(),
 			}),
 		},
+	)
+	.get(
+		"/money/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const money = await taskService.getMoney(taskId);
+			return money;
+		},
+	)
+	.get(
+		"/money/all/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const money = await taskService.getAllMoney(taskId);
+			return money;
+		},
+	)
+	.post(
+		"/money",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskID: string;
+				budget: number;
+				advance: number;
+				expense: number;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				await taskService.addMoney(
+					body.taskID,
+					body.budget,
+					body.advance,
+					body.expense,
+				);
+				return Response.json("Success", { status: 200 });
+			} catch (error) {
+				if (error instanceof Error) {
+					return Response.json(error.message, { status: 400 });
+				}
+				// Handle unexpected errors
+				return Response.json("Internal server error", { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskID: t.String(),
+				budget: t.Number(),
+				advance: t.Number(),
+				expense: t.Number(),
+			}),
+		},
+	)
+
+	.delete(
+		"/money",
+		async ({ body, db, redis }: Context & { body: { taskID: string } }) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				await taskService.getTaskById(body.taskID);
+				await taskService.deleteMoney(body.taskID, 0, 0, 0);
+				return Response.json("Success", { status: 200 });
+			} catch (error) {
+				if (error instanceof Error) {
+					return Response.json(error.message, { status: 400 });
+				}
+				// Handle unexpected errors
+				return Response.json("Internal Server error", { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskID: t.String(),
+			}),
+		},
 	);

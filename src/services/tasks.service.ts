@@ -113,6 +113,25 @@ export class TaskService extends BaseService<Task> {
 		return unAssigningTaskToUser;
 	}
 
+	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+		const taskStatus = isTaskExist.status;
+		return taskStatus;
+	}
+
+	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const newTask = {
+			status: newTaskStatus,
+		};
+
+		const changedStatusTask = await this.taskModel.update(taskId, newTask);
+		return changedStatusTask;
+	}
+
 	async getMoney(taskId: string): Promise<number[]> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new Error("Task not found");
@@ -204,15 +223,24 @@ export class TaskService extends BaseService<Task> {
 		if (!task) throw new Error("Task not found");
 
 		//Second step check if task money isn't empty
-		if (!areAllBudgetsEmptyOrZero([task.budget, task.expense, task.advance]))
-			throw new Error("Budget are not empty.");
+		if (!areAllBudgetsEmptyOrZero([task.budget, task.expense, task.advance])) {
+			const updateMoney = await this.taskModel.update(taskID, {
+				budget: budget,
+				advance: advance,
+				expense: expense,
+			});
+			return updateMoney;
+		}
 
 		//Third step check if input money isn't only one value
 		if (!isOneBudgetValue(budgetList))
 			throw new Error("Only one budget value should be present.");
 
 		//Fourth step check if another task aleady have budget value
-		if (task.statusBudgets !== BudgetStatus.Initial)
+		if (
+			task.statusBudgets === BudgetStatus.ParentTaskAdded ||
+			task.statusBudgets === BudgetStatus.SubTasksAdded
+		)
 			throw new Error(
 				"The parent task or subtask already has an assigned budget.",
 			);
@@ -226,26 +254,6 @@ export class TaskService extends BaseService<Task> {
 		return addMoney;
 	}
 
-	async updateMoney(
-		taskID: string,
-		budget: number,
-		advance: number,
-		expense: number,
-	): Promise<Task> {
-		const task = await this.taskModel.findById(taskID);
-		if (!task) throw new Error("Task not found");
-
-		if (task.statusBudgets !== BudgetStatus.Added)
-			throw new Error("Task wasn't assigned");
-
-		const updateMoney = await this.taskModel.update(taskID, {
-			budget: budget,
-			advance: advance,
-			expense: expense,
-		});
-		return updateMoney;
-	}
-
 	async deleteMoney(
 		taskID: string,
 		budget: number,
@@ -254,6 +262,7 @@ export class TaskService extends BaseService<Task> {
 	): Promise<Task> {
 		const task = await this.taskModel.findById(taskID);
 		const setStatusBudgets = async () => {
+			//set the subTaks to be initial
 			const setSubtasks = async (taskID: string) => {
 				const subTasks = await this.taskModel.findSubTask(taskID);
 				if (subTasks !== null) {
@@ -265,24 +274,45 @@ export class TaskService extends BaseService<Task> {
 					});
 				}
 			};
+			//check if the subTask has a status of Added or SubTasksAdded
+			const isSubTaskAdded = async (taskID: string) => {
+				const subTasks = await this.taskModel.findSubTask(taskID);
+				if (subTasks !== null) {
+					for (const task of subTasks) {
+						if (
+							task.statusBudgets === BudgetStatus.Added ||
+							task.statusBudgets === BudgetStatus.SubTasksAdded
+						) {
+							return true;
+						}
+					}
+				}
+				return false;
+			};
 
 			if (task === null) return;
 
 			//set this task
 			this.taskModel.update(task.id, { statusBudgets: BudgetStatus.Initial });
 
+			//set subtasks
+			setSubtasks(taskID);
+
 			//set parent task
 			let parentId = task.parentTaskId;
 			while (parentId) {
-				this.taskModel.update(parentId, {
-					statusBudgets: BudgetStatus.Initial,
-				});
+				const subTaskAdded = await isSubTaskAdded(parentId);
+				if (!subTaskAdded) {
+					this.taskModel.update(parentId, {
+						statusBudgets: BudgetStatus.Initial,
+					});
+				}
+
 				const parentTask = await this.taskModel.findById(parentId);
 				parentId = parentTask?.parentTaskId ?? null;
 			}
-			//set subtasks
-			setSubtasks(taskID);
 		};
+
 		if (!task) {
 			throw new Error("Task not found");
 		}
@@ -296,24 +326,5 @@ export class TaskService extends BaseService<Task> {
 		});
 		setStatusBudgets();
 		return updateMoney;
-	}
-
-	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
-		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
-		const taskStatus = isTaskExist.status;
-		return taskStatus;
-	}
-
-	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
-		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
-
-		const newTask = {
-			status: newTaskStatus,
-		};
-
-		const changedStatusTask = await this.taskModel.update(taskId, newTask);
-		return changedStatusTask;
 	}
 }
