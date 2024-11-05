@@ -203,46 +203,45 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				taskID: t.String(),
 			}),
 		},
-	)
+	);
 
-	// .patch(
-	// 	"/money",
-	// 	async ({
-	// 		body,
-	// 		db,
-	// 		redis,
-	// 	}: Context & {
-	// 		body: {
-	// 			taskID: string;
-	// 			budget: number;
-	// 			advance: number;
-	// 			expense: number;
-	// 		};
-	// 	}) => {
-	// 		const taskService = new TaskService(db, redis);
-	// 		try {
-	// 			await taskService.updateMoney(
-	// 				body.taskID,
-	// 				body.budget,
-	// 				body.advance,
-	// 				body.expense,
-	// 			);
-	// 			return Response.json(taskService, { status: 200 });
-	// 		} catch (error) {
-	// 			if (error instanceof Error) {
-	// 				return Response.json(error.message, { status: 400 });
-	// 			}
-	// 			// Handle unexpected errors
-	// 			return Response.json("Internal Server error", { status: 500 });
-	// 		}
-	// 	},
-	// 	{
-	// 		body: t.Object({
-	// 			taskID: t.String(),
-	// 			budget: t.Number(),
-	// 			advance: t.Number(),
-	// 			expense: t.Number(),
-	// 		}),
-	// 	},
-	// )
-	;
+// .patch(
+// 	"/money",
+// 	async ({
+// 		body,
+// 		db,
+// 		redis,
+// 	}: Context & {
+// 		body: {
+// 			taskID: string;
+// 			budget: number;
+// 			advance: number;
+// 			expense: number;
+// 		};
+// 	}) => {
+// 		const taskService = new TaskService(db, redis);
+// 		try {
+// 			await taskService.updateMoney(
+// 				body.taskID,
+// 				body.budget,
+// 				body.advance,
+// 				body.expense,
+// 			);
+// 			return Response.json(taskService, { status: 200 });
+// 		} catch (error) {
+// 			if (error instanceof Error) {
+// 				return Response.json(error.message, { status: 400 });
+// 			}
+// 			// Handle unexpected errors
+// 			return Response.json("Internal Server error", { status: 500 });
+// 		}
+// 	},
+// 	{
+// 		body: t.Object({
+// 			taskID: t.String(),
+// 			budget: t.Number(),
+// 			advance: t.Number(),
+// 			expense: t.Number(),
+// 		}),
+// 	},
+// )
