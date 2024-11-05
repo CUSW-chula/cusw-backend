@@ -17,12 +17,25 @@ export class ActivityService extends BaseService<Activity> {
 		this.taskModel = new TasksModel(prisma);
 	}
 
-	async getActivityById(Id: string): Promise<Activity[]> {
-		const isTaskIdExist = await this.taskModel.findById(Id);
-		if (!isTaskIdExist) throw new Error("Task not found");
+	async getActivityById(Id: string): Promise<Activity> {
+		const cacheKey = `activity:${Id}`;
+		const cacheActivity = await this.getFromCache(cacheKey);
+		if (cacheActivity) return cacheActivity as Activity;
 
-		const activity = await this.activityModel.findByTaskId(Id);
+		const activity = await this.activityModel.findById(Id);
 		if (!activity) throw new Error("Activity not found");
+		await this.setToCache(cacheKey, activity);
+		return activity;
+	}
+
+	async getActivityByTaskId(taskId: string): Promise<Activity[]> {
+		const cacheKey = `activity:task:${taskId}`;
+		const cacheActivity = await this.getFromCache(cacheKey);
+		if (cacheActivity) return cacheActivity as Activity[];
+
+		const activity = await this.activityModel.findByTaskId(taskId);
+		if (!activity) throw new Error("Activity not found");
+		await this.setToCache(cacheKey, activity);
 		return activity;
 	}
 
@@ -44,6 +57,8 @@ export class ActivityService extends BaseService<Activity> {
 			userId: userId,
 			createdAt: new Date(),
 		});
-		return activity;
+		await this.setToCache(`activity:${activity.id}`, activity);
+		await this.setToCache(`activity:task:${taskId}`, activity);
+		return await this.activityModel.create(activity);
 	}
 }

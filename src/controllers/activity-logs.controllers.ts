@@ -13,21 +13,14 @@ export const ActivityController = new Elysia({ prefix: "/activities" }).get(
 		const activityService = new ActivityService(db, redis);
 		try {
 			const activities = await activityService.getActivityById(id);
+			if (!activities) {
+				return Response.json("Activity not found", { status: 404 });
+			}
 			WebSocket.broadcast("activity", activities);
 			return activities;
-		} catch (error) {
-			// Handle email validation error
-			if (error instanceof Error) {
-				return {
-					status: 404,
-					body: { error: error.message },
-				};
-			}
-			// Handle unexpected errors
-			return {
-				status: 500,
-				body: { error: "Internal Server Error" },
-			};
+		} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 		}
 	},
 );
