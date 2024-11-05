@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { $Enums, User } from "@prisma/client";
+import { EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 import { ActivityService } from "../services/activity-logs.service";
 
@@ -24,6 +24,102 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return task;
 		},
 	)
+	.get(
+		"/title/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const title = await taskService.getTitleByTaskId(id);
+			return title;
+		},
+	)
+	.get(
+		"/description/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const description = await taskService.getDescriptionByTaskId(id);
+			return description;
+		},
+	)
+	.patch(
+		"/title",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskId: string;
+				userId: string;
+				title: string;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const updateTitle = await taskService.updateTitleByTaskId(
+					body.taskId,
+					body.userId,
+					body.title,
+				);
+				WebSocket.broadcast("title edited", updateTitle);
+				return updateTitle;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				userId: t.String(),
+				title: t.String(),
+			}),
+		},
+	)
+
+	.patch(
+		"/description",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskId: string;
+				userId: string;
+				description: string;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const updateDescription = await taskService.updateDescriptionByTaskId(
+					body.taskId,
+					body.userId,
+					body.description,
+				);
+				WebSocket.broadcast("description edited", updateDescription);
+				return updateDescription;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				userId: t.String(),
+				description: t.String(),
+			}),
+		},
+	)
+
 	.get(
 		"/getassign/:taskId",
 		async ({
@@ -117,6 +213,93 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			}),
 		},
 	)
+	.post(
+		"/emoji",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { taskId: string; userId: string; emoji: string };
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const newEmoji = await taskService.addEmojiOnTask(
+					body.emoji,
+					body.userId,
+					body.taskId,
+				);
+				WebSocket.broadcast("addEmoji", newEmoji);
+				return newEmoji;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				userId: t.String(),
+				emoji: t.String(),
+			}),
+		},
+	)
+	.get(
+		"/emoji/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const emoji: EmojiTaskUser[] =
+				await taskService.getAllEmojiByTaskId(taskId);
+			return emoji;
+		},
+	)
+
+	.get(
+		"/emoji/:taskId/:userId",
+		async ({
+			params: { taskId, userId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string; userId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const check: Boolean = await taskService.checkEmojiUserIdAndByTaskId(
+				taskId,
+				userId,
+			);
+			return Response.json(check);
+		},
+	)
+
+	.patch(
+		"/emoji",
+		async ({ body, db, redis }: Context & { body: EmojiTaskUser }) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const emoji = await taskService.updateEmojiByTaskId(
+					body.emoji,
+					body.userId,
+					body.taskId,
+				);
+				WebSocket.broadcast("updateEmoji", emoji);
+				return { status: 200, body: { message: "Success", emoji } };
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				emoji: t.String(),
+				userId: t.String(),
+				taskId: t.String(),
+			}),
+		},
+	)
+
 	.get(
 		"/money/:taskId",
 		async ({
@@ -129,6 +312,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return money;
 		},
 	)
+
 	.get(
 		"/money/all/:taskId",
 		async ({
