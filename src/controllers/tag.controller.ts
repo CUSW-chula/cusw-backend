@@ -66,13 +66,12 @@ export const TagController = new Elysia({ prefix: "/tags" })
 					body.tagId,
 				);
 				const assignTags = await tagService.getTagById(assignTag.tagId);
-				const getTagName = await tagService.getTagById(assignTag.tagId);
 				WebSocket.broadcast("tags", assignTags);
 				const tagAddActivity = await activityService.postActivity(
 					body.taskId,
 					$Enums.ActivityAction.ADDED,
-					getTagName.name + "tag",
-					body.tagId,
+					`a tag name "${assignTags.name}"`,
+					"cm34ap50w00003rvnb2tls5c3",
 				);
 				WebSocket.broadcast("activity", tagAddActivity);
 				return assignTags;
@@ -103,13 +102,12 @@ export const TagController = new Elysia({ prefix: "/tags" })
 					body.tagId,
 				);
 				const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
-				const getTagName = await tagService.getTagById(unAssignTaskTag.tagId);
 				WebSocket.broadcast("unassigned-Tag", unAssignTag);
 				const tagUnassignActivity = await activityService.postActivity(
 					body.taskId,
 					$Enums.ActivityAction.REMOVED,
-					getTagName.name + "tag",
-					body.tagId,
+					`a tag name "${unAssignTag.name}"`,
+					"cm34ap50w00003rvnb2tls5c3",
 				);
 				WebSocket.broadcast("activity", tagUnassignActivity);
 				return unAssignTag;
