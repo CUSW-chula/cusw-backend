@@ -2,8 +2,9 @@ import { Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { User } from "@prisma/client";
+import { $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
+import { ActivityService } from "../services/activity-logs.service";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -45,13 +46,24 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}: Context & { body: { taskId: string; userId: string } }) => {
 			const taskService = new TaskService(db, redis);
 			const userService = new UserService(db, redis);
+			const activityService = new ActivityService(db, redis);
 			try {
 				const assignTask = await taskService.assigningTaskToUser(
 					body.taskId,
 					body.userId,
 				);
 				const usersAssign = await userService.getUserById(assignTask.userId);
+				if (!usersAssign) {
+					throw new Error("User not found");
+				}
 				WebSocket.broadcast("assigned", usersAssign);
+				const assignActivity = await activityService.postActivity(
+					body.taskId,
+					$Enums.ActivityAction.ASSIGNED,
+					"this task to " + usersAssign.name,
+					body.userId,
+				);
+				WebSocket.broadcast("activity", assignActivity);
 				return assignTask;
 			} catch (_error) {
 				const error = _error as Error;
@@ -74,13 +86,24 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}: Context & { body: { taskId: string; userId: string } }) => {
 			const taskService = new TaskService(db, redis);
 			const userService = new UserService(db, redis);
+			const activityService = new ActivityService(db, redis);
 			try {
 				const unAssignTask = await taskService.unAssigningTaskToUser(
 					body.taskId,
 					body.userId,
 				);
 				const unAssignUser = await userService.getUserById(unAssignTask.userId);
+				if (!unAssignUser) {
+					throw new Error("User not found");
+				}
 				WebSocket.broadcast("unassigned", unAssignUser);
+				const unassignActivity = await activityService.postActivity(
+					body.taskId,
+					$Enums.ActivityAction.UNASSIGNED,
+					"this task from " + unAssignUser.name,
+					body.userId,
+				);
+				WebSocket.broadcast("activity", unassignActivity);
 				return unAssignTask;
 			} catch (_error) {
 				const error = _error as Error;
