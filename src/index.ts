@@ -24,7 +24,9 @@ const minioClient = new Minio.Client({
 });
 
 const app = new Elysia()
-	.use(swagger())
+	.use(swagger({
+		version: "0.1.0"
+	}))
 	.use(
 		cors({
 			origin: ["http://localhost:3000", "http://cusw-workspace.sa.chula.ac.th"],
