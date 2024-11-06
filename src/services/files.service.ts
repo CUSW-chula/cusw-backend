@@ -58,7 +58,9 @@ export class FilesService extends BaseService<File> {
 		const cacheKey = `files:${taskId}`;
 		const bucketName = "cusw-workspace";
 		const isBucketExist = await this.minIoClient.bucketExists(bucketName);
+		const list = await this.minIoClient.listBuckets();
 		console.info("bucket", isBucketExist);
+		console.info("list", list);
 		const fileKey = `${projectId}-${taskId}-${file.name}`;
 		const arrBuf = await file.arrayBuffer();
 		const fileBuffer = Buffer.from(arrBuf);
