@@ -23,6 +23,8 @@ const minioClient = new Minio.Client({
 	secretKey: process.env.MINIO_SECRET_KEY ?? "",
 });
 
+console.info("MinIO buckets", minioClient.listBuckets());
+
 const app = new Elysia()
 	.use(swagger())
 	.use(
