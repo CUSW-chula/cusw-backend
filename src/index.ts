@@ -40,14 +40,9 @@ const app = new Elysia()
 	.decorate("db", prisma)
 	.decorate("redis", redis)
 	.decorate("minio", minioClient)
-	.get("/sign/:id", async ({ jwt, cookie: { auth }, params }) => {
-		auth.set({
-			value: await jwt.sign(params),
-			httpOnly: true,
-			path: "/",
-		});
-
-		return `Sign in as ${auth.value}`;
+	.get("/sign/:id", async ({ jwt, params }) => {
+		const auth = await jwt.sign(params);
+		return `${auth}`;
 	})
 	.guard(
 		{

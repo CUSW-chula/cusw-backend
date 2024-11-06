@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { type Cookie, Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { FilesService } from "../services/files.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
@@ -38,26 +38,28 @@ export const FileController = new Elysia({ prefix: "/file" })
 	.post(
 		"/",
 		async ({
-			body: { taskId, file, projectId, authorId },
+			body: { taskId, file, projectId },
 			db,
 			redis,
 			minio,
+			cookie: { session },
 		}: Context & {
 			body: {
 				taskId: string;
 				file: Blob;
 				projectId: string;
-				authorId: string;
 			};
+			cookie: { session: Cookie<string> };
 		}) => {
 			const fileService = new FilesService(db, redis, minio);
 			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const savedFile = await fileService.uploadFileByTaskId(
 					taskId,
 					file,
 					projectId,
-					authorId,
+					userId,
 				);
 				if (!savedFile) {
 					return Response.json("file couldn't be saved", { status: 500 });
@@ -75,7 +77,7 @@ export const FileController = new Elysia({ prefix: "/file" })
 					taskId,
 					$Enums.ActivityAction.UPLOADED,
 					savedFile.fileName,
-					authorId,
+					userId,
 				);
 				WebSocket.broadcast("activity", uploadActivity);
 
@@ -90,7 +92,6 @@ export const FileController = new Elysia({ prefix: "/file" })
 				taskId: t.String(),
 				file: t.File(),
 				projectId: t.String(),
-				authorId: t.String(),
 			}),
 		},
 	)

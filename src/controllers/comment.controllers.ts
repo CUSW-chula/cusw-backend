@@ -62,13 +62,16 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 	)
 	.delete(
 		"/",
-		async ({ body, db, redis }: Context & { body: Comment }) => {
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & { body: Comment; cookie: { session: Cookie<string> } }) => {
 			const commentService = new CommentService(db, redis);
+			const userId = session.value;
 			try {
-				const comment = await commentService.deleteComment(
-					body.id,
-					body.authorId,
-				);
+				const comment = await commentService.deleteComment(body.id, userId);
 				WebSocket.broadcast("comment-delete", comment);
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
@@ -80,18 +83,23 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 		{
 			body: t.Object({
 				id: t.String(),
-				authorId: t.String(),
 			}),
 		},
 	)
 	.patch(
 		"/",
-		async ({ body, db, redis }: Context & { body: Comment }) => {
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & { body: Comment; cookie: { session: Cookie<string> } }) => {
 			const commentService = new CommentService(db, redis);
+			const userId = session.value;
 			try {
 				const comment = await commentService.editComment(
 					body.id,
-					body.authorId,
+					userId,
 					body.content,
 				);
 				WebSocket.broadcast("comment-edit", comment);
@@ -105,7 +113,6 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 		{
 			body: t.Object({
 				id: t.String(),
-				authorId: t.String(),
 				content: t.String(),
 			}),
 		},

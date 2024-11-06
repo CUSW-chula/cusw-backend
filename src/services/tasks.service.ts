@@ -1,6 +1,7 @@
 import { TasksModel } from "../models/tasks.model";
 import {
 	BudgetStatus,
+	type EmojiTaskUser,
 	type PrismaClient,
 	type Task,
 	type TaskAssignment,
@@ -10,16 +11,19 @@ import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
+import { EmojiModel } from "../models/emoji.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
 	private readonly userModel: UserModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
+	private readonly emojiModel: EmojiModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
 		this.taskModel = new TasksModel(prisma);
 		this.userModel = new UserModel(prisma);
+		this.emojiModel = new EmojiModel(prisma);
 		this.taskAssignmentModel = new TasksAssignmentModel(prisma);
 	}
 
@@ -45,6 +49,88 @@ export class TaskService extends BaseService<Task> {
 		return task;
 	}
 
+	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return {
+			title: task.title,
+		};
+	}
+
+	async getDescriptionByTaskId(
+		taskId: string,
+	): Promise<{ description: string }> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return {
+			description: task.description,
+		};
+	}
+
+	async updateTitleByTaskId(
+		taskId: string,
+		userId: string,
+		title: string,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
+		if (!taskAssignments || taskAssignments.length === 0)
+			throw new Error("No users assigned to this task");
+
+		const newTitle = {
+			title: title,
+		};
+		const updateTitles = await this.taskModel.update(taskId, newTitle);
+		return updateTitles;
+	}
+
+	async updateDescriptionByTaskId(
+		taskId: string,
+		userId: string,
+		description: string,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
+			taskId,
+			userId,
+		);
+
+		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		const newTitle = {
+			description: description,
+		};
+		const updateDescription = await this.taskModel.update(taskId, newTitle);
+
+		return updateDescription;
+	}
+
+	async checkTextUserIdAndByTaskId(
+		taskId: string,
+		userId: string,
+	): Promise<Boolean> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+
+		if (emojis === null) return false;
+		else return true;
+	}
+
 	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {
 		// Check if task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
@@ -53,7 +139,7 @@ export class TaskService extends BaseService<Task> {
 		// Retrieve task assignments
 		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
 		if (!taskAssignments || taskAssignments.length === 0)
-			throw new Error("No users assigned to this task");
+			throw new Error("Did not assigned");
 
 		// Get all users assigned to the task concurrently
 		const usersInTask = await Promise.all(
@@ -110,6 +196,83 @@ export class TaskService extends BaseService<Task> {
 			taskAssignment.id,
 		);
 		return unAssigningTaskToUser;
+	}
+	async addEmojiOnTask(
+		emoji: string,
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
+			taskId,
+			userId,
+		);
+
+		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		const addEmojiOnTask = await this.emojiModel.create({
+			emoji: emoji,
+			taskId: taskId,
+			userId: userId,
+		});
+
+		return addEmojiOnTask;
+	}
+	async getAllEmojiByTaskId(taskId: string): Promise<EmojiTaskUser[]> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojiOnTasks = await this.emojiModel.findAllByTaskId(taskId);
+		if (!emojiOnTasks || emojiOnTasks.length === 0)
+			throw new Error("No emoji add to this task");
+		return emojiOnTasks;
+	}
+
+	async updateEmojiByTaskId(
+		newEmoji: string,
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+		if (!emojis) throw new Error("emoji not found");
+
+		if (userId !== emojis.userId) throw new Error("This is not your emoji");
+
+		const newEmojis = {
+			emoji: newEmoji,
+			taskId: emojis.taskId,
+			userId: emojis.userId,
+		};
+		const updatedEmoji = await this.emojiModel.update(emojis.id, newEmojis);
+		return updatedEmoji;
+	}
+
+	async checkEmojiUserIdAndByTaskId(
+		taskId: string,
+		userId: string,
+	): Promise<Boolean> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+
+		if (emojis === null) return false;
+		else return true;
 	}
 
 	async getMoney(taskId: string): Promise<number[]> {
@@ -234,26 +397,6 @@ export class TaskService extends BaseService<Task> {
 		return addMoney;
 	}
 
-	//   async updateMoney(
-	//     taskID: string,
-	//     budget: number,
-	//     advance: number,
-	//     expense: number
-	//   ): Promise<Task> {
-	//     const task = await this.taskModel.findById(taskID);
-	//     if (!task) throw new Error("Task not found");
-
-	//     if (task.statusBudgets !== BudgetStatus.Added)
-	//       throw new Error("Task wasn't assigned");
-
-	//     const updateMoney = await this.taskModel.update(taskID, {
-	//       budget: budget,
-	//       advance: advance,
-	//       expense: expense,
-	//     });
-	//     return updateMoney;
-	//   }
-
 	async deleteMoney(
 		taskID: string,
 		budget: number,
@@ -276,7 +419,6 @@ export class TaskService extends BaseService<Task> {
 			};
 			//check if the subTask has a status of Added or SubTasksAdded
 			const isSubTaskAdded = async (taskID: string) => {
-				const task = await this.taskModel.findById(taskID);
 				const subTasks = await this.taskModel.findSubTask(taskID);
 				if (subTasks !== null) {
 					for (const task of subTasks) {
