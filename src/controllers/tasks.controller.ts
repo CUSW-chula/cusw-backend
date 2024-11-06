@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { type Cookie, Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
@@ -54,18 +54,20 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
 			body: {
 				taskId: string;
-				userId: string;
 				title: string;
 			};
+			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
+			const userId = session.value;
 			try {
 				const updateTitle = await taskService.updateTitleByTaskId(
 					body.taskId,
-					body.userId,
+					userId,
 					body.title,
 				);
 				WebSocket.broadcast("title edited", updateTitle);
@@ -78,7 +80,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				taskId: t.String(),
-				userId: t.String(),
 				title: t.String(),
 			}),
 		},
@@ -90,18 +91,20 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
 			body: {
 				taskId: string;
-				userId: string;
 				description: string;
 			};
+			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
+			const userId = session.value;
 			try {
 				const updateDescription = await taskService.updateDescriptionByTaskId(
 					body.taskId,
-					body.userId,
+					userId,
 					body.description,
 				);
 				WebSocket.broadcast("description edited", updateDescription);
@@ -114,7 +117,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				taskId: t.String(),
-				userId: t.String(),
 				description: t.String(),
 			}),
 		},
@@ -219,14 +221,17 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
-			body: { taskId: string; userId: string; emoji: string };
+			body: { taskId: string; emoji: string };
+			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
+			const userId = session.value;
 			try {
 				const newEmoji = await taskService.addEmojiOnTask(
 					body.emoji,
-					body.userId,
+					userId,
 					body.taskId,
 				);
 				WebSocket.broadcast("addEmoji", newEmoji);
@@ -239,7 +244,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				taskId: t.String(),
-				userId: t.String(),
 				emoji: t.String(),
 			}),
 		},
@@ -276,12 +280,21 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 
 	.patch(
 		"/emoji",
-		async ({ body, db, redis }: Context & { body: EmojiTaskUser }) => {
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: EmojiTaskUser;
+			cookie: { session: Cookie<string> };
+		}) => {
 			const taskService = new TaskService(db, redis);
+			const userId = session.value;
 			try {
 				const emoji = await taskService.updateEmojiByTaskId(
 					body.emoji,
-					body.userId,
+					userId,
 					body.taskId,
 				);
 				WebSocket.broadcast("updateEmoji", emoji);
@@ -294,7 +307,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				emoji: t.String(),
-				userId: t.String(),
 				taskId: t.String(),
 			}),
 		},

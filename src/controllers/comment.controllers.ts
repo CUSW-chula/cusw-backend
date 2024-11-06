@@ -11,14 +11,10 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 			params: { id },
 			db,
 			redis,
-			cookie: { session },
 		}: Context & {
 			params: { id: string };
-			cookie: { session: Cookie<string> };
 		}) => {
 			const commentService = new CommentService(db, redis);
-			const userId = session.value;
-			console.info(userId);
 			try {
 				const comments = await commentService.getCommentByTaskId(id);
 				if (!comments) {
