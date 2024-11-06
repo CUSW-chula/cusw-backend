@@ -1,7 +1,10 @@
 import { WebSocketServer } from "ws";
 
 export class WebSocket {
-	static wss: WebSocketServer = new WebSocketServer({ port: 3001, path: "/socket" });
+	static wss: WebSocketServer = new WebSocketServer({
+		port: 3001,
+		path: "/socket",
+	});
 
 	private static convertToJson = (data: string) => {
 		interface Message {
