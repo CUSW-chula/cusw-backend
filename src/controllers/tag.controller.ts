@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { type Cookie, Elysia, t } from "elysia";
 import { Context } from "../shared/interfaces.shared";
 import { TagService } from "../services/tag.service";
 import { $Enums, Tag, Task } from "@prisma/client";
@@ -54,12 +54,15 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
 			body: { tagid: string; taskId: string; tagId: string };
+			cookie: { session: Cookie<string> };
 		}) => {
 			//const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const assignTag = await tagService.assigningTagToTask(
 					body.taskId,
@@ -71,7 +74,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 					body.taskId,
 					$Enums.ActivityAction.ADDED,
 					`a tag name "${assignTags.name}"`,
-					"cm34ap50w00003rvnb2tls5c3",
+					userId,
 				);
 				WebSocket.broadcast("activity", tagAddActivity);
 				return assignTags;
@@ -93,9 +96,14 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { taskId: string; tagId: string } }) => {
+			cookie: { session },
+		}: Context & {
+			body: { taskId: string; tagId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const unAssignTaskTag = await tagService.unAssigningTagToTask(
 					body.taskId,
@@ -107,7 +115,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 					body.taskId,
 					$Enums.ActivityAction.REMOVED,
 					`a tag name "${unAssignTag.name}"`,
-					"cm34ap50w00003rvnb2tls5c3",
+					userId,
 				);
 				WebSocket.broadcast("activity", tagUnassignActivity);
 				return unAssignTag;
