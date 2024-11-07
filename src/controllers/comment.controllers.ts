@@ -101,7 +101,6 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 					userId,
 					body.content,
 				);
-				console.info(comment);
 				WebSocket.broadcast("comment-edit", comment);
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
