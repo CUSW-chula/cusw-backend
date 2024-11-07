@@ -89,7 +89,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 			db,
 			redis,
 			cookie: { session },
-		}: Context & { body: Comment; cookie: { session: Cookie<string> } }) => {
+		}: Context & { body: {id: string; content: string}; cookie: { session: Cookie<string> } }) => {
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 			try {
