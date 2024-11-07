@@ -39,15 +39,6 @@ export class FilesService extends BaseService<File> {
 		return file;
 	}
 
-	private async getPublicFileUrl(filePath: string): Promise<string> {
-		const bucketName = "cusw-workspace";
-		const url = await this.minIoClient.presignedUrl(
-			"GET",
-			bucketName,
-			filePath,
-		);
-		return url;
-	}
 
 	async uploadFileByTaskId(
 		taskId: string,
@@ -57,10 +48,6 @@ export class FilesService extends BaseService<File> {
 	): Promise<File | null> {
 		const cacheKey = `files:${taskId}`;
 		const bucketName = "cusw-workspace";
-		const isBucketExist = await this.minIoClient.bucketExists(bucketName);
-		const list = await this.minIoClient.listBuckets();
-		console.info("bucket", isBucketExist);
-		console.info("list", list);
 		const fileKey = `${projectId}-${taskId}-${file.name}`;
 		const arrBuf = await file.arrayBuffer();
 		const fileBuffer = Buffer.from(arrBuf);
@@ -80,7 +67,7 @@ export class FilesService extends BaseService<File> {
 
 		console.info(upload);
 
-		const fileUrl = await this.getPublicFileUrl(fileKey);
+		const fileUrl = "http://localhost:9000/cusw-workspace/" + fileKey;
 		let filePath = fileUrl;
 
 		// Check if in production and if the URL starts with localhost
