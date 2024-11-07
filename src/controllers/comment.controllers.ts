@@ -89,7 +89,10 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 			db,
 			redis,
 			cookie: { session },
-		}: Context & { body: {id: string; content: string}; cookie: { session: Cookie<string> } }) => {
+		}: Context & {
+			body: { id: string; content: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 			try {
@@ -98,6 +101,7 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 					userId,
 					body.content,
 				);
+				console.info(comment);
 				WebSocket.broadcast("comment-edit", comment);
 				return { status: 200, body: { message: "Success" } };
 			} catch (_error) {
