@@ -39,7 +39,6 @@ export class FilesService extends BaseService<File> {
 		return file;
 	}
 
-
 	async uploadFileByTaskId(
 		taskId: string,
 		file: Blob,
@@ -55,7 +54,7 @@ export class FilesService extends BaseService<File> {
 		// Get the MIME type based on the file extension
 		const contentType = mime.lookup(file.name) || "application/octet-stream";
 
-		const upload = await this.minIoClient.putObject(
+		await this.minIoClient.putObject(
 			bucketName,
 			fileKey,
 			fileBuffer,
@@ -64,8 +63,6 @@ export class FilesService extends BaseService<File> {
 				"Content-Type": contentType,
 			},
 		);
-
-		console.info(upload);
 
 		const fileUrl = "http://localhost:9000/cusw-workspace/" + fileKey;
 		let filePath = fileUrl;
