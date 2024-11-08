@@ -75,7 +75,7 @@ export class FilesService extends BaseService<File> {
 			// Replace 'localhost' with your production domain
 			filePath = fileUrl.replace(
 				"http://localhost:9000",
-				"http://cusw-workspace.sa.chula.ac.th",
+				"https://cusw-workspace.sa.chula.ac.th",
 			);
 		}
 
