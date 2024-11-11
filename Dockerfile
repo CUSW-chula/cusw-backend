@@ -10,10 +10,10 @@ COPY prisma ./prisma
 
 # Install dependencies
 RUN bun install
+RUN bunx prisma generate
 
 # Update package list and install openssl
 RUN apt-get update && apt-get install -y openssl
-
 
 # Copy the remaining application files
 COPY tsconfig.json ./
