@@ -12,18 +12,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		const tasks = await taskService.getAllTask();
 		return tasks;
 	})
-	.get(
-		"/project/:projectid",
-		async ({
-			params: { id },
-			db,
-			redis,
-		}: Context & { params: { id: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const task = await taskService.getTaskByProjectId(id);
-			return task;
-		},
-	)
+
 	.get(
 		"/parent/:parentid",
 		async ({
@@ -172,7 +161,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				title: string;
 				description: string;
 			};
-			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
@@ -218,7 +206,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				endDate: Date;
 			};
 			cookie: { session: Cookie<string> };
-
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const userId = session.value;
@@ -238,7 +225,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				WebSocket.broadcast("task", task);
 
-				return 	Response.json(task, { status: 200 });
+				return Response.json(task, { status: 200 });
 			} catch (_error) {
 				const error = _error as Error;
 				return Response.json(error.message, { status: 500 });

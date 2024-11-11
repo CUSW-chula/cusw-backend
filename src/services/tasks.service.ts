@@ -47,28 +47,27 @@ export class TaskService extends BaseService<Task> {
 		// Find and validate the task
 		const existingTask = await this.taskModel.findById(taskId);
 		if (!existingTask) throw new Error("Task not found");
-	
+
 		// Check if user exists based on the task's createdById
 		if (!existingTask.createdById) throw new Error("Task creator ID not found");
 		const isUserExist = await this.userModel.findById(existingTask.createdById);
 		if (!isUserExist) throw new Error("User not found");
-	
+
 		// Prepare the updated task object
 		const updatedTask = {
 			...existingTask,
 			title,
 			description,
 		};
-	
+
 		// Invalidate caches
 		await this.invalidateCache("tasks:all");
 		await this.invalidateCache(`tasks:project:${existingTask.projectId}`);
 		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
-	
+
 		// Update and return the task
 		return await this.taskModel.update(taskId, updatedTask);
 	}
-	
 
 	async createTask(
 		title: string,

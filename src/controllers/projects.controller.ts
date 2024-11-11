@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { type Context } from "../shared/interfaces.shared";
+import { TaskService } from "../services/tasks.service";
 
 export const ProjectController = new Elysia({ prefix: "/projects" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -19,4 +20,16 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const project = await projectService.getProjectById(id);
 			return project;
 		},
-	);
+	)
+	.get(
+		"/project/:projectid",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskByProjectId(id);
+			return task;
+		},
+	)

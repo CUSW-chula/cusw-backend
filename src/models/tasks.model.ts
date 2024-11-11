@@ -64,10 +64,10 @@ export class TasksModel extends BaseModel<Task> {
 	async findByProjectId(projectId: string): Promise<Task[]> {
 		const tasks = await this.getModel().task.findMany({
 			where: { projectId },
-		include: {
-			subTasks: true,
-		},
-	});
+			include: {
+				subTasks: true,
+			},
+		});
 		return tasks;
 	}
 
