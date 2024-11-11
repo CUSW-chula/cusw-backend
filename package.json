@@ -6,7 +6,6 @@
     "dev": "bun run --watch src/index.ts",
     "db:push": "bunx prisma db push",
     "db:studio": "bunx prisma studio",
-    "postinstall": "bunx prisma generate",
     "prepare": "husky",
     "commit": "git-cz",
     "lint": "bunx biome lint ./src",
