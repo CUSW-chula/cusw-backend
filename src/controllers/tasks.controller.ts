@@ -313,6 +313,32 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 	)
 
 	.get(
+		"/parent-recursive/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const parentTask = await taskService.getRecursiveParentTaskList(taskId);
+			return parentTask;
+		},
+	)
+
+	.get(
+		"/parent/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const parentTask = await taskService.getParentTask(taskId);
+			return parentTask;
+		},
+	)
+
+	.get(
 		"/money/:taskId",
 		async ({
 			params: { taskId },

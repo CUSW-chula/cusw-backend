@@ -470,4 +470,35 @@ export class TaskService extends BaseService<Task> {
 		setStatusBudgets();
 		return updateMoney;
 	}
+
+	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
+		const taskList: Task[] = [];
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+
+		let currentTask = task;
+		taskList.push(currentTask);
+		while (currentTask.parentTaskId) {
+			const parentTask = await this.taskModel.findById(
+				currentTask.parentTaskId,
+			);
+			if (!parentTask) break;
+			taskList.push(parentTask);
+			currentTask = parentTask;
+		}
+
+		return taskList.reverse();
+	}
+
+	async getParentTask(taskId: string): Promise<Task | null> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+
+		if (!task.parentTaskId) return null;
+
+		const parentTask = await this.taskModel.findById(task.parentTaskId);
+		if (!parentTask) throw new Error("Parent task not found");
+
+		return parentTask;
+	}
 }
