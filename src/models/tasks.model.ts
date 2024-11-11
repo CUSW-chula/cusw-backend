@@ -35,8 +35,11 @@ export class TasksModel extends BaseModel<Task> {
 				advance: data.advance ?? 0.0,
 				expense: data.expense ?? 0.0,
 				status: data.status ?? TaskStatus.Unassigned,
-				parentTaskId: data.parentTaskId ?? "",
+				parentTaskId: data.parentTaskId,
 				projectId: data.projectId ?? "",
+				createdById: data.createdById ?? "",
+				startDate: data.startDate ?? new Date(),
+				endDate: data.endDate ?? new Date(),
 			},
 		});
 		return createdProject;
@@ -56,5 +59,27 @@ export class TasksModel extends BaseModel<Task> {
 			where: { id },
 		});
 		return deletedTask;
+	}
+
+	async findByProjectId(projectId: string): Promise<Task[]> {
+		const tasks = await this.getModel().task.findMany({
+			where: { projectId },
+			include: {
+				subTasks: true,
+			},
+		});
+		return tasks;
+	}
+
+	async findByParentTaskId(parentTaskId: string): Promise<Task[]> {
+		const tasks = await this.getModel().task.findMany({
+			where: {
+				parentTaskId: parentTaskId,
+			},
+			include: {
+				subTasks: true,
+			},
+		});
+		return tasks;
 	}
 }

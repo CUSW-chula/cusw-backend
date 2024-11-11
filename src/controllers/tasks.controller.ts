@@ -12,6 +12,19 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		const tasks = await taskService.getAllTask();
 		return tasks;
 	})
+
+	.get(
+		"/parent/:parentid",
+		async ({
+			params: { parentid },
+			db,
+			redis,
+		}: Context & { params: { parentid: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskByParentTaskId(parentid);
+			return task;
+		},
+	)
 	.get(
 		"/:id",
 		async ({
@@ -133,6 +146,104 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			const users: User[] =
 				await taskService.getAsignUserInTaskByTaskId(taskId);
 			return users;
+		},
+	)
+	//patch data only task title and description
+	.patch(
+		"/",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskId: string;
+				title: string;
+				description: string;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const updateTaskId = await taskService.updateTask(
+					body.taskId,
+					body.title,
+					body.description,
+				);
+				WebSocket.broadcast("taskid edited", updateTaskId);
+				return updateTaskId;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				title: t.String(),
+				description: t.String(),
+			}),
+		},
+	)
+
+	.post(
+		"/",
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: {
+				title: string;
+				description: string;
+				expectedBudget: number;
+				realBudget: number;
+				usedBudget: number;
+				status: $Enums.TaskStatus;
+				parentTaskId: string;
+				projectId: string;
+				startDate: Date;
+				endDate: Date;
+			};
+			cookie: { session: Cookie<string> };
+		}) => {
+			const taskService = new TaskService(db, redis);
+			const userId = session.value;
+			try {
+				const task = await taskService.createTask(
+					body.title,
+					body.description,
+					body.projectId,
+					body.parentTaskId,
+					body.startDate,
+					body.endDate,
+					userId,
+					body.status,
+					body.expectedBudget,
+					body.realBudget,
+					body.usedBudget,
+				);
+				WebSocket.broadcast("task", task);
+
+				return Response.json(task, { status: 200 });
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				title: t.String(),
+				description: t.String(),
+				expectedBudget: t.Number(),
+				realBudget: t.Number(),
+				usedBudget: t.Number(),
+				status: t.String(),
+				parentTaskId: t.String(),
+				projectId: t.String(),
+				startDate: t.Date(),
+				endDate: t.Date(),
+			}),
 		},
 	)
 	.post(

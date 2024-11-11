@@ -1,5 +1,6 @@
 import { TasksModel } from "../models/tasks.model";
 import {
+	$Enums,
 	BudgetStatus,
 	type EmojiTaskUser,
 	type PrismaClient,
@@ -36,6 +37,98 @@ export class TaskService extends BaseService<Task> {
 		if (!tasks) throw new Error("Task not found");
 		await this.setToCache(cacheKey, tasks);
 		return tasks;
+	}
+
+	async updateTask(
+		taskId: string,
+		title: string,
+		description: string,
+	): Promise<Task> {
+		// Find and validate the task
+		const existingTask = await this.taskModel.findById(taskId);
+		if (!existingTask) throw new Error("Task not found");
+
+		// Check if user exists based on the task's createdById
+		if (!existingTask.createdById) throw new Error("Task creator ID not found");
+		const isUserExist = await this.userModel.findById(existingTask.createdById);
+		if (!isUserExist) throw new Error("User not found");
+
+		// Prepare the updated task object
+		const updatedTask = {
+			...existingTask,
+			title,
+			description,
+		};
+
+		// Invalidate caches
+		await this.invalidateCache("tasks:all");
+		await this.invalidateCache(`tasks:project:${existingTask.projectId}`);
+		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
+
+		// Update and return the task
+		return await this.taskModel.update(taskId, updatedTask);
+	}
+
+	async createTask(
+		title: string,
+		description: string,
+		projectId: string,
+		parentTaskId: string | null,
+		startDate: Date,
+		endDate: Date,
+		createdById: string,
+		status: $Enums.TaskStatus,
+		expectedBudget: number,
+		realBudget: number,
+		usedBudget: number,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(createdById);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+
+		if (title !== null) {
+			const newTask = {
+				title: title,
+				description: description,
+				createdById: createdById,
+				startDate: startDate,
+				endDate: endDate,
+				status: status,
+				parentTaskId: parentTaskId !== "" ? parentTaskId : undefined,
+				expectedBudget: expectedBudget,
+				usedBudget: usedBudget,
+				realBudget: realBudget,
+				projectId: projectId,
+			};
+			await this.invalidateCache("tasks:all");
+			await this.invalidateCache(`tasks:project:${projectId}`);
+			await this.invalidateCache(`tasks:parent:${parentTaskId}`);
+			return await this.taskModel.create(newTask);
+		}
+		throw new Error("Title cann't be null");
+	}
+
+	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
+		const cacheKey = `tasks:project:${projectIdId}`;
+		const cacheTask = await this.getFromCache(cacheKey);
+		if (cacheTask) return cacheTask as Task[];
+
+		const task = await this.taskModel.findByProjectId(projectIdId);
+		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
+		return task;
+	}
+
+	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
+		const cacheKey = `tasks:parent:${parentTaskId}`;
+		const cacheTask = await this.getFromCache(cacheKey);
+		if (cacheTask) return cacheTask as Task[];
+
+		const task = await this.taskModel.findByParentTaskId(parentTaskId);
+		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
+		return task;
 	}
 
 	async getTaskById(taskId: string): Promise<Task> {
