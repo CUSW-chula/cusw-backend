@@ -5,6 +5,8 @@ WORKDIR /app
 
 # Copy package.json first for better cache utilization
 COPY package.json ./
+# Copy prisma schema and push the database schema
+COPY prisma ./prisma
 
 # Install dependencies
 RUN bun install
@@ -12,8 +14,7 @@ RUN bun install
 # Update package list and install openssl
 RUN apt-get update && apt-get install -y openssl
 
-# Copy prisma schema and push the database schema
-COPY prisma ./prisma
+
 RUN bun run db:push
 RUN bunx prisma generate
 
