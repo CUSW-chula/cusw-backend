@@ -15,9 +15,6 @@ RUN bun install
 RUN apt-get update && apt-get install -y openssl
 
 
-RUN bun run db:push
-RUN bunx prisma generate
-
 # Copy the remaining application files
 COPY tsconfig.json ./
 COPY src ./src
