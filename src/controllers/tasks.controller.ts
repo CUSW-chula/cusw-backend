@@ -159,12 +159,51 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return users;
 		},
 	)
+	//patch data only task title and description
+	.patch(
+		"/",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskId: string;
+				title: string;
+				description: string;
+			};
+			cookie: { session: Cookie<string> };
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const updateTaskId = await taskService.updateTask(
+					body.taskId,
+					body.title,
+					body.description,
+				);
+				WebSocket.broadcast("taskid edited", updateTaskId);
+				return updateTaskId;
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				title: t.String(),
+				description: t.String(),
+			}),
+		},
+	)
+
 	.post(
 		"/",
 		async ({
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
 			body: {
 				title: string;
@@ -175,12 +214,14 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				status: $Enums.TaskStatus;
 				parentTaskId: string;
 				projectId: string;
-				createdById: string;
 				startDate: Date;
 				endDate: Date;
 			};
+			cookie: { session: Cookie<string> };
+
 		}) => {
 			const taskService = new TaskService(db, redis);
+			const userId = session.value;
 			try {
 				const task = await taskService.createTask(
 					body.title,
@@ -189,7 +230,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.parentTaskId,
 					body.startDate,
 					body.endDate,
-					body.createdById,
+					userId,
 					body.status,
 					body.expectedBudget,
 					body.realBudget,
@@ -197,12 +238,10 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				WebSocket.broadcast("task", task);
 
-				return { status: 200, body: { message: "Success" } };
-			} catch (error) {
-				return {
-					status: 500,
-					body: { error: (error as Error).message || "Internal Server Error" },
-				};
+				return 	Response.json(task, { status: 200 });
+			} catch (_error) {
+				const error = _error as Error;
+				return Response.json(error.message, { status: 500 });
 			}
 		},
 		{
@@ -215,7 +254,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				status: t.String(),
 				parentTaskId: t.String(),
 				projectId: t.String(),
-				createdById: t.String(),
 				startDate: t.Date(),
 				endDate: t.Date(),
 			}),
