@@ -1,6 +1,5 @@
 generator client { 
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x"] 
 }
 
 datasource db { 
@@ -71,13 +70,14 @@ model Task {
   description    String 
   status         TaskStatus 
   projectId      String       
-  project        Project        @relation("ProjectTasks", fields: [projectId], references: [id]) 
-  subTasks       Task[]         @relation("SubTasks") 
-  parentTask     Task?          @relation("SubTasks", fields: [parentTaskId], references: [id]) 
-  parentTaskId   String? 
-  expectedBudget Float 
-  realBudget     Float 
-  usedBudget     Float
+  project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) 
+  subTasks       Task[]       @relation("SubTasks") 
+  parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
+  parentTaskId   String?
+  statusBudgets  BudgetStatus 
+  budget         Float 
+  advance        Float 
+  expense        Float
   startDate      DateTime?
   endDate        DateTime?
   assignedUsers  TaskAssignment[] 
@@ -146,9 +146,9 @@ model File {
   filePath   String 
   fileSize   Float   
   taskId     String? 
+  fileName   String
   projectId  String? 
   uploadedBy String 
-  uploadedAt DateTime  @default(now()) 
   createdAt  DateTime  @default(now()) 
 
   task       Task?    @relation("TaskFiles", fields: [taskId], references: [id]) 
@@ -185,9 +185,19 @@ enum TaskStatus {
   Done 
 }
 
+enum BudgetStatus { 
+  Initial
+  Added
+  SubTasksAdded
+  ParentTaskAdded
+}
+
 enum ActivityAction { 
-  CREATE 
+  CREATED
   ASSIGNED 
-  DELETE 
-  UPLOAD 
+  DELETED 
+  UPLOADED
+  UNASSIGNED
+  ADDED
+  REMOVED
 }
