@@ -142,6 +142,28 @@ export class TaskService extends BaseService<Task> {
 		return task;
 	}
 
+	async deleteTask(taskId: string): Promise<Task> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		try {
+			//   Step 1: Find all direct sub-tasks of the current task
+			const subTasks = await this.taskModel.findSubTask(taskId);
+
+			// Step 2: Recursively delete each sub-task (bottom-up)
+			if (subTasks && subTasks.length > 0) {
+				for (const subTask of subTasks) {
+					await this.deleteTask(subTask.id);
+				}
+			}
+
+			//   Step 3: Delete the main task after all sub-tasks are deleted
+			await this.taskModel.delete(taskId);
+		} catch (_error) {
+			throw new Error(`Error deleting task with ID ${taskId}:`);
+		}
+		return task;
+	}
+
 	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new Error("Task not found");
@@ -562,5 +584,36 @@ export class TaskService extends BaseService<Task> {
 		});
 		setStatusBudgets();
 		return updateMoney;
+	}
+
+	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
+		const taskList: Task[] = [];
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+
+		let currentTask = task;
+		taskList.push(currentTask);
+		while (currentTask.parentTaskId) {
+			const parentTask = await this.taskModel.findById(
+				currentTask.parentTaskId,
+			);
+			if (!parentTask) break;
+			taskList.push(parentTask);
+			currentTask = parentTask;
+		}
+
+		return taskList.reverse();
+	}
+
+	async getParentTask(taskId: string): Promise<Task | null> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+
+		if (!task.parentTaskId) return null;
+
+		const parentTask = await this.taskModel.findById(task.parentTaskId);
+		if (!parentTask) throw new Error("Parent task not found");
+
+		return parentTask;
 	}
 }

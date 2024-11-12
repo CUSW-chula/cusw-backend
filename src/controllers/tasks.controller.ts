@@ -49,6 +49,26 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return task;
 		},
 	)
+	.delete(
+		"/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const task = await taskService.deleteTask(id);
+				return task;
+			} catch (error) {
+				if (error instanceof Error) {
+					return Response.json(error.message, { status: 400 });
+				}
+				// Handle unexpected errors
+				return Response.json("Internal Server error", { status: 500 });
+			}
+		},
+	)
 	.get(
 		"/title/:id",
 		async ({
@@ -436,6 +456,32 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 	)
 
 	.get(
+		"/parent-recursive/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const parentTask = await taskService.getRecursiveParentTaskList(taskId);
+			return parentTask;
+		},
+	)
+
+	.get(
+		"/parent/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const parentTask = await taskService.getParentTask(taskId);
+			return parentTask;
+		},
+	)
+
+	.get(
 		"/money/:taskId",
 		async ({
 			params: { taskId },
@@ -476,12 +522,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
-				await taskService.addMoney(
+				const addMoney = await taskService.addMoney(
 					body.taskID,
 					body.budget,
 					body.advance,
 					body.expense,
 				);
+				WebSocket.broadcast("addMoney", addMoney);
 				return Response.json("Success", { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {
@@ -507,7 +554,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			const taskService = new TaskService(db, redis);
 			try {
 				await taskService.getTaskById(body.taskID);
-				await taskService.deleteMoney(body.taskID, 0, 0, 0);
+				const deleteMoney = await taskService.deleteMoney(body.taskID, 0, 0, 0);
+				WebSocket.broadcast("deleteMoney", deleteMoney);
 				return Response.json("Success", { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {

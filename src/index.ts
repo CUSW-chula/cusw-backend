@@ -94,6 +94,4 @@ console.info(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
 
-console.info(
-	"Swagger·documentation·available·at·http://localhost:4000/swagger",
-);
+console.info("🦊 API is running at ://localhost:4000/swagger");
