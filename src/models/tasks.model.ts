@@ -66,15 +66,15 @@ export class TasksModel extends BaseModel<Task> {
 			where: { id: taskId },
 			include: { subTasks: true },
 		});
-		
+
 		if (!task) throw new Error("Task not found");
-	
+
 		// Recursively fetch subtasks for each subTask
 		if (task.subTasks && task.subTasks.length > 0) {
 			task.subTasks = await Promise.all(
 				task.subTasks.map(async (subTask) => {
 					return await this.loadNestedSubtasks.call(this, subTask.id);
-				})
+				}),
 			);
 		}
 		return task;
@@ -86,15 +86,16 @@ export class TasksModel extends BaseModel<Task> {
 			where: { projectId, parentTaskId: null },
 			include: { subTasks: true },
 		});
-	
+
 		// Load nested subtasks for each top-level task
 		const tasksWithNestedSubtasks = await Promise.all(
-			topLevelTasks.map(async (task) => await this.loadNestedSubtasks.call(this, task.id))
+			topLevelTasks.map(
+				async (task) => await this.loadNestedSubtasks.call(this, task.id),
+			),
 		);
-	
+
 		return tasksWithNestedSubtasks;
 	}
-
 
 	async findByParentTaskId(parentTaskId: string): Promise<Task[]> {
 		const tasks = await this.getModel().task.findMany({

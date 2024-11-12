@@ -20,5 +20,4 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const project = await projectService.getProjectById(id);
 			return project;
 		},
-	)
-
+	);
