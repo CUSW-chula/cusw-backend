@@ -217,7 +217,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				WebSocket.broadcast("unassigned", unAssignUser);
 				const unassignActivity = await activityService.postActivity(
 					body.taskId,
-					$Enums.ActivityAction.ASSIGNED,
+					$Enums.ActivityAction.UNASSIGNED,
 					"this task from " + unAssignUser.name,
 					body.userId,
 				);

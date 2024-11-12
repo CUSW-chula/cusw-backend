@@ -65,8 +65,8 @@ export class TaskService extends BaseService<Task> {
 
 			//   Step 3: Delete the main task after all sub-tasks are deleted
 			await this.taskModel.delete(taskId);
-		} catch (error) {
-			console.error(`Error deleting task with ID ${taskId}:`, error);
+		} catch (_error) {
+			throw new Error(`Error deleting task with ID ${taskId}:`);
 		}
 		return task;
 	}
