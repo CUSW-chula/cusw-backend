@@ -1,27 +1,27 @@
+# Use a specific version of the Bun image
 FROM oven/bun:1.1.30
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy package.json first for better cache utilization
+# Copy the Prisma schema and other initial files for better caching
 COPY package.json ./
+COPY tsconfig.json ./
+COPY prisma ./prisma
 
-# Install dependencies
+# Install dependencies (will only re-run if package.json or lock files change)
 RUN bun install
 
-# Update package list and install openssl
-RUN apt-get update && apt-get install -y openssl
-
-# Copy prisma schema and push the database schema
-COPY prisma ./prisma
-RUN bun run db:push
+# Generate Prisma client
 RUN bunx prisma generate
 
-# Copy the remaining application files
-COPY tsconfig.json ./
+# Install OpenSSL (required by some libraries)
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+# Copy the rest of the application files
 COPY src ./src
 
-# Uncomment the following line if you have public assets to copy
+# Uncomment if you have public assets to include
 # COPY public ./public
 
 # Expose the application port

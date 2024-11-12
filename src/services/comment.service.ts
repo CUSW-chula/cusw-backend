@@ -17,13 +17,18 @@ export class CommentService extends BaseService<Comment> {
 		this.taskModel = new TasksModel(prisma);
 	}
 
-	async addComment(data: Partial<Comment>): Promise<Comment> {
-		const authorId = data.authorId ?? "";
+	async addComment(data: Partial<Comment>, authorId: string): Promise<Comment> {
 		const isUserExist = await this.userModel.findById(authorId);
 		if (!isUserExist) {
 			throw new Error("User not found");
 		}
-		if (data.content !== null) return await this.commentModel.create(data);
+		if (data.content !== null)
+			return await this.commentModel.create({
+				content: data.content,
+				createdAt: data.createdAt,
+				taskId: data.taskId,
+				authorId: authorId,
+			});
 		throw new Error("Content cann't be null");
 	}
 

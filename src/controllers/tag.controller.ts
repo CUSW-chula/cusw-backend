@@ -1,9 +1,9 @@
-import { Elysia, t } from "elysia";
+import { type Cookie, Elysia, t } from "elysia";
 import { Context } from "../shared/interfaces.shared";
 import { TagService } from "../services/tag.service";
-import { Tag, Task } from "@prisma/client";
-import { TaskService } from "../services/tasks.service";
+import { $Enums, Tag, Task } from "@prisma/client";
 import { WebSocket } from "../shared/utils/websocket.utils";
+import { ActivityService } from "../services/activity-logs.service";
 
 export const TagController = new Elysia({ prefix: "/tags" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -54,18 +54,29 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
 			body: { tagid: string; taskId: string; tagId: string };
+			cookie: { session: Cookie<string> };
 		}) => {
 			//const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
+			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const assignTag = await tagService.assigningTagToTask(
 					body.taskId,
 					body.tagId,
 				);
 				const assignTags = await tagService.getTagById(assignTag.tagId);
-				WebSocket.broadcast("tags", assignTags);
+				WebSocket.broadcast("assigned-tags", assignTags);
+				const tagAddActivity = await activityService.postActivity(
+					body.taskId,
+					$Enums.ActivityAction.ADDED,
+					`a tag name "${assignTags.name}"`,
+					userId,
+				);
+				WebSocket.broadcast("activity", tagAddActivity);
 				return assignTags;
 			} catch (_error) {
 				const error = _error as Error;
@@ -85,15 +96,28 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { taskId: string; tagId: string } }) => {
+			cookie: { session },
+		}: Context & {
+			body: { taskId: string; tagId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const tagService = new TagService(db, redis);
+			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const unAssignTaskTag = await tagService.unAssigningTagToTask(
 					body.taskId,
 					body.tagId,
 				);
 				const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
-				WebSocket.broadcast("unassigned-Tag", unAssignTag);
+				WebSocket.broadcast("unassigned-tag", unAssignTag);
+				const tagUnassignActivity = await activityService.postActivity(
+					body.taskId,
+					$Enums.ActivityAction.REMOVED,
+					`a tag name "${unAssignTag.name}"`,
+					userId,
+				);
+				WebSocket.broadcast("activity", tagUnassignActivity);
 				return unAssignTag;
 			} catch (_error) {
 				const error = _error as Error;

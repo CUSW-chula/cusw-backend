@@ -39,16 +39,6 @@ export class FilesService extends BaseService<File> {
 		return file;
 	}
 
-	private async getPublicFileUrl(filePath: string): Promise<string> {
-		const bucketName = "cusw-workspace";
-		const url = await this.minIoClient.presignedUrl(
-			"GET",
-			bucketName,
-			filePath,
-		);
-		return url;
-	}
-
 	async uploadFileByTaskId(
 		taskId: string,
 		file: Blob,
@@ -74,12 +64,25 @@ export class FilesService extends BaseService<File> {
 			},
 		);
 
-		const fileUrl = await this.getPublicFileUrl(fileKey);
+		const fileUrl = "http://localhost:9000/cusw-workspace/" + fileKey;
+		let filePath = fileUrl;
+
+		// Check if in production and if the URL starts with localhost
+		if (
+			process.env.NODE_ENV === "production" &&
+			fileUrl.startsWith("http://localhost")
+		) {
+			// Replace 'localhost' with your production domain
+			filePath = fileUrl.replace(
+				"http://localhost:9000",
+				"https://cusw-workspace.sa.chula.ac.th",
+			);
+		}
 
 		const savedFile = await this.fileModel.create({
 			taskId: taskId,
 			createdAt: new Date(),
-			filePath: fileUrl,
+			filePath: filePath,
 			fileName: file.name,
 			fileSize: file.size,
 			projectId: projectId,

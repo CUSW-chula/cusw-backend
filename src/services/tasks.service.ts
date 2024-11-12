@@ -1,7 +1,9 @@
 import { TasksModel } from "../models/tasks.model";
 import {
+	$Enums,
 	BudgetStatus,
 	TaskStatus,
+	type EmojiTaskUser,
 	type PrismaClient,
 	type Task,
 	type TaskAssignment,
@@ -11,16 +13,19 @@ import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
+import { EmojiModel } from "../models/emoji.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
 	private readonly userModel: UserModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
+	private readonly emojiModel: EmojiModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
 		this.taskModel = new TasksModel(prisma);
 		this.userModel = new UserModel(prisma);
+		this.emojiModel = new EmojiModel(prisma);
 		this.taskAssignmentModel = new TasksAssignmentModel(prisma);
 	}
 
@@ -35,6 +40,98 @@ export class TaskService extends BaseService<Task> {
 		return tasks;
 	}
 
+	async updateTask(
+		taskId: string,
+		title: string,
+		description: string,
+	): Promise<Task> {
+		// Find and validate the task
+		const existingTask = await this.taskModel.findById(taskId);
+		if (!existingTask) throw new Error("Task not found");
+
+		// Check if user exists based on the task's createdById
+		if (!existingTask.createdById) throw new Error("Task creator ID not found");
+		const isUserExist = await this.userModel.findById(existingTask.createdById);
+		if (!isUserExist) throw new Error("User not found");
+
+		// Prepare the updated task object
+		const updatedTask = {
+			...existingTask,
+			title,
+			description,
+		};
+
+		// Invalidate caches
+		await this.invalidateCache("tasks:all");
+		await this.invalidateCache(`tasks:project:${existingTask.projectId}`);
+		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
+
+		// Update and return the task
+		return await this.taskModel.update(taskId, updatedTask);
+	}
+
+	async createTask(
+		title: string,
+		description: string,
+		projectId: string,
+		parentTaskId: string | null,
+		startDate: Date,
+		endDate: Date,
+		createdById: string,
+		status: $Enums.TaskStatus,
+		expectedBudget: number,
+		realBudget: number,
+		usedBudget: number,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(createdById);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+
+		if (title !== null) {
+			const newTask = {
+				title: title,
+				description: description,
+				createdById: createdById,
+				startDate: startDate,
+				endDate: endDate,
+				status: status,
+				parentTaskId: parentTaskId !== "" ? parentTaskId : undefined,
+				expectedBudget: expectedBudget,
+				usedBudget: usedBudget,
+				realBudget: realBudget,
+				projectId: projectId,
+			};
+			await this.invalidateCache("tasks:all");
+			await this.invalidateCache(`tasks:project:${projectId}`);
+			await this.invalidateCache(`tasks:parent:${parentTaskId}`);
+			return await this.taskModel.create(newTask);
+		}
+		throw new Error("Title cann't be null");
+	}
+
+	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
+		const cacheKey = `tasks:project:${projectIdId}`;
+		const cacheTask = await this.getFromCache(cacheKey);
+		if (cacheTask) return cacheTask as Task[];
+
+		const task = await this.taskModel.findByProjectId(projectIdId);
+		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
+		return task;
+	}
+
+	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
+		const cacheKey = `tasks:parent:${parentTaskId}`;
+		const cacheTask = await this.getFromCache(cacheKey);
+		if (cacheTask) return cacheTask as Task[];
+
+		const task = await this.taskModel.findByParentTaskId(parentTaskId);
+		if (!task) throw new Error("Task not found");
+		await this.setToCache(cacheKey, task);
+		return task;
+	}
+
 	async getTaskById(taskId: string): Promise<Task> {
 		const cacheKey = `tasks:${taskId}`;
 		const cacheTask = await this.getFromCache(cacheKey);
@@ -46,6 +143,110 @@ export class TaskService extends BaseService<Task> {
 		return task;
 	}
 
+	async deleteTask(taskId: string): Promise<Task> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		try {
+			//   Step 1: Find all direct sub-tasks of the current task
+			const subTasks = await this.taskModel.findSubTask(taskId);
+
+			// Step 2: Recursively delete each sub-task (bottom-up)
+			if (subTasks && subTasks.length > 0) {
+				for (const subTask of subTasks) {
+					await this.deleteTask(subTask.id);
+				}
+			}
+
+			//   Step 3: Delete the main task after all sub-tasks are deleted
+			await this.taskModel.delete(taskId);
+		} catch (_error) {
+			throw new Error(`Error deleting task with ID ${taskId}:`);
+		}
+		return task;
+	}
+
+	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return {
+			title: task.title,
+		};
+	}
+
+	async getDescriptionByTaskId(
+		taskId: string,
+	): Promise<{ description: string }> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return {
+			description: task.description,
+		};
+	}
+
+	async updateTitleByTaskId(
+		taskId: string,
+		userId: string,
+		title: string,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
+		if (!taskAssignments || taskAssignments.length === 0)
+			throw new Error("No users assigned to this task");
+
+		const newTitle = {
+			title: title,
+		};
+		const updateTitles = await this.taskModel.update(taskId, newTitle);
+		return updateTitles;
+	}
+
+	async updateDescriptionByTaskId(
+		taskId: string,
+		userId: string,
+		description: string,
+	): Promise<Task> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
+			taskId,
+			userId,
+		);
+
+		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		const newTitle = {
+			description: description,
+		};
+		const updateDescription = await this.taskModel.update(taskId, newTitle);
+
+		return updateDescription;
+	}
+
+	async checkTextUserIdAndByTaskId(
+		taskId: string,
+		userId: string,
+	): Promise<Boolean> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+
+		if (emojis === null) return false;
+		else return true;
+	}
+
 	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {
 		// Check if task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
@@ -54,7 +255,7 @@ export class TaskService extends BaseService<Task> {
 		// Retrieve task assignments
 		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
 		if (!taskAssignments || taskAssignments.length === 0)
-			throw new Error("No users assigned to this task");
+			throw new Error("Did not assigned");
 
 		// Get all users assigned to the task concurrently
 		const usersInTask = await Promise.all(
@@ -112,8 +313,14 @@ export class TaskService extends BaseService<Task> {
 		);
 		return unAssigningTaskToUser;
 	}
-
 	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
+		const cacheKey = `status:${taskId}`;
+		const cacheStatus = await this.getFromCache(cacheKey);
+		if (cacheStatus) {
+			const task = cacheStatus as Task;
+			return task.status;
+		}
+
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 		const taskStatus = isTaskExist.status;
@@ -129,7 +336,85 @@ export class TaskService extends BaseService<Task> {
 		};
 
 		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
+		await this.invalidateCache(`status:${taskId}`);
 		return changedStatusTask;
+	}
+	async addEmojiOnTask(
+		emoji: string,
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new Error("User not found");
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
+			taskId,
+			userId,
+		);
+
+		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		const addEmojiOnTask = await this.emojiModel.create({
+			emoji: emoji,
+			taskId: taskId,
+			userId: userId,
+		});
+
+		return addEmojiOnTask;
+	}
+	async getAllEmojiByTaskId(taskId: string): Promise<EmojiTaskUser[]> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojiOnTasks = await this.emojiModel.findAllByTaskId(taskId);
+		if (!emojiOnTasks || emojiOnTasks.length === 0)
+			throw new Error("No emoji add to this task");
+		return emojiOnTasks;
+	}
+
+	async updateEmojiByTaskId(
+		newEmoji: string,
+		userId: string,
+		taskId: string,
+	): Promise<EmojiTaskUser> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+		if (!emojis) throw new Error("emoji not found");
+
+		if (userId !== emojis.userId) throw new Error("This is not your emoji");
+
+		const newEmojis = {
+			emoji: newEmoji,
+			taskId: emojis.taskId,
+			userId: emojis.userId,
+		};
+		const updatedEmoji = await this.emojiModel.update(emojis.id, newEmojis);
+		return updatedEmoji;
+	}
+
+	async checkEmojiUserIdAndByTaskId(
+		taskId: string,
+		userId: string,
+	): Promise<Boolean> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) {
+			throw new Error("User not found");
+		}
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const emojis = await this.emojiModel.findByUserIdAndTaskId(userId, taskId);
+
+		if (emojis === null) return false;
+		else return true;
 	}
 
 	async getMoney(taskId: string): Promise<number[]> {
@@ -326,5 +611,36 @@ export class TaskService extends BaseService<Task> {
 		});
 		setStatusBudgets();
 		return updateMoney;
+	}
+
+	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
+		const taskList: Task[] = [];
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+
+		let currentTask = task;
+		taskList.push(currentTask);
+		while (currentTask.parentTaskId) {
+			const parentTask = await this.taskModel.findById(
+				currentTask.parentTaskId,
+			);
+			if (!parentTask) break;
+			taskList.push(parentTask);
+			currentTask = parentTask;
+		}
+
+		return taskList.reverse();
+	}
+
+	async getParentTask(taskId: string): Promise<Task | null> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+
+		if (!task.parentTaskId) return null;
+
+		const parentTask = await this.taskModel.findById(task.parentTaskId);
+		if (!parentTask) throw new Error("Parent task not found");
+
+		return parentTask;
 	}
 }
