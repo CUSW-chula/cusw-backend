@@ -142,6 +142,28 @@ export class TaskService extends BaseService<Task> {
 		return task;
 	}
 
+	async deleteTask(taskId: string): Promise<Task> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		try {
+			//   Step 1: Find all direct sub-tasks of the current task
+			const subTasks = await this.taskModel.findSubTask(taskId);
+
+			// Step 2: Recursively delete each sub-task (bottom-up)
+			if (subTasks && subTasks.length > 0) {
+				for (const subTask of subTasks) {
+					await this.deleteTask(subTask.id);
+				}
+			}
+
+			//   Step 3: Delete the main task after all sub-tasks are deleted
+			await this.taskModel.delete(taskId);
+		} catch (_error) {
+			throw new Error(`Error deleting task with ID ${taskId}:`);
+		}
+		return task;
+	}
+
 	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new Error("Task not found");
