@@ -46,5 +46,8 @@
     }
   },
   "module": "src/index.js",
-  "type": "module"
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
