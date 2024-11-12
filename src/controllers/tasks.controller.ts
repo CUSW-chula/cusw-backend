@@ -14,7 +14,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 	})
 
 	.get(
-		"/parent/:parentid",
+		"/child/:parentid",
 		async ({
 			params: { parentid },
 			db,
