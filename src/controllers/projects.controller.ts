@@ -32,4 +32,4 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const task = await taskService.getTaskByProjectId(id);
 			return task;
 		},
-	)
+	);
