@@ -124,11 +124,11 @@ export class TaskService extends BaseService<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 
-		const newTask = {
+		const newStatus = {
 			status: newTaskStatus,
 		};
 
-		const changedStatusTask = await this.taskModel.update(taskId, newTask);
+		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
 		return changedStatusTask;
 	}
 

@@ -99,7 +99,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		},
 	)
 	.get(
-		"/getstatus/:taskId",
+		"/status/:taskId",
 		async ({
 			params: { taskId },
 			db,
@@ -111,7 +111,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		},
 	)
 	.patch(
-		"/",
+		"/changedStatus",
 		async ({
 			body,
 			db,
@@ -123,8 +123,11 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					body.newTaskStatus,
 				);
-				WebSocket.broadcast("status-edit", changedStatusTask);
-				return Response.json("Task status change successfull", { status: 200 });
+				WebSocket.broadcast("status-changed", changedStatusTask);
+				return Response.json(
+					`task status changed to ${changedStatusTask.status}`,
+					{ status: 200 },
+				);
 			} catch (error) {
 				return Response.json(error, { status: 500 });
 			}
