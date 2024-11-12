@@ -323,6 +323,7 @@ export class TaskService extends BaseService<Task> {
 
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
+		await this.setToCache(cacheKey, isTaskExist);
 		const taskStatus = isTaskExist.status;
 		return taskStatus;
 	}
