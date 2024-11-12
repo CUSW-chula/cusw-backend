@@ -373,12 +373,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}) => {
 			const taskService = new TaskService(db, redis);
 			try {
-				await taskService.addMoney(
+				const addMoney = await taskService.addMoney(
 					body.taskID,
 					body.budget,
 					body.advance,
 					body.expense,
 				);
+				WebSocket.broadcast("addMoney", addMoney);
 				return Response.json("Success", { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {
@@ -404,7 +405,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			const taskService = new TaskService(db, redis);
 			try {
 				await taskService.getTaskById(body.taskID);
-				await taskService.deleteMoney(body.taskID, 0, 0, 0);
+				const deleteMoney = await taskService.deleteMoney(body.taskID, 0, 0, 0);
+				WebSocket.broadcast("deleteMoney", deleteMoney);
 				return Response.json("Success", { status: 200 });
 			} catch (error) {
 				if (error instanceof Error) {
