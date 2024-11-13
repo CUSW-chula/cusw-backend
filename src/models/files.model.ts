@@ -21,6 +21,13 @@ export class FilesModel extends BaseModel<File> {
 		return file;
 	}
 
+	async deleteByTaskId(taskId: string): Promise<number> {
+		const file = await this.getModel().file.deleteMany({
+			where: { taskId: taskId },
+		});
+		return file.count;
+	}
+
 	async create(data: Partial<File>): Promise<File> {
 		const createFile = await this.getModel().file.create({
 			data: {

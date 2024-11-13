@@ -62,4 +62,11 @@ export class EmojiModel extends BaseModel<EmojiTaskUser> {
 		});
 		return deletedEmoji;
 	}
+
+	async deleteByTaskId(taskId: string): Promise<number> {
+		const deletedEmoji = await this.getModel().emojiTaskUser.deleteMany({
+			where: { taskId: taskId },
+		});
+		return deletedEmoji.count;
+	}
 }

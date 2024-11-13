@@ -45,6 +45,13 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		return deletedActivity;
 	}
 
+	async deleteByTaskId(taskId: string): Promise<number> {
+		const deletedActivity = await this.getModel().activity.deleteMany({
+			where: { taskId: taskId },
+		});
+		return deletedActivity.count;
+	}
+
 	async findAll(): Promise<PrismaActivity[]> {
 		const activities = await this.getModel().activity.findMany();
 		return activities;

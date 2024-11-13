@@ -58,4 +58,12 @@ export class CommentModel extends BaseModel<PrismaComment> {
 		});
 		return deletedComment;
 	}
+	async deleteByTaskId(taskId: string): Promise<number> {
+		const deleteComment = await this.getModel().comment.deleteMany({
+			where: {
+				taskId: taskId,
+			},
+		});
+		return deleteComment.count;
+	}
 }

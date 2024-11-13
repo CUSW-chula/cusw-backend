@@ -41,6 +41,13 @@ export class TaskTagModel extends BaseModel<TaskTag> {
 		return deletedTaskTag;
 	}
 
+	async deleteByTaskId(taskId: string): Promise<number> {
+		const deletedTaskTag = await this.getModel().taskTag.deleteMany({
+			where: { taskId: taskId },
+		});
+		return deletedTaskTag.count;
+	}
+
 	async findByTagId(id: string): Promise<TaskTag[] | null> {
 		const taskTags = await this.getModel().taskTag.findMany({
 			where: { tagId: id },

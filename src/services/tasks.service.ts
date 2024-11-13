@@ -14,12 +14,20 @@ import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { EmojiModel } from "../models/emoji.model";
+import { TaskTagModel } from "../models/task-tag.model";
+import { FilesModel } from "../models/files.model";
+import { ActivityLogsModel } from "../models/activity-logs.model";
+import { CommentModel } from "../models/comment.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
 	private readonly userModel: UserModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
 	private readonly emojiModel: EmojiModel;
+	private readonly taskTagModel: TaskTagModel;
+	private readonly fileModel: FilesModel;
+	private readonly activitiesLogsModel: ActivityLogsModel;
+	private readonly commentModel: CommentModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
@@ -27,6 +35,10 @@ export class TaskService extends BaseService<Task> {
 		this.userModel = new UserModel(prisma);
 		this.emojiModel = new EmojiModel(prisma);
 		this.taskAssignmentModel = new TasksAssignmentModel(prisma);
+		this.taskTagModel = new TaskTagModel(prisma);
+		this.fileModel = new FilesModel(prisma);
+		this.activitiesLogsModel = new ActivityLogsModel(prisma);
+		this.commentModel = new CommentModel(prisma);
 	}
 
 	async getAllTask(): Promise<Task[]> {
@@ -144,6 +156,7 @@ export class TaskService extends BaseService<Task> {
 	}
 
 	async deleteTask(taskId: string): Promise<Task> {
+		const cacheKey = `tasks:${taskId}`;
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new Error("Task not found");
 		try {
@@ -158,10 +171,18 @@ export class TaskService extends BaseService<Task> {
 			}
 
 			//   Step 3: Delete the main task after all sub-tasks are deleted
+			await this.taskAssignmentModel.deleteByTaskId(taskId);
+			await this.taskTagModel.deleteByTaskId(taskId);
+			await this.emojiModel.deleteByTaskId(taskId);
+			await this.fileModel.deleteByTaskId(taskId);
+			await this.activitiesLogsModel.deleteByTaskId(taskId);
+			await this.commentModel.deleteByTaskId(taskId);
 			await this.taskModel.delete(taskId);
+			await this.invalidateCache(cacheKey);
 		} catch (_error) {
 			throw new Error(`Error deleting task with ID ${taskId}:`);
 		}
+		await this.invalidateCache("task:all");
 		return task;
 	}
 
