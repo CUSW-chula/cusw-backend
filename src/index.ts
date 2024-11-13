@@ -5,13 +5,13 @@ import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
 import { ProjectController } from "./controllers/projects.controller";
-import { CommentController } from "./controllers/comment.controllers";
+import { CommentController } from "./controllers/comment.controller";
 import cors from "@elysiajs/cors";
 import { TaskController } from "./controllers/tasks.controller";
 import { TagController } from "./controllers/tag.controller";
 import { FileController } from "./controllers/files.controller";
 import jwt from "@elysiajs/jwt";
-import { ActivityController } from "./controllers/activity-logs.controllers";
+import { ActivityController } from "./controllers/activity-logs.controller";
 
 const prisma = new PrismaClient();
 const redis = new Redis();

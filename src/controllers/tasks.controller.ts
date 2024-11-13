@@ -284,10 +284,15 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { taskId: string; userId: string } }) => {
+			cookie: { session },
+		}: Context & {
+			body: { taskId: string; userId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const taskService = new TaskService(db, redis);
 			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const assignTask = await taskService.assigningTaskToUser(
 					body.taskId,
@@ -302,7 +307,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					$Enums.ActivityAction.ASSIGNED,
 					"this task to " + usersAssign.name,
-					body.userId,
+					userId,
 				);
 				WebSocket.broadcast("activity", assignActivity);
 				return assignTask;
@@ -324,10 +329,15 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { taskId: string; userId: string } }) => {
+			cookie: { session },
+		}: Context & {
+			body: { taskId: string; userId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const taskService = new TaskService(db, redis);
 			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const unAssignTask = await taskService.unAssigningTaskToUser(
 					body.taskId,
@@ -342,7 +352,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					$Enums.ActivityAction.UNASSIGNED,
 					"this task from " + unAssignUser.name,
-					body.userId,
+					userId,
 				);
 				WebSocket.broadcast("activity", unassignActivity);
 				return unAssignTask;
