@@ -216,9 +216,8 @@ export class TaskService extends BaseService<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 
-		const taskAssignments = await this.taskAssignmentModel.findByTaskId(taskId);
-		if (!taskAssignments || taskAssignments.length === 0)
-			throw new Error("No users assigned to this task");
+		if (isTaskExist.createdById !== userId)
+			throw new Error("You dont have permission to edit");
 
 		const newTitle = {
 			title: title,
@@ -243,7 +242,7 @@ export class TaskService extends BaseService<Task> {
 			userId,
 		);
 
-		if (!taskAssignment) throw new Error("Unexpected error User not found");
+		if (!taskAssignment && isTaskExist.createdById !== userId) throw new Error("Unexpected error User not found");
 		const newTitle = {
 			description: description,
 		};
