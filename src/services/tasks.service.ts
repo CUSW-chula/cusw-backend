@@ -116,6 +116,7 @@ export class TaskService extends BaseService<Task> {
 			};
 			await this.invalidateCache("tasks:all");
 			await this.invalidateCache(`tasks:project:${projectId}`);
+			await this.invalidateCache(`projects:${projectId}`);
 			await this.invalidateCache(`tasks:parent:${parentTaskId}`);
 			return await this.taskModel.create(newTask);
 		}

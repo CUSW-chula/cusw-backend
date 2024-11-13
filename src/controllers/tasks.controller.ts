@@ -240,6 +240,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
+			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			try {
 				const task = await taskService.createTask(
@@ -256,7 +257,13 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.usedBudget,
 				);
 				WebSocket.broadcast("task", task);
-
+				const createTaskActivity = await activityService.postActivity(
+					task.id,
+					$Enums.ActivityAction.CREATED,
+					"this task",
+					userId,
+				);
+				WebSocket.broadcast("activity", createTaskActivity);
 				return Response.json(task, { status: 200 });
 			} catch (_error) {
 				const error = _error as Error;
@@ -386,14 +393,27 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body,
 			db,
 			redis,
-		}: Context & { body: { taskId: string; newTaskStatus: TaskStatus } }) => {
+			cookie: { session },
+		}: Context & {
+			body: { taskId: string; newTaskStatus: TaskStatus };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const taskService = new TaskService(db, redis);
+			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			try {
 				const changedStatusTask = await taskService.changeStatus(
 					body.taskId,
 					body.newTaskStatus,
 				);
 				WebSocket.broadcast("status-changed", changedStatusTask);
+				const assignActivity = await activityService.postActivity(
+					body.taskId,
+					$Enums.ActivityAction.ADDED,
+					"this task to " + changedStatusTask.status.toLowerCase(),
+					userId,
+				);
+				WebSocket.broadcast("activity", assignActivity);
 				return Response.json(
 					`task status changed to ${changedStatusTask.status}`,
 					{ status: 200 },
