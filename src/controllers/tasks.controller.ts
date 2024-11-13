@@ -333,6 +333,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 					body.taskId,
 					body.userId,
 				);
+				console.info("Unassign Task: ", unAssignTask);
 				const unAssignUser = await userService.getUserById(unAssignTask.userId);
 				if (!unAssignUser) {
 					throw new Error("User not found");
