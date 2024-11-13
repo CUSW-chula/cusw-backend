@@ -242,7 +242,8 @@ export class TaskService extends BaseService<Task> {
 			userId,
 		);
 
-		if (!taskAssignment && isTaskExist.createdById !== userId) throw new Error("Unexpected error User not found");
+		if (!taskAssignment && isTaskExist.createdById !== userId)
+			throw new Error("Unexpected error User not found");
 		const newTitle = {
 			description: description,
 		};
