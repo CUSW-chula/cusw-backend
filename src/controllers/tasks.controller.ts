@@ -2,7 +2,7 @@ import { type Cookie, Elysia, t } from "elysia";
 import { type Context } from "../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
+import { TaskStatus, EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 import { ActivityService } from "../services/activity-logs.service";
 
@@ -354,7 +354,48 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				taskId: t.String(),
-				userId: t.String(),
+				emoji: t.String(),
+			}),
+		},
+	)
+	.get(
+		"/status/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const taskStatus = await taskService.getStatusByTaskId(taskId);
+			return Response.json(taskStatus);
+		},
+	)
+	.patch(
+		"/status",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & { body: { taskId: string; newTaskStatus: TaskStatus } }) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const changedStatusTask = await taskService.changeStatus(
+					body.taskId,
+					body.newTaskStatus,
+				);
+				WebSocket.broadcast("status-changed", changedStatusTask);
+				return Response.json(
+					`task status changed to ${changedStatusTask.status}`,
+					{ status: 200 },
+				);
+			} catch (error) {
+				return Response.json(error, { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskId: t.String(),
+				newTaskStatus: t.String(),
 			}),
 		},
 	)
@@ -480,7 +521,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return parentTask;
 		},
 	)
-
 	.get(
 		"/money/:taskId",
 		async ({

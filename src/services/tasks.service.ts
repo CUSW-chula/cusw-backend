@@ -2,6 +2,7 @@ import { TasksModel } from "../models/tasks.model";
 import {
 	$Enums,
 	BudgetStatus,
+	TaskStatus,
 	type EmojiTaskUser,
 	type PrismaClient,
 	type Task,
@@ -311,6 +312,33 @@ export class TaskService extends BaseService<Task> {
 			taskAssignment.id,
 		);
 		return unAssigningTaskToUser;
+	}
+	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
+		const cacheKey = `status:${taskId}`;
+		const cacheStatus = await this.getFromCache(cacheKey);
+		if (cacheStatus) {
+			const task = cacheStatus as Task;
+			return task.status;
+		}
+
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+		await this.setToCache(cacheKey, isTaskExist);
+		const taskStatus = isTaskExist.status;
+		return taskStatus;
+	}
+
+	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new Error("Task not found");
+
+		const newStatus = {
+			status: newTaskStatus,
+		};
+
+		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
+		await this.invalidateCache(`status:${taskId}`);
+		return changedStatusTask;
 	}
 	async addEmojiOnTask(
 		emoji: string,
