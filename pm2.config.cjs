@@ -6,5 +6,4 @@ module.exports = {
     // biome-ignore lint/style/useNamingConvention: <explanation>
     NODE_ENV: "production",
   },
-  interpreter: "none", // Allows PM2 to directly execute Bun
 };
