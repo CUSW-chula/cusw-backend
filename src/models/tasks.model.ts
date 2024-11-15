@@ -107,6 +107,12 @@ export class TasksModel extends BaseModel<Task> {
 				subTasks: true,
 			},
 		});
-		return tasks;
+
+		const tasksWithNestedSubtasks = await Promise.all(
+			tasks.map(
+				async (task) => await this.loadNestedSubtasks.call(this, task.id),
+			),
+		);
+		return tasksWithNestedSubtasks;
 	}
 }
