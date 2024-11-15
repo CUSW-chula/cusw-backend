@@ -18,6 +18,7 @@ import { TaskTagModel } from "../models/task-tag.model";
 import { FilesModel } from "../models/files.model";
 import { ActivityLogsModel } from "../models/activity-logs.model";
 import { CommentModel } from "../models/comment.model";
+import { ProjectModel } from "../models/projects.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
@@ -183,7 +184,8 @@ export class TaskService extends BaseService<Task> {
 		} catch (_error) {
 			throw new Error(`Error deleting task with ID ${taskId}:`);
 		}
-		await this.invalidateCache("task:all");
+		const projectId = task.projectId;
+		await this.invalidateCache(`tasks:project:${projectId}`);
 		return task;
 	}
 
