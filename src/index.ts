@@ -14,7 +14,10 @@ import jwt from "@elysiajs/jwt";
 import { ActivityController } from "./controllers/activity-logs.controller";
 
 const prisma = new PrismaClient();
-const redis = new Redis();
+const redis = new Redis({
+	host: "localhost",
+	port: 6379,
+});
 const minioClient = new Minio.Client({
 	endPoint: "localhost",
 	port: 9000,
