@@ -84,7 +84,7 @@ export class TasksModel extends BaseModel<Task> {
 	async findByProjectId(projectId: string): Promise<Task[]> {
 		// Retrieve only top-level tasks (those without a parentId)
 		const topLevelTasks = await this.getModel().task.findMany({
-			where: { projectId, parentTaskId: null },
+			where: { projectId: projectId, parentTaskId: null },
 			include: { subTasks: true },
 		});
 
