@@ -307,7 +307,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				const usersAssign = await userService.getUserById(assignTask.userId);
 				if (!usersAssign) {
-					throw new Error("User not found");
+					return Response.json({ error: "User not found" }, { status: 400 });
 				}
 				WebSocket.broadcast("assigned", usersAssign);
 				const assignActivity = await activityService.postActivity(
@@ -352,7 +352,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				);
 				const unAssignUser = await userService.getUserById(unAssignTask.userId);
 				if (!unAssignUser) {
-					throw new Error("User y not found");
+					return Response.json({ error: "User not found" }, { status: 400 });
 				}
 				WebSocket.broadcast("unassigned", unAssignUser);
 				const unassignActivity = await activityService.postActivity(

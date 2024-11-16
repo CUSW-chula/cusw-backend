@@ -374,37 +374,45 @@ export class TaskService extends BaseService<Task> {
 		if (!isTaskExist) throw new Error("Task not found");
 
 		const newStatus = { status: newTaskStatus };
-		console.info("New task status:", newTaskStatus);
 
 		const subTasks = await this.taskModel.findSubTask(taskId);
 
 		if (subTasks && subTasks.length > 0) {
-			console.info(
-				"Sub-task statuses:",
-				subTasks.map((task) => task.status),
-			);
+			const getStatusValue = (status: String) => {
+				let value = 5;
+				if (status === "Unassigned") value = 0;
+				if (status === "Assigned") value = 1;
+				if (status === "UnderReview") value = 2;
+				if (status === "InRecheck") value = 3;
+				if (status === "Done") value = 4;
+				return value;
+			};
+			let lowestSubTaskStatusValue = getStatusValue(subTasks[0].status);
 
-			let lowestSubTaskStatus = subTasks[0].status;
 			for (const subTask of subTasks) {
-				if (subTask.status < lowestSubTaskStatus)
-					lowestSubTaskStatus = subTask.status;
+				const subTasksStatusValue = getStatusValue(subTask.status);
+				if (subTasksStatusValue < lowestSubTaskStatusValue)
+					lowestSubTaskStatusValue = subTasksStatusValue;
 			}
-			console.info("Lowest sub-task status:", lowestSubTaskStatus);
-
-			console.info(
-				"compare",
-				newTaskStatus,
-				"is more than",
-				lowestSubTaskStatus,
-				newTaskStatus > lowestSubTaskStatus,
-			);
-			if (newTaskStatus > lowestSubTaskStatus)
+			if (getStatusValue(newTaskStatus) > lowestSubTaskStatusValue)
 				throw new Error(
 					"Cannot change status: Parent task status cannot exceed sub-task statuses.",
 				);
 		}
 
 		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
+
+		if (newTaskStatus === "Done") {
+			const parentTask = await this.taskModel.findParentTask(taskId);
+			if (!parentTask) throw new Error("parent Task not found");
+			const friendTask = await this.taskModel.findSubTask(parentTask.id);
+			if (!friendTask) throw new Error("friend Task not found");
+			let isAllDone = true;
+			for (const task of friendTask) {
+				if (task.status !== "Done") isAllDone = false;
+			}
+			if (isAllDone) this.taskModel.update(parentTask.id, newStatus);
+		}
 		await this.invalidateCache(`status:${taskId}`);
 		return changedStatusTask;
 	}
