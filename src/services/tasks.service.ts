@@ -402,14 +402,14 @@ export class TaskService extends BaseService<Task> {
 
 		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
 
-		if (newTaskStatus === "Done") {
-			const parentTask = await this.taskModel.findParentTask(taskId);
-			if (!parentTask) throw new Error("parent Task not found");
+		const parentTask = await this.taskModel.findParentTask(taskId);
+		if (parentTask && newTaskStatus === "Done") {
 			const friendTask = await this.taskModel.findSubTask(parentTask.id);
-			if (!friendTask) throw new Error("friend Task not found");
 			let isAllDone = true;
-			for (const task of friendTask) {
-				if (task.status !== "Done") isAllDone = false;
+			if (friendTask) {
+				for (const task of friendTask) {
+					if (task.status !== "Done") isAllDone = false;
+				}
 			}
 			if (isAllDone) this.taskModel.update(parentTask.id, newStatus);
 		}
