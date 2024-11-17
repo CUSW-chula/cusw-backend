@@ -24,6 +24,18 @@ export class TasksModel extends BaseModel<Task> {
 		if (tasks) return tasks.subTasks;
 		return null;
 	}
+	async findParentTask(id: string): Promise<Task | null> {
+		const tasks = await this.getModel().task.findUnique({
+			where: {
+				id: id,
+			},
+			include: {
+				parentTask: true,
+			},
+		});
+		if (tasks) return tasks.parentTask;
+		return null;
+	}
 
 	async create(data: Partial<Task>): Promise<Task> {
 		const createdProject = await this.getModel().task.create({
