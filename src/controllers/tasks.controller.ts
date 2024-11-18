@@ -5,6 +5,7 @@ import { WebSocket } from "../shared/utils/websocket.utils";
 import { EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 import { ActivityService } from "../services/activity-logs.service";
+import { NullLiteral } from "typescript";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -568,6 +569,58 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				taskID: t.String(),
+			}),
+		},
+	)
+
+	.get(
+		"/date/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const date = await taskService.getDate(taskId);
+			return date;
+		},
+	)
+
+	.patch(
+		"/date",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskID: string;
+				startDate: Date | null;
+				endDate: Date | null;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const updateDate = await taskService.updateDate(
+					body.taskID,
+					body.startDate,
+					body.endDate,
+				);
+				WebSocket.broadcast("date", updateDate);
+				return Response.json("Success", { status: 200 });
+			} catch (error) {
+				if (error instanceof Error) {
+					return Response.json(error.message, { status: 400 });
+				}
+				// Handle unexpected errors
+				return Response.json("Internal server error", { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskID: t.String(),
+				startDate: t.Date(),
+				endDate: t.Date(),
 			}),
 		},
 	);
