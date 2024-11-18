@@ -304,6 +304,16 @@ export class TaskService extends BaseService<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 
+		const isTaskHasBeenAssigned =
+			await this.taskAssignmentModel.findByTaskId(taskId);
+		if (
+			isTaskHasBeenAssigned?.length === 0 &&
+			isTaskExist.status === "Unassigned"
+		)
+			await this.taskModel.update(taskId, {
+				status: "Assigned",
+			});
+
 		// Assigning userTaskAssignment
 		const assignTaskToUser = await this.taskAssignmentModel.create({
 			taskId: taskId,
@@ -334,6 +344,15 @@ export class TaskService extends BaseService<Task> {
 		const unAssigningTaskToUser = await this.taskAssignmentModel.delete(
 			taskAssignment.id,
 		);
+		const isTaskHasBeenAssigned =
+			await this.taskAssignmentModel.findByTaskId(taskId);
+		if (
+			isTaskHasBeenAssigned?.length === 0 &&
+			isTaskExist.status === "Assigned"
+		)
+			this.taskModel.update(taskId, {
+				status: "Unassigned",
+			});
 		return unAssigningTaskToUser;
 	}
 	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
@@ -355,14 +374,50 @@ export class TaskService extends BaseService<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new Error("Task not found");
 
-		const newStatus = {
-			status: newTaskStatus,
-		};
+		const newStatus = { status: newTaskStatus };
+
+		const subTasks = await this.taskModel.findSubTask(taskId);
+
+		if (subTasks && subTasks.length > 0) {
+			const getStatusValue = (status: String) => {
+				let value = 5;
+				if (status === "Unassigned") value = 0;
+				if (status === "Assigned") value = 1;
+				if (status === "UnderReview") value = 2;
+				if (status === "InRecheck") value = 3;
+				if (status === "Done") value = 4;
+				return value;
+			};
+			let lowestSubTaskStatusValue = getStatusValue(subTasks[0].status);
+
+			for (const subTask of subTasks) {
+				const subTasksStatusValue = getStatusValue(subTask.status);
+				if (subTasksStatusValue < lowestSubTaskStatusValue)
+					lowestSubTaskStatusValue = subTasksStatusValue;
+			}
+			if (getStatusValue(newTaskStatus) > lowestSubTaskStatusValue)
+				throw new Error(
+					"Cannot change status: Parent task status cannot exceed sub-task statuses.",
+				);
+		}
 
 		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
+
+		const parentTask = await this.taskModel.findParentTask(taskId);
+		if (parentTask && newTaskStatus === "Done") {
+			const friendTask = await this.taskModel.findSubTask(parentTask.id);
+			let isAllDone = true;
+			if (friendTask) {
+				for (const task of friendTask) {
+					if (task.status !== "Done") isAllDone = false;
+				}
+			}
+			if (isAllDone) this.taskModel.update(parentTask.id, newStatus);
+		}
 		await this.invalidateCache(`status:${taskId}`);
 		return changedStatusTask;
 	}
+
 	async addEmojiOnTask(
 		emoji: string,
 		userId: string,
