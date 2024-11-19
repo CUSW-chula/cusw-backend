@@ -296,6 +296,7 @@ export class TaskService extends BaseService<Task> {
 		taskId: string,
 		userId: string,
 	): Promise<TaskAssignment> {
+		const cacheKey = `status:${taskId}`;
 		// First step check if user exists
 		const isUserExist = await this.userModel.findById(userId);
 		if (!isUserExist) throw new Error("User not found");
@@ -319,6 +320,7 @@ export class TaskService extends BaseService<Task> {
 			taskId: taskId,
 			userId: userId,
 		});
+		await this.invalidateCache(cacheKey);
 		return assignTaskToUser;
 	}
 
