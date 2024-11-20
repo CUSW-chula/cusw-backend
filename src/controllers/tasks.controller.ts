@@ -640,4 +640,56 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				taskID: t.String(),
 			}),
 		},
+	)
+
+	.get(
+		"/date/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const date = await taskService.getDate(taskId);
+			return date;
+		},
+	)
+
+	.patch(
+		"/date",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				taskID: string;
+				startDate: Date | null;
+				endDate: Date | null;
+			};
+		}) => {
+			const taskService = new TaskService(db, redis);
+			try {
+				const updateDate = await taskService.updateDate(
+					body.taskID,
+					body.startDate,
+					body.endDate,
+				);
+				WebSocket.broadcast("date", updateDate);
+				return Response.json("Success", { status: 200 });
+			} catch (error) {
+				if (error instanceof Error) {
+					return Response.json(error.message, { status: 400 });
+				}
+				// Handle unexpected errors
+				return Response.json("Internal server error", { status: 500 });
+			}
+		},
+		{
+			body: t.Object({
+				taskID: t.String(),
+				startDate: t.Date(),
+				endDate: t.Date(),
+			}),
+		},
 	);

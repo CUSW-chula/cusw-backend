@@ -45,6 +45,5 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "module": "src/index.js",
-  "type": "module"
+  "module": "src/index.js"
 }

@@ -724,4 +724,29 @@ export class TaskService extends BaseService<Task> {
 
 		return parentTask;
 	}
+
+	async getDate(taskId: string): Promise<(Date | null)[]> {
+		const task = await this.taskModel.findById(taskId);
+		if (!task) throw new Error("Task not found");
+		return [task.startDate, task.endDate];
+	}
+
+	async updateDate(
+		taskID: string,
+		startDate: Date | null,
+		endDate: Date | null,
+	): Promise<Task> {
+		const task = await this.taskModel.findById(taskID);
+
+		//First step check if task isn't exist
+		if (!task) throw new Error("Task not found");
+
+		//Second step update date that assign in.
+		const updateDate = await this.taskModel.update(taskID, {
+			startDate: startDate,
+			endDate: endDate,
+		});
+
+		return updateDate;
+	}
 }
