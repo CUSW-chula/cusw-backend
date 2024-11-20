@@ -688,8 +688,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		{
 			body: t.Object({
 				taskID: t.String(),
-				startDate: t.Date(),
-				endDate: t.Date(),
+				startDate: t.Union([t.Date(), t.Null()]),
+				endDate: t.Union([t.Date(), t.Null()]),
 			}),
 		},
 	);
