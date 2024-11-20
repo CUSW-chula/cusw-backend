@@ -13,7 +13,6 @@ import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { EmojiModel } from "../models/emoji.model";
-import { isStringLiteral, NullLiteral } from "typescript";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;

@@ -5,7 +5,6 @@ import { WebSocket } from "../shared/utils/websocket.utils";
 import { EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 import { ActivityService } from "../services/activity-logs.service";
-import { NullLiteral } from "typescript";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
 	.get("/", async ({ db, redis }: Context) => {
