@@ -5,6 +5,9 @@ import { WebSocket } from "../shared/utils/websocket.utils";
 import { TaskStatus, EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
 import { UserService } from "../services/users.service";
 import { ActivityService } from "../services/activity-logs.service";
+import { EmojiClassService } from "../services/tasks/emoji.tasks.service";
+import { MoneyClassService } from "../services/tasks/money.tasks.service";
+import { UserTaskClassService } from "../services/tasks/user.tasks.service";
 
 export const TaskController = new Elysia({ prefix: "/tasks" })
 	.get("/", async ({ db, redis }: Context) => {
@@ -174,9 +177,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			db,
 			redis,
 		}: Context & { params: { taskId: string } }) => {
-			const taskService = new TaskService(db, redis);
+			const userTaskClassService = new UserTaskClassService(db, redis);
 			const users: User[] =
-				await taskService.getAsignUserInTaskByTaskId(taskId);
+				await userTaskClassService.getAsignUserInTaskByTaskId(taskId);
 			return users;
 		},
 	)
@@ -296,12 +299,12 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: { taskId: string; userId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
-			const taskService = new TaskService(db, redis);
+			const userTaskClassService = new UserTaskClassService(db, redis);
 			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			try {
-				const assignTask = await taskService.assigningTaskToUser(
+				const assignTask = await userTaskClassService.assigningTaskToUser(
 					body.taskId,
 					body.userId,
 				);
@@ -341,12 +344,12 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: { taskId: string; userId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
-			const taskService = new TaskService(db, redis);
+			const userTaskClassService = new UserTaskClassService(db, redis);
 			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			try {
-				const unAssignTask = await taskService.unAssigningTaskToUser(
+				const unAssignTask = await userTaskClassService.unAssigningTaskToUser(
 					body.taskId,
 					body.userId,
 				);
@@ -440,10 +443,10 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: { taskId: string; emoji: string };
 			cookie: { session: Cookie<string> };
 		}) => {
-			const taskService = new TaskService(db, redis);
+			const emojiClassService = new EmojiClassService(db, redis);
 			const userId = session.value;
 			try {
-				const newEmoji = await taskService.addEmojiOnTask(
+				const newEmoji = await emojiClassService.addEmojiOnTask(
 					body.emoji,
 					userId,
 					body.taskId,
@@ -469,9 +472,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			db,
 			redis,
 		}: Context & { params: { taskId: string } }) => {
-			const taskService = new TaskService(db, redis);
+			const emojiClassService = new EmojiClassService(db, redis);
 			const emoji: EmojiTaskUser[] =
-				await taskService.getAllEmojiByTaskId(taskId);
+				await emojiClassService.getAllEmojiByTaskId(taskId);
 			return emoji;
 		},
 	)
@@ -483,11 +486,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			db,
 			redis,
 		}: Context & { params: { taskId: string; userId: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const check: Boolean = await taskService.checkEmojiUserIdAndByTaskId(
-				taskId,
-				userId,
-			);
+			const emojiClassService = new EmojiClassService(db, redis);
+			const check: Boolean =
+				await emojiClassService.checkEmojiUserIdAndByTaskId(taskId, userId);
 			return Response.json(check);
 		},
 	)
@@ -503,10 +504,10 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: EmojiTaskUser;
 			cookie: { session: Cookie<string> };
 		}) => {
-			const taskService = new TaskService(db, redis);
+			const emojiClassService = new EmojiClassService(db, redis);
 			const userId = session.value;
 			try {
-				const emoji = await taskService.updateEmojiByTaskId(
+				const emoji = await emojiClassService.updateEmojiByTaskId(
 					body.emoji,
 					userId,
 					body.taskId,
@@ -558,8 +559,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			db,
 			redis,
 		}: Context & { params: { taskId: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const money = await taskService.getMoney(taskId);
+			const moneyClassService = new MoneyClassService(db, redis);
+			const money = await moneyClassService.getMoney(taskId);
 			return money;
 		},
 	)
@@ -571,8 +572,8 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			db,
 			redis,
 		}: Context & { params: { taskId: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const money = await taskService.getAllMoney(taskId);
+			const moneyClassService = new MoneyClassService(db, redis);
+			const money = await moneyClassService.getAllMoney(taskId);
 			return money;
 		},
 	)
@@ -590,9 +591,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				expense: number;
 			};
 		}) => {
-			const taskService = new TaskService(db, redis);
+			const moneyClassService = new MoneyClassService(db, redis);
 			try {
-				const addMoney = await taskService.addMoney(
+				const addMoney = await moneyClassService.addMoney(
 					body.taskID,
 					body.budget,
 					body.advance,
@@ -621,10 +622,14 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 	.delete(
 		"/money",
 		async ({ body, db, redis }: Context & { body: { taskID: string } }) => {
-			const taskService = new TaskService(db, redis);
+			const moneyClassService = new MoneyClassService(db, redis);
 			try {
-				await taskService.getTaskById(body.taskID);
-				const deleteMoney = await taskService.deleteMoney(body.taskID, 0, 0, 0);
+				const deleteMoney = await moneyClassService.deleteMoney(
+					body.taskID,
+					0,
+					0,
+					0,
+				);
 				WebSocket.broadcast("deleteMoney", deleteMoney);
 				return Response.json("Success", { status: 200 });
 			} catch (error) {
