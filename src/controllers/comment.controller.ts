@@ -3,7 +3,6 @@ import { CommentService } from "../services/comment.service";
 import { type Context } from "../shared/interfaces.shared";
 import { type Comment } from "@prisma/client";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { Exception } from "../core/exception.core";
 
 export const CommentController = new Elysia({ prefix: "/comments" })
 	.get(

@@ -2,7 +2,6 @@ import { Elysia } from "elysia";
 import { ActivityService } from "../services/activity-logs.service";
 import { type Context } from "../shared/interfaces.shared";
 import { WebSocket } from "../shared/utils/websocket.utils";
-import { Exception } from "../core/exception.core";
 
 export const ActivityController = new Elysia({ prefix: "/activities" }).get(
 	"/:id",
