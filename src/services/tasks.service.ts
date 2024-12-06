@@ -14,6 +14,12 @@ import { TaskTagModel } from "../models/task-tag.model";
 import { FilesModel } from "../models/files.model";
 import { ActivityLogsModel } from "../models/activity-logs.model";
 import { CommentModel } from "../models/comment.model";
+import {
+	NotFoundException,
+	ValidationException,
+	ServerErrorException,
+	PermissionException,
+} from "../core/exception.core";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
@@ -59,7 +65,6 @@ export class TaskService extends BaseService<Task> {
 		if (cacheTasks) return cacheTasks as Task[];
 
 		const tasks = await this.taskModel.findAll();
-		if (!tasks) throw new Error("Task not found");
 		await this.setToCache(cacheKey, tasks);
 		return tasks;
 	}
@@ -71,12 +76,13 @@ export class TaskService extends BaseService<Task> {
 	): Promise<Task> {
 		// Find and validate the task
 		const existingTask = await this.taskModel.findById(taskId);
-		if (!existingTask) throw new Error("Task not found");
+		if (!existingTask) throw new NotFoundException("Task not found");
 
 		// Check if user exists based on the task's createdById
-		if (!existingTask.createdById) throw new Error("Task creator ID not found");
+		if (!existingTask.createdById)
+			throw new NotFoundException("Task creator ID not found");
 		const isUserExist = await this.userModel.findById(existingTask.createdById);
-		if (!isUserExist) throw new Error("User not found");
+		if (!isUserExist) throw new NotFoundException("User not found");
 
 		// Prepare the updated task object
 		const updatedTask = {
@@ -109,7 +115,7 @@ export class TaskService extends BaseService<Task> {
 	): Promise<Task> {
 		const isUserExist = await this.userModel.findById(createdById);
 		if (!isUserExist) {
-			throw new Error("User not found");
+			throw new NotFoundException("User not found");
 		}
 
 		if (title !== null) {
@@ -132,7 +138,7 @@ export class TaskService extends BaseService<Task> {
 			await this.invalidateCache(`tasks:parent:${parentTaskId}`);
 			return await this.taskModel.create(newTask);
 		}
-		throw new Error("Title cann't be null");
+		throw new ValidationException("Title cann't be null");
 	}
 
 	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
@@ -140,7 +146,7 @@ export class TaskService extends BaseService<Task> {
 		const cacheTask = await this.getFromCache(cacheKey);
 		if (cacheTask) return cacheTask as Task[];
 		const task = await this.taskModel.findByProjectId(projectIdId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		await this.setToCache(cacheKey, task);
 		return task;
 	}
@@ -151,7 +157,7 @@ export class TaskService extends BaseService<Task> {
 		if (cacheTask) return cacheTask as Task[];
 
 		const task = await this.taskModel.findByParentTaskId(parentTaskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		await this.setToCache(cacheKey, task);
 		return task;
 	}
@@ -162,7 +168,7 @@ export class TaskService extends BaseService<Task> {
 		if (cacheTask) return cacheTask as Task;
 
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		await this.setToCache(cacheKey, task);
 		return task;
 	}
@@ -170,7 +176,7 @@ export class TaskService extends BaseService<Task> {
 	async deleteTask(taskId: string): Promise<Task> {
 		const cacheKey = `tasks:${taskId}`;
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		try {
 			//   Step 1: Find all direct sub-tasks of the current task
 			const subTasks = await this.taskModel.findSubTask(taskId);
@@ -192,7 +198,7 @@ export class TaskService extends BaseService<Task> {
 			await this.taskModel.delete(taskId);
 			await this.invalidateCache(cacheKey);
 		} catch (_error) {
-			throw new Error(`Error deleting task with ID ${taskId}:`);
+			throw new ServerErrorException(`Error deleting task with ID ${taskId}:`);
 		}
 		const projectId = task.projectId;
 		await this.invalidateCache(`tasks:project:${projectId}`);
@@ -201,7 +207,7 @@ export class TaskService extends BaseService<Task> {
 
 	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		return {
 			title: task.title,
 		};
@@ -211,7 +217,7 @@ export class TaskService extends BaseService<Task> {
 		taskId: string,
 	): Promise<{ description: string }> {
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		return {
 			description: task.description,
 		};
@@ -223,13 +229,13 @@ export class TaskService extends BaseService<Task> {
 		title: string,
 	): Promise<Task> {
 		const isUserExist = await this.userModel.findById(userId);
-		if (!isUserExist) throw new Error("User not found");
+		if (!isUserExist) throw new NotFoundException("User not found");
 
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 
 		if (isTaskExist.createdById !== userId)
-			throw new Error("You dont have permission to edit");
+			throw new PermissionException("You dont have permission to edit");
 
 		const newTitle = {
 			title: title,
@@ -244,10 +250,10 @@ export class TaskService extends BaseService<Task> {
 		description: string,
 	): Promise<Task> {
 		const isUserExist = await this.userModel.findById(userId);
-		if (!isUserExist) throw new Error("User not found");
+		if (!isUserExist) throw new NotFoundException("User not found");
 
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 
 		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
 			taskId,
@@ -255,7 +261,7 @@ export class TaskService extends BaseService<Task> {
 		);
 
 		if (!taskAssignment && isTaskExist.createdById !== userId)
-			throw new Error("Unexpected error User not found");
+			throw new ServerErrorException("Unexpected error User not found");
 		const newTitle = {
 			description: description,
 		};
@@ -273,7 +279,7 @@ export class TaskService extends BaseService<Task> {
 		}
 
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 		await this.setToCache(cacheKey, isTaskExist);
 		const taskStatus = isTaskExist.status;
 		return taskStatus;
@@ -281,7 +287,7 @@ export class TaskService extends BaseService<Task> {
 
 	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 
 		const newStatus = { status: newTaskStatus };
 
@@ -305,7 +311,7 @@ export class TaskService extends BaseService<Task> {
 					lowestSubTaskStatusValue = subTasksStatusValue;
 			}
 			if (getStatusValue(newTaskStatus) > lowestSubTaskStatusValue)
-				throw new Error(
+				throw new PermissionException(
 					"Cannot change status: Parent task status cannot exceed sub-task statuses.",
 				);
 		}
@@ -330,7 +336,7 @@ export class TaskService extends BaseService<Task> {
 	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
 		const taskList: Task[] = [];
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 
 		let currentTask = task;
 		taskList.push(currentTask);
@@ -348,19 +354,19 @@ export class TaskService extends BaseService<Task> {
 
 	async getParentTask(taskId: string): Promise<Task | null> {
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 
 		if (!task.parentTaskId) return null;
 
 		const parentTask = await this.taskModel.findById(task.parentTaskId);
-		if (!parentTask) throw new Error("Parent task not found");
+		if (!parentTask) throw new NotFoundException("Parent task not found");
 
 		return parentTask;
 	}
 
 	async getDate(taskId: string): Promise<(Date | null)[]> {
 		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		return [task.startDate, task.endDate];
 	}
 
@@ -372,7 +378,7 @@ export class TaskService extends BaseService<Task> {
 		const task = await this.taskModel.findById(taskID);
 
 		//First step check if task isn't exist
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 
 		//Second step update date that assign in.
 		const updateDate = await this.taskModel.update(taskID, {

@@ -1,6 +1,10 @@
 import { BudgetStatus, PrismaClient, Task } from "@prisma/client";
 import { TaskService } from "../tasks.service";
 import Redis from "ioredis";
+import {
+	NotFoundException,
+	ValidationException,
+} from "../../core/exception.core";
 
 export class MoneyClassService extends TaskService {
 	constructor(prisma: PrismaClient, redis: Redis) {
@@ -9,13 +13,13 @@ export class MoneyClassService extends TaskService {
 
 	async getMoney(taskId: string): Promise<number[]> {
 		const task = await this.getTaskModel().findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		return [task.budget, task.advance, task.expense];
 	}
 
 	async getAllMoney(taskId: string): Promise<number[]> {
 		const task = await this.getTaskModel().findById(taskId);
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 		let sum = [task.budget, task.advance, task.expense];
 
 		//sum budget from subTasks
@@ -97,7 +101,7 @@ export class MoneyClassService extends TaskService {
 		};
 
 		//First step check if task isn't exist
-		if (!task) throw new Error("Task not found");
+		if (!task) throw new NotFoundException("Task not found");
 
 		//Second step check if task money isn't empty
 		if (!areAllBudgetsEmptyOrZero([task.budget, task.expense, task.advance])) {
@@ -111,14 +115,14 @@ export class MoneyClassService extends TaskService {
 
 		//Third step check if input money isn't only one value
 		if (!isOneBudgetValue(budgetList))
-			throw new Error("Only one budget value should be present.");
+			throw new ValidationException("Only one budget value should be present.");
 
 		//Fourth step check if another task aleady have budget value
 		if (
 			task.statusBudgets === BudgetStatus.ParentTaskAdded ||
 			task.statusBudgets === BudgetStatus.SubTasksAdded
 		)
-			throw new Error(
+			throw new ValidationException(
 				"The parent task or subtask already has an assigned budget.",
 			);
 
@@ -193,10 +197,10 @@ export class MoneyClassService extends TaskService {
 		};
 
 		if (!task) {
-			throw new Error("Task not found");
+			throw new NotFoundException("Task not found");
 		}
 		if (task.statusBudgets !== BudgetStatus.Added) {
-			throw new Error("Task wasn't assigned");
+			throw new ValidationException("Task wasn't assigned");
 		}
 		const updateMoney = await this.getTaskModel().update(taskID, {
 			budget: budget,

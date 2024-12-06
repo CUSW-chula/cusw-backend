@@ -4,6 +4,11 @@ import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksModel } from "../models/tasks.model";
+import {
+	NotFoundException,
+	PermissionException,
+	ValidationException,
+} from "../core/exception.core";
 
 export class CommentService extends BaseService<Comment> {
 	private readonly commentModel: CommentModel;
@@ -20,7 +25,7 @@ export class CommentService extends BaseService<Comment> {
 	async addComment(data: Partial<Comment>, authorId: string): Promise<Comment> {
 		const isUserExist = await this.userModel.findById(authorId);
 		if (!isUserExist) {
-			throw new Error("User not found");
+			throw new NotFoundException("User not found");
 		}
 		if (data.content !== null)
 			return await this.commentModel.create({
@@ -29,27 +34,27 @@ export class CommentService extends BaseService<Comment> {
 				taskId: data.taskId,
 				authorId: authorId,
 			});
-		throw new Error("Content cann't be null");
+		throw new ValidationException("Content cann't be null");
 	}
 
 	async getCommentByTaskId(taskId: string): Promise<Comment[]> {
 		const isTaskIdExist = await this.taskModel.findById(taskId);
-		if (!isTaskIdExist) throw new Error("Task not found");
+		if (!isTaskIdExist) throw new NotFoundException("Task not found");
 
 		const comment = await this.commentModel.findByTaskId(taskId);
-		if (!comment) throw new Error("Comment not found");
+		if (!comment) throw new NotFoundException("Comment not found");
 		return comment;
 	}
 
 	async deleteComment(id: string, authorId: string): Promise<Comment> {
 		const isUserExist = await this.userModel.findById(authorId);
 		if (!isUserExist) {
-			throw new Error("User not found");
+			throw new NotFoundException("User not found");
 		}
 		const comment = await this.commentModel.findById(id);
-		if (!comment) throw new Error("Comment not found");
+		if (!comment) throw new NotFoundException("Comment not found");
 		if (authorId !== comment.authorId)
-			throw new Error("This is not your comment");
+			throw new PermissionException("This is not your comment");
 		const deleteComment = await this.commentModel.delete(id);
 		return deleteComment;
 	}
@@ -61,10 +66,10 @@ export class CommentService extends BaseService<Comment> {
 	): Promise<Comment> {
 		const isUserExist = await this.userModel.findById(authorId);
 		if (!isUserExist) {
-			throw new Error("User not found");
+			throw new NotFoundException("User not found");
 		}
 		const comment = await this.commentModel.findById(id);
-		if (!comment) throw new Error("Comment not found");
+		if (!comment) throw new NotFoundException("Comment not found");
 		const newComment: Comment = {
 			id: comment.id,
 			content: newContent,
@@ -75,7 +80,7 @@ export class CommentService extends BaseService<Comment> {
 			editTime: comment.editTime,
 		};
 		if (authorId !== comment.authorId)
-			throw new Error("This is not your comment");
+			throw new NotFoundException("This is not your comment");
 		const editComment = await this.commentModel.update(id, newComment);
 		return editComment;
 	}

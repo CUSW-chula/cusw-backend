@@ -4,6 +4,7 @@ import { FilesService } from "../services/files.service";
 import { WebSocket } from "../shared/utils/websocket.utils";
 import { ActivityService } from "../services/activity-logs.service";
 import { $Enums } from "@prisma/client";
+import { Exception } from "../core/exception.core";
 
 const MAX_FILENAME_LENGTH = 50; // Define your max length for filenames
 
@@ -23,16 +24,8 @@ export const FileController = new Elysia({ prefix: "/file" })
 			minio,
 		}: Context & { params: { id: string } }) => {
 			const fileService = new FilesService(db, redis, minio);
-			try {
-				const files = await fileService.getFileByTaskId(id);
-				if (!files) {
-					return Response.json("file not found", { status: 404 });
-				}
-				return files;
-			} catch (_error) {
-				const error = _error as Error;
-				return Response.json(error.message, { status: 500 });
-			}
+			const files = await fileService.getFileByTaskId(id);
+			return files;
 		},
 	)
 	.post(
@@ -54,38 +47,33 @@ export const FileController = new Elysia({ prefix: "/file" })
 			const fileService = new FilesService(db, redis, minio);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			try {
-				const savedFile = await fileService.uploadFileByTaskId(
-					taskId,
-					file,
-					projectId,
-					userId,
-				);
-				if (!savedFile) {
-					return Response.json("file couldn't be saved", { status: 500 });
-				}
-
-				// Shorten fileName if necessary
-				savedFile.fileName = truncateFileName(
-					savedFile.fileName,
-					MAX_FILENAME_LENGTH,
-				);
-
-				WebSocket.broadcast("add-file", savedFile);
-
-				const uploadActivity = await activityService.postActivity(
-					taskId,
-					$Enums.ActivityAction.UPLOADED,
-					savedFile.fileName,
-					userId,
-				);
-				WebSocket.broadcast("activity", uploadActivity);
-
-				return savedFile;
-			} catch (_error) {
-				const error = _error as Error;
-				return Response.json(error.message, { status: 500 });
+			const savedFile = await fileService.uploadFileByTaskId(
+				taskId,
+				file,
+				projectId,
+				userId,
+			);
+			if (!savedFile) {
+				return Response.json("file couldn't be saved", { status: 500 });
 			}
+
+			// Shorten fileName if necessary
+			savedFile.fileName = truncateFileName(
+				savedFile.fileName,
+				MAX_FILENAME_LENGTH,
+			);
+
+			WebSocket.broadcast("add-file", savedFile);
+
+			const uploadActivity = await activityService.postActivity(
+				taskId,
+				$Enums.ActivityAction.UPLOADED,
+				savedFile.fileName,
+				userId,
+			);
+			WebSocket.broadcast("activity", uploadActivity);
+
+			return savedFile;
 		},
 		{
 			body: t.Object({
@@ -109,37 +97,29 @@ export const FileController = new Elysia({ prefix: "/file" })
 		}) => {
 			const fileService = new FilesService(db, redis, minio);
 			const activityService = new ActivityService(db, redis);
-			try {
-				const removeFile = await fileService.removeFileByFileId(fileId);
-				if (!removeFile) {
-					return Response.json("file couldn't be removed", { status: 500 });
-				}
+			const removeFile = await fileService.removeFileByFileId(fileId);
 
-				// Shorten fileName if necessary
-				removeFile.fileName = truncateFileName(
-					removeFile.fileName,
-					MAX_FILENAME_LENGTH,
-				);
+			// Shorten fileName if necessary
+			removeFile.fileName = truncateFileName(
+				removeFile.fileName,
+				MAX_FILENAME_LENGTH,
+			);
 
-				WebSocket.broadcast("remove-file", removeFile);
+			WebSocket.broadcast("remove-file", removeFile);
 
-				if (!removeFile.taskId) {
-					throw new Error("Task ID is null");
-				}
-
-				const removeActivity = await activityService.postActivity(
-					removeFile.taskId,
-					$Enums.ActivityAction.DELETED,
-					removeFile.fileName,
-					removeFile.uploadedBy,
-				);
-				WebSocket.broadcast("activity", removeActivity);
-
-				return removeFile;
-			} catch (_error) {
-				const error = _error as Error;
-				return Response.json(error.message, { status: 500 });
+			if (!removeFile.taskId) {
+				throw new Error("Task ID is null");
 			}
+
+			const removeActivity = await activityService.postActivity(
+				removeFile.taskId,
+				$Enums.ActivityAction.DELETED,
+				removeFile.fileName,
+				removeFile.uploadedBy,
+			);
+			WebSocket.broadcast("activity", removeActivity);
+
+			return removeFile;
 		},
 		{
 			body: t.Object({
