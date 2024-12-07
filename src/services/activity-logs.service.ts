@@ -4,6 +4,7 @@ import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksModel } from "../models/tasks.model";
+import { NotFoundException } from "../core/exception.core";
 
 export class ActivityService extends BaseService<Activity> {
 	private readonly activityModel: ActivityLogsModel;
@@ -23,7 +24,7 @@ export class ActivityService extends BaseService<Activity> {
 		if (cacheActivity) return cacheActivity as Activity[];
 
 		const activity = await this.activityModel.findByTaskId(id);
-		if (!activity) throw new Error("Activity not found");
+		if (!activity) throw new NotFoundException("Activity not found");
 		await this.setToCache(cacheKey, activity);
 		return activity;
 	}
@@ -35,10 +36,10 @@ export class ActivityService extends BaseService<Activity> {
 		userId: string,
 	): Promise<Activity> {
 		const isTaskIdExist = await this.taskModel.findById(taskId);
-		if (!isTaskIdExist) throw new Error("Task not found");
+		if (!isTaskIdExist) throw new NotFoundException("Task not found");
 
 		const isUserExist = await this.userModel.findById(userId);
-		if (!isUserExist) throw new Error("User not found");
+		if (!isUserExist) throw new NotFoundException("User not found");
 
 		const activity = await this.activityModel.create({
 			action,

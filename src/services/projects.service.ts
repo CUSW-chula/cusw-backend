@@ -2,6 +2,7 @@ import type { PrismaClient, Project } from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import { ProjectModel } from "../models/projects.model";
 import type Redis from "ioredis";
+import { NotFoundError } from "elysia";
 
 export class ProjectService extends BaseService<Project> {
 	private readonly projectModel: ProjectModel;
@@ -29,7 +30,8 @@ export class ProjectService extends BaseService<Project> {
 		if (cacheProject) return cacheProject as Project;
 
 		const project = await this.projectModel.findById(id);
-		if (project) await this.setToCache(cacheKey, project);
+		if (!project) throw new NotFoundError("Project not found");
+		await this.setToCache(cacheKey, project);
 		return project;
 	}
 }
