@@ -63,6 +63,34 @@ describe("ActivityService", () => {
 			]);
 			expect(mockPrisma.activity.findMany).toHaveBeenCalled();
 		});
+		it("should fetch activity by ID from cache if available", async () => {
+			// Mock Redis cache to return cached data
+			mockRedis.get.mockResolvedValueOnce(
+				JSON.stringify([
+					{
+						id: "1",
+						action: "CREATED",
+						detail: "Activity 1",
+						taskId: "1",
+						userId: "1",
+						createdAt: new Date(),
+					},
+				]),
+			);
+
+			const activity = await activityService.getActivityById("1");
+			expect(activity).toEqual([
+				{
+					id: "1",
+					action: "CREATED",
+					detail: "Activity 1",
+					taskId: "1",
+					userId: "1",
+					createdAt: expect.any(String),
+				},
+			]);
+			expect(mockRedis.get).toHaveReturned();
+		});
 	});
 
 	describe("postActivity", () => {

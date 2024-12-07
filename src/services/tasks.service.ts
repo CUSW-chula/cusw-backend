@@ -100,42 +100,34 @@ export class TaskService extends BaseService<Task> {
 		return await this.taskModel.update(taskId, updatedTask);
 	}
 
-	async createTask(
-		title: string,
-		description: string,
-		projectId: string,
-		parentTaskId: string | null,
-		startDate: Date,
-		endDate: Date,
-		createdById: string,
-		status: $Enums.TaskStatus,
-		expectedBudget: number,
-		realBudget: number,
-		usedBudget: number,
-	): Promise<Task> {
-		const isUserExist = await this.userModel.findById(createdById);
+	async createTask(task: Partial<Task>): Promise<Task> {
+		if (!task.createdById)
+			throw new ValidationException("No creator ID provided");
+		if (!task.projectId)
+			throw new ValidationException("No project ID provided");
+		const isUserExist = await this.userModel.findById(task.createdById);
 		if (!isUserExist) {
 			throw new NotFoundException("User not found");
 		}
 
-		if (title !== null) {
+		if (task.title !== null) {
 			const newTask = {
-				title: title,
-				description: description,
-				createdById: createdById,
-				startDate: startDate,
-				endDate: endDate,
-				status: status,
-				parentTaskId: parentTaskId !== "" ? parentTaskId : undefined,
-				expectedBudget: expectedBudget,
-				usedBudget: usedBudget,
-				realBudget: realBudget,
-				projectId: projectId,
+				title: task.title,
+				description: task.description,
+				createdById: task.createdById,
+				startDate: task.startDate,
+				endDate: task.endDate,
+				status: task.status,
+				parentTaskId: task.parentTaskId !== "" ? task.parentTaskId : undefined,
+				budget: task.budget,
+				advance: task.advance,
+				expense: task.expense,
+				projectId: task.projectId,
 			};
 			await this.invalidateCache("tasks:all");
-			await this.invalidateCache(`tasks:project:${projectId}`);
-			await this.invalidateCache(`projects:${projectId}`);
-			await this.invalidateCache(`tasks:parent:${parentTaskId}`);
+			await this.invalidateCache(`tasks:project:${task.projectId}`);
+			await this.invalidateCache(`projects:${task.projectId}`);
+			await this.invalidateCache(`tasks:parent:${task.parentTaskId}`);
 			return await this.taskModel.create(newTask);
 		}
 		throw new ValidationException("Title cann't be null");

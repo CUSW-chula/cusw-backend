@@ -209,9 +209,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: {
 				title: string;
 				description: string;
-				expectedBudget: number;
-				realBudget: number;
-				usedBudget: number;
+				budget: number;
+				advance: number;
+				expense: number;
 				status: $Enums.TaskStatus;
 				parentTaskId: string;
 				projectId: string;
@@ -223,19 +223,7 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			const taskService = new TaskService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			const task = await taskService.createTask(
-				body.title,
-				body.description,
-				body.projectId,
-				body.parentTaskId,
-				body.startDate,
-				body.endDate,
-				userId,
-				body.status,
-				body.expectedBudget,
-				body.realBudget,
-				body.usedBudget,
-			);
+			const task = await taskService.createTask(body);
 			WebSocket.broadcast("task", task);
 			const createTaskActivity = await activityService.postActivity(
 				task.id,
@@ -250,9 +238,9 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			body: t.Object({
 				title: t.String(),
 				description: t.String(),
-				expectedBudget: t.Number(),
-				realBudget: t.Number(),
-				usedBudget: t.Number(),
+				budget: t.Number(),
+				advance: t.Number(),
+				expense: t.Number(),
 				status: t.String(),
 				parentTaskId: t.String(),
 				projectId: t.String(),
