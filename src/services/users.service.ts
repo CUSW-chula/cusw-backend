@@ -34,7 +34,7 @@ export class UserService extends BaseService<User> {
 		return users;
 	}
 
-	// Fetch user by email 
+	// Fetch user by email
 	async getUserByEmail(email: string): Promise<User | null> {
 		const cacheKey = `users:email:${email}`;
 		const cachedUser = await this.getFromCache(cacheKey);
