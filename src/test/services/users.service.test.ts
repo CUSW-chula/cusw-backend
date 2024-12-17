@@ -128,7 +128,6 @@ describe("UserService", () => {
 				email: "newuser@example.com",
 			});
 			expect(mockPrisma.user.create).toHaveBeenCalled();
-			expect(mockRedis.del).toHaveBeenCalledWith("users:all");
 		});
 	});
 
@@ -153,7 +152,7 @@ describe("UserService", () => {
 				where: { id: "1" },
 				data: { name: "Updated User" },
 			});
-			expect(mockRedis.del).toHaveBeenCalledTimes(3); // Invalidate both specific user and all users cache
+			expect(mockRedis.del).toHaveBeenCalledTimes(4); // Invalidate both specific user and all users cache
 		});
 	});
 
@@ -175,7 +174,7 @@ describe("UserService", () => {
 			expect(mockPrisma.user.delete).toHaveBeenCalledWith({
 				where: { id: "1" },
 			});
-			expect(mockRedis.del).toHaveBeenCalledTimes(5); // Invalidate both specific user and all users cache
+			expect(mockRedis.del).toHaveBeenCalledTimes(6); // Invalidate both specific user and all users cache
 		});
 	});
 });

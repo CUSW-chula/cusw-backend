@@ -20,6 +20,17 @@ export const UserController = new Elysia({ prefix: "/users" })
 			return await userService.getUserById(id);
 		},
 	)
+	.get(
+		"/email/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const userService = new UserService(db, redis);
+			return await userService.getUserByEmail(id);
+		},
+	)
 	// Create a new user
 	.post(
 		"/",
