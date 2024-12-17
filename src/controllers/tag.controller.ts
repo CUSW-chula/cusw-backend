@@ -63,25 +63,21 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			try {
-				const assignTag = await tagService.assigningTagToTask(
-					body.taskId,
-					body.tagId,
-				);
-				const assignTags = await tagService.getTagById(assignTag.tagId);
-				WebSocket.broadcast("assigned-tags", assignTags);
-				const tagAddActivity = await activityService.postActivity(
-					body.taskId,
-					$Enums.ActivityAction.ADDED,
-					`a tag name "${assignTags.name}"`,
-					userId,
-				);
-				WebSocket.broadcast("activity", tagAddActivity);
-				return assignTags;
-			} catch (_error) {
-				const error = _error as Error;
-				return Response.json(error.message, { status: 500 });
-			}
+			const assignTag = await tagService.assigningTagToTask(
+				body.taskId,
+				body.tagId,
+				userId,
+			);
+			const assignTags = await tagService.getTagById(assignTag.tagId);
+			WebSocket.broadcast("assigned-tags", assignTags);
+			const tagAddActivity = await activityService.postActivity(
+				body.taskId,
+				$Enums.ActivityAction.ADDED,
+				`a tag name "${assignTags.name}"`,
+				userId,
+			);
+			WebSocket.broadcast("activity", tagAddActivity);
+			return assignTags;
 		},
 		{
 			body: t.Object({
@@ -104,25 +100,20 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			try {
-				const unAssignTaskTag = await tagService.unAssigningTagToTask(
-					body.taskId,
-					body.tagId,
-				);
-				const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
-				WebSocket.broadcast("unassigned-tag", unAssignTag);
-				const tagUnassignActivity = await activityService.postActivity(
-					body.taskId,
-					$Enums.ActivityAction.REMOVED,
-					`a tag name "${unAssignTag.name}"`,
-					userId,
-				);
-				WebSocket.broadcast("activity", tagUnassignActivity);
-				return unAssignTag;
-			} catch (_error) {
-				const error = _error as Error;
-				return Response.json(error.message, { status: 500 });
-			}
+			const unAssignTaskTag = await tagService.unAssigningTagToTask(
+				body.taskId,
+				body.tagId,
+			);
+			const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
+			WebSocket.broadcast("unassigned-tag", unAssignTag);
+			const tagUnassignActivity = await activityService.postActivity(
+				body.taskId,
+				$Enums.ActivityAction.REMOVED,
+				`a tag name "${unAssignTag.name}"`,
+				userId,
+			);
+			WebSocket.broadcast("activity", tagUnassignActivity);
+			return unAssignTag;
 		},
 		{
 			body: t.Object({

@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Elysia, error, t } from "elysia";
 import { PrismaClient } from "@prisma/client";
 import { UserController } from "./controllers/users.controller";
 import swagger from "@elysiajs/swagger";
@@ -12,6 +12,7 @@ import { TagController } from "./controllers/tag.controller";
 import { FileController } from "./controllers/files.controller";
 import jwt from "@elysiajs/jwt";
 import { ActivityController } from "./controllers/activity-logs.controller";
+import { Exception, UnauthorizedException } from "./core/exception.core";
 
 const prisma = new PrismaClient();
 const redis = new Redis({
@@ -59,6 +60,7 @@ const app = new Elysia()
 		},
 		(app) =>
 			app
+				.error({ Exception })
 				.onBeforeHandle(
 					async ({
 						headers: { authorization },
@@ -69,8 +71,7 @@ const app = new Elysia()
 						const token = authorization.split(" ")[1];
 						const user = await jwt.verify(token);
 						if (!user) {
-							set.status = 401;
-							return { message: "Unauthorization" };
+							throw new UnauthorizedException("Unauthorization");
 						}
 						set.status = 200;
 						session.set({
@@ -80,6 +81,11 @@ const app = new Elysia()
 						});
 					},
 				)
+				.onError(({ error }) => {
+					if (error instanceof Exception) {
+						return Response.json(error.message, { status: error.statusCode });
+					}
+				})
 				.group("/api", (api) => {
 					api.use(ProjectController);
 					api.use(UserController);
@@ -97,4 +103,4 @@ console.info(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
 
-console.info("🦊 API is running at ://localhost:4000/swagger");
+console.info("🦊 API is running at http://localhost:4000/swagger");

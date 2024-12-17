@@ -12,6 +12,11 @@ export class UserModel extends BaseModel<User> {
 		return user;
 	}
 
+	async findByEmail(email: string): Promise<User | null> {
+		const user = await this.getModel().user.findUnique({ where: { email } });
+		return user;
+	}
+
 	async create(data: Partial<User>): Promise<User> {
 		const createdUser = await this.getModel().user.create({
 			data: {

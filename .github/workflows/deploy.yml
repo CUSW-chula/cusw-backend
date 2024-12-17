@@ -83,4 +83,4 @@ jobs:
       - name: Unit test
         run: |
           echo "Running unit test..."
-          bun test
+          bun test --coverage  # Run unit tests using Bun

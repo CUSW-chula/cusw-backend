@@ -4,6 +4,8 @@ import { FilesModel } from "../models/files.model";
 import * as Minio from "minio";
 import Redis from "ioredis";
 import mime from "mime-types"; // Import mime-types library to get the content type by extension
+import { NotFoundError } from "elysia";
+import { ServerErrorException } from "../core/exception.core";
 
 export class FilesService extends BaseService<File> {
 	private readonly fileModel: FilesModel;
@@ -33,7 +35,7 @@ export class FilesService extends BaseService<File> {
 		if (cacheFile) return cacheFile as File[];
 
 		const file = await this.fileModel.findByTaskId(taskId);
-		if (!file) throw new Error("File not found");
+		if (!file) throw new NotFoundError("File not found");
 
 		await this.setToCache(cacheKey, file);
 		return file;
@@ -89,7 +91,9 @@ export class FilesService extends BaseService<File> {
 			uploadedBy: authorId,
 		});
 
-		this.invalidateCache(cacheKey);
+		if (!savedFile) throw new ServerErrorException("Failed to save file");
+
+		await this.invalidateCache(cacheKey);
 
 		return savedFile;
 	}
@@ -103,6 +107,7 @@ export class FilesService extends BaseService<File> {
 		await this.minIoClient.removeObject(bucketName, file.fileName);
 
 		const removeFile = await this.fileModel.delete(file.id);
+		if (!removeFile) throw new ServerErrorException("Failed to remove file");
 		await this.invalidateCache(cacheKey);
 		return removeFile;
 	}
