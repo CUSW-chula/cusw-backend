@@ -4,6 +4,7 @@ import { TaskTagModel } from "../models/task-tag.model";
 import { BaseService } from "../core/service.core";
 import { TasksModel } from "../models/tasks.model";
 import Redis from "ioredis";
+import { NotFoundException, PermissionException } from "../core/exception.core";
 
 export class TagService extends BaseService<Tag> {
 	private readonly tagModel: TagModel;
@@ -24,7 +25,6 @@ export class TagService extends BaseService<Tag> {
 		if (cacheTag) return cacheTag as Tag[];
 
 		const tags = await this.tagModel.findAll();
-		if (!tags) throw new Error("Tag not found");
 		await this.setToCache(cacheKey, tags);
 		return tags;
 	}
@@ -36,7 +36,7 @@ export class TagService extends BaseService<Tag> {
 		if (cacheTag) return cacheTag as Tag;
 
 		const tags = await this.tagModel.findById(tagId);
-		if (!tags) throw new Error("Tag not found");
+		if (!tags) throw new NotFoundException("Tag not found");
 		await this.setToCache(cacheKey, tags);
 		return tags;
 	}
@@ -45,11 +45,11 @@ export class TagService extends BaseService<Tag> {
 	async getAsignTagInTaskByTaskId(taskId: string): Promise<Tag[]> {
 		// Check if the task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 
 		// Retrieve all tag assignments for the task
 		const taskTag = await this.taskTagModel.findByTaskId(taskId);
-		if (!taskTag) throw new Error("No tag assigned to this task");
+		if (!taskTag) throw new NotFoundException("No tag assigned to this task");
 
 		// Fetch each tag concurrently
 		const tagsInTask = await Promise.all(
@@ -67,11 +67,11 @@ export class TagService extends BaseService<Tag> {
 	async getAsignTaskInTagByTagId(tagId: string): Promise<Task[]> {
 		// Check if the tag exists
 		const isTaskExist = await this.tagModel.findById(tagId);
-		if (!isTaskExist) throw new Error("Tag not found");
+		if (!isTaskExist) throw new NotFoundException("Tag not found");
 
 		// Retrieve all task assignments for the tag
 		const taskTag = await this.taskTagModel.findByTagId(tagId);
-		if (!taskTag) throw new Error("No task assigned to this tag");
+		if (!taskTag) throw new NotFoundException("No task assigned to this tag");
 
 		// Fetch each task concurrently
 		const tagsInTask = await Promise.all(
@@ -86,27 +86,38 @@ export class TagService extends BaseService<Tag> {
 	}
 
 	// Assign a tag to a task
-	async assigningTagToTask(taskId: string, tagId: string): Promise<TaskTag> {
+	async assigningTagToTask(
+		taskId: string,
+		tagId: string,
+		userId: string,
+	): Promise<TaskTag> {
 		// Check if the tag exists
 		const isTagExist = await this.tagModel.findById(tagId);
-		if (!isTagExist) throw new Error("Tag not found");
+		if (!isTagExist) throw new NotFoundException("Tag not found");
 
 		// Check if the task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
+
+		const isUserCreatedTask = isTaskExist.createdById === userId;
+		if (!isUserCreatedTask)
+			throw new PermissionException("You are not the creator of this task");
 
 		// Check for duplicate tag assignment
 		const tagExist = await this.taskTagModel.findByTaskIdAndTagId(
 			taskId,
 			tagId,
 		);
-		if (tagExist) throw new Error("Duplicate Tag");
+		if (tagExist) throw new PermissionException("Duplicate Tag");
 
 		// Assign the tag to the task
 		const assignTagToTask = await this.taskTagModel.create({
 			tagId: tagId,
 			taskId: taskId,
 		});
+
+		if (!assignTagToTask)
+			throw new NotFoundException("Failed to assign tag to task");
 		return assignTagToTask;
 	}
 
@@ -114,15 +125,15 @@ export class TagService extends BaseService<Tag> {
 	async unAssigningTagToTask(taskId: string, tagId: string): Promise<TaskTag> {
 		// Check if the tag exists
 		const isTagExist = await this.tagModel.findById(tagId);
-		if (!isTagExist) throw new Error("Tag not found");
+		if (!isTagExist) throw new NotFoundException("Tag not found");
 
 		// Check if the task exists
 		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new Error("Task not found");
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 
 		// Find the tag-task association
 		const taskTag = await this.taskTagModel.findByTaskIdAndTagId(taskId, tagId);
-		if (!taskTag) throw new Error("Assignment not found");
+		if (!taskTag) throw new NotFoundException("Assignment not found");
 
 		// Unassign the tag from the task
 		const unAssigningTagToTask = await this.taskTagModel.delete(taskTag.id);
