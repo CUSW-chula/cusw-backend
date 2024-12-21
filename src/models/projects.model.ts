@@ -1,4 +1,5 @@
 import type { Project } from "@prisma/client";
+import type { ProjectRole } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
 
 export class ProjectModel extends BaseModel<Project> {
@@ -10,6 +11,27 @@ export class ProjectModel extends BaseModel<Project> {
 	async findById(id: string): Promise<Project | null> {
 		const project = await this.getModel().project.findUnique({ where: { id } });
 		return project;
+	}
+
+	async findrole(id: string): Promise<ProjectRole[] | null> {
+		const roles = await this.getModel().projectRole.findMany({
+			where: {
+				projectId: id,
+			},
+		});
+		return roles ?? null; // Ensures null is returned if no roles are found
+	}
+
+	async finduserid(id: string): Promise<string[] | null> {
+		const users = await this.getModel().projectRole.findMany({
+			where: {
+				projectId: id,
+			},
+			select: {
+				userId: true, // Fetch only the userId field
+			},
+		});
+		return users?.map((user) => user.userId) ?? null; // Map results to an array of user IDs or return null
 	}
 
 	async create(data: Partial<Project>): Promise<Project> {
