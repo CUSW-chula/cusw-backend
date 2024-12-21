@@ -16,6 +16,7 @@ import { FilesModel } from "../models/files.model";
 import { TaskTagModel } from "../models/task-tag.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { UserModel } from "../models/users.model";
+import { BudgetStatus } from "@prisma/client";
 
 export class ProjectService extends BaseService<Project> {
 	private readonly projectModel: ProjectModel;
@@ -27,6 +28,10 @@ export class ProjectService extends BaseService<Project> {
 	private readonly activitiesLogsModel: ActivityLogsModel;
 	private readonly commentModel: CommentModel;
 	private readonly userModel: UserModel;
+
+	protected getTaskModel() {
+		return this.taskModel;
+	}
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60);
@@ -156,5 +161,43 @@ export class ProjectService extends BaseService<Project> {
 		}
 
 		return project;
+	}
+	
+	async getProjectMoney(id: string): Promise<number[]> {
+		const project = await this.projectModel.findById(id);
+		if (!project) throw new NotFoundError("Project not found");
+		let sum = [0, 0, 0];
+
+		const addToSum = (task: {
+			budget: number;
+			advance: number;
+			expense: number;
+		}) => {
+			sum = sum.map(
+				(val, index) => val + [task.budget, task.advance, task.expense][index],
+			);
+		};
+
+		//sum budget from subTasks
+		const calculateSubTaskSum = async (taskId: string) => {
+			const subTasks = await this.getTaskModel().findSubTask(taskId);
+			if (!subTasks || subTasks.length === 0) return;
+			for (const task of subTasks) {
+				if (
+					task.statusBudgets === BudgetStatus.Added ||
+					BudgetStatus.SubTasksAdded
+				) {
+					addToSum(task);
+					await calculateSubTaskSum(task.id);
+				}
+			}
+		};
+		const allTasks = await this.taskModel.findByProjectId(id);
+		for (const task of allTasks) {
+			addToSum(task);
+			await calculateSubTaskSum(task.id);
+		}
+
+		return sum;
 	}
 }

@@ -111,4 +111,16 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 				projectId: t.String(),
 			}),
 		},
+	)
+	.get(
+		"money/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const projectService = new ProjectService(db, redis);
+			const budgetList = await projectService.getProjectMoney(id);
+			return budgetList;
+		},
 	);
