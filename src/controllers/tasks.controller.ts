@@ -496,18 +496,18 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		},
 	)
 
-	.get(
-		"/money/all/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const moneyClassService = new MoneyClassService(db, redis);
-			const money = await moneyClassService.getAllMoney(taskId);
-			return money;
-		},
-	)
+	// .get(
+	// 	"/money/all/:taskId",
+	// 	async ({
+	// 		params: { taskId },
+	// 		db,
+	// 		redis,
+	// 	}: Context & { params: { taskId: string } }) => {
+	// 		const moneyClassService = new MoneyClassService(db, redis);
+	// 		const money = await moneyClassService.getAllMoney(taskId);
+	// 		return money;
+	// 	},
+	// )
 	.post(
 		"/money",
 		async ({

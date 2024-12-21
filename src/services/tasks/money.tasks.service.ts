@@ -17,32 +17,32 @@ export class MoneyClassService extends TaskService {
 		return [task.budget, task.advance, task.expense];
 	}
 
-	async getAllMoney(taskId: string): Promise<number[]> {
-		const task = await this.getTaskModel().findById(taskId);
-		if (!task) throw new NotFoundException("Task not found");
-		let sum = [task.budget, task.advance, task.expense];
+	// async getAllMoney(taskId: string): Promise<number[]> {
+	// 	const task = await this.getTaskModel().findById(taskId);
+	// 	if (!task) throw new NotFoundException("Task not found");
+	// 	let sum = [task.budget, task.advance, task.expense];
 
-		//sum budget from subTasks
-		const subTask = async (taskId: string) => {
-			const subTasks = await this.getTaskModel().findSubTask(taskId);
-			if (subTasks === null) return null;
-			for (const task of subTasks) {
-				if (
-					task.statusBudgets === BudgetStatus.Added ||
-					BudgetStatus.SubTasksAdded
-				) {
-					sum = sum.map(
-						(val, index) =>
-							val + [task.budget, task.advance, task.expense][index],
-					);
-					await subTask(task.id);
-				}
-			}
-		};
+	// 	//sum budget from subTasks
+	// 	const subTask = async (taskId: string) => {
+	// 		const subTasks = await this.getTaskModel().findSubTask(taskId);
+	// 		if (subTasks === null) return null;
+	// 		for (const task of subTasks) {
+	// 			if (
+	// 				task.statusBudgets === BudgetStatus.Added ||
+	// 				BudgetStatus.SubTasksAdded
+	// 			) {
+	// 				sum = sum.map(
+	// 					(val, index) =>
+	// 						val + [task.budget, task.advance, task.expense][index],
+	// 				);
+	// 				await subTask(task.id);
+	// 			}
+	// 		}
+	// 	};
 
-		await subTask(taskId);
-		return sum;
-	}
+	// 	await subTask(taskId);
+	// 	return sum;
+	// }
 
 	async addMoney(
 		taskID: string,
