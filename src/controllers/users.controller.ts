@@ -36,12 +36,11 @@ export const UserController = new Elysia({ prefix: "/users" })
 	//getAllProjectOwnerByProjectId
 	.get(
 		"/projectowner/:id",
-		async ({ 
+		async ({
 			params: { id },
 			db,
-			redis
-		 }: 
-			Context & { params: { id: string } }) => {
+			redis,
+		}: Context & { params: { id: string } }) => {
 			const userService = new UserService(db, redis);
 			try {
 				const user = await userService.getUserOwnersByProjectId(id);
@@ -51,21 +50,20 @@ export const UserController = new Elysia({ prefix: "/users" })
 				};
 			} catch (error) {
 				return {
-					status: error instanceof NotFoundException ? 404+"error" : 500,
+					status: error instanceof NotFoundException ? 404 + "error" : 500,
 				};
 			}
-		}
+		},
 	)
 
 	//getAllMemberofProjectByProjectId
 	.get(
 		"/projectmember/:id",
-		async ({ 
+		async ({
 			params: { id },
 			db,
-			redis
-		 }: 
-			Context & { params: { id: string } }) => {
+			redis,
+		}: Context & { params: { id: string } }) => {
 			const userService = new UserService(db, redis);
 			try {
 				const user = await userService.getUserMemberByProjectId(id);
@@ -75,13 +73,12 @@ export const UserController = new Elysia({ prefix: "/users" })
 				};
 			} catch (error) {
 				return {
-					status: error instanceof NotFoundException ? 404+"error" : 500,
+					status: error instanceof NotFoundException ? 404 + "error" : 500,
 				};
 			}
-		}
+		},
 	)
-	
-	
+
 	// Create a new user
 	.post(
 		"/",
