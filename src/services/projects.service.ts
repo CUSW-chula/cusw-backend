@@ -43,7 +43,7 @@ export class ProjectService extends BaseService<Project> {
 		return project;
 	}
 
-	async getProjectMoney(id: string): Promise<number[]> {
+	async getProjectMoney(id: string): Promise<{ budget: number; advance: number; expense: number }> {
 		const project = await this.projectModel.findById(id);
 		if (!project) throw new NotFoundError("Project not found");
 		let sum = [0, 0, 0];
@@ -77,7 +77,10 @@ export class ProjectService extends BaseService<Project> {
 			addToSum(task);
 			await calculateSubTaskSum(task.id);
 		}
-
-		return sum;
+		return {
+			budget: sum[0],
+			advance: sum[1],
+			expense: sum[2],
+		};;
 	}
 }
