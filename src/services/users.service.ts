@@ -1,5 +1,8 @@
 import { UserModel } from "../models/users.model";
-import type { PrismaClient, User } from "@prisma/client";
+import { ProjectModel } from "../models/projects.model";
+import { TasksAssignmentModel } from "../models/tasks-assignment.model";
+import { TasksModel } from "../models/tasks.model";
+import type { PrismaClient, Project, User } from "@prisma/client";
 import { BaseService } from "../core/service.core";
 import type Redis from "ioredis";
 import {
@@ -10,10 +13,16 @@ import {
 
 export class UserService extends BaseService<User> {
 	private readonly userModel: UserModel;
+	private readonly projectModel: ProjectModel;
+	private readonly taskAssignmentModel: TasksAssignmentModel;
+	private readonly taskModel: TasksModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
 		this.userModel = new UserModel(prisma);
+		this.projectModel = new ProjectModel(prisma);
+		this.taskAssignmentModel = new TasksAssignmentModel(prisma)
+		this.taskModel = new TasksModel(prisma)
 	}
 
 	// Email validation method
@@ -55,6 +64,83 @@ export class UserService extends BaseService<User> {
 		await this.setToCache(cacheKey, user);
 		return user;
 	}
+	
+	//getAllProjectOwnerByProjectId
+	async getUserOwnersByProjectId(projectId: string): Promise<User[]> {
+		if (!projectId || typeof projectId !== 'string') {
+			throw new ValidationException("Invalid projectId");
+		}
+	
+		const cacheKey = `users:project:${projectId}:owners`;
+		const cachedUsers = await this.getFromCache(cacheKey);
+		if (cachedUsers) return cachedUsers as User[];
+	
+		// ตรวจสอบว่าโปรเจกต์มีอยู่จริงหรือไม่
+		const existingProject = await this.projectModel.findById(projectId);
+		if (!existingProject) throw new NotFoundException("Project not found");
+	
+		// ดึงบทบาททั้งหมดในโปรเจกต์
+		const roles = await this.projectModel.findrole(projectId);
+		if (!roles || roles.length === 0) throw new NotFoundException("No roles found for the project");
+	
+		// ค้นหา userIds ของเจ้าของโปรเจกต์
+		const userIds = roles
+			.filter((role) => role.role === "ProjectOwner")
+			.map((role) => role.userId);
+	
+		if (userIds.length === 0) throw new NotFoundException("No Project Owners found");
+	
+		// ดึงข้อมูลผู้ใช้ตาม userIds
+		const users = await Promise.all(userIds.map((id) => this.userModel.findById(id)));
+	
+		// กรองข้อมูลผู้ใช้ที่เป็น null หรือ undefined
+		const validUsers = users.filter((user): user is User => user !== null);
+	
+		// บันทึกในแคช
+		await this.setToCache(cacheKey, validUsers);
+	
+		return validUsers;
+	}
+
+	//getAllMemberofProjectByProjectId
+	async getUserMemberByProjectId(projectId: string): Promise<User[]> {
+		if (!projectId || typeof projectId !== 'string') {
+			throw new ValidationException("Invalid projectId");
+		}
+	
+		const cacheKey = `users:project:${projectId}:owners`;
+		const cachedUsers = await this.getFromCache(cacheKey);
+		if (cachedUsers) return cachedUsers as User[];
+	
+		// ตรวจสอบว่าโปรเจกต์มีอยู่จริงหรือไม่
+		const existingProject = await this.projectModel.findById(projectId);
+		if (!existingProject) throw new NotFoundException("Project not found");
+	
+		// ดึงบทบาททั้งหมดในโปรเจกต์
+		const roles = await this.projectModel.findrole(projectId);
+		if (!roles || roles.length === 0) throw new NotFoundException("No roles found for the project");
+	
+		// ค้นหา userIds ของเจ้าของโปรเจกต์
+		const userIds = roles
+			.filter((role) => role.role === "Member")
+			.map((role) => role.userId);
+	
+		if (userIds.length === 0) throw new NotFoundException("No Project Owners found");
+	
+		// ดึงข้อมูลผู้ใช้ตาม userIds
+		const users = await Promise.all(userIds.map((id) => this.userModel.findById(id)));
+	
+		// กรองข้อมูลผู้ใช้ที่เป็น null หรือ undefined
+		const validUsers = users.filter((user): user is User => user !== null);
+	
+		// บันทึกในแคช
+		await this.setToCache(cacheKey, validUsers);
+	
+		return validUsers;
+	}
+	
+	
+
 
 	// Create a new user with email validation and invalidate cache
 	async createNewUser(userData: {

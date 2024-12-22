@@ -1,7 +1,9 @@
-import type { Project } from "@prisma/client";
+import type { Project, ProjectRole } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
+import { ValidationException } from "../core/exception.core";
 
 export class ProjectModel extends BaseModel<Project> {
+	[x: string]: any;
 	async findAll(): Promise<Project[]> {
 		const projects = await this.getModel().project.findMany();
 		return projects;
@@ -41,5 +43,26 @@ export class ProjectModel extends BaseModel<Project> {
 			where: { id },
 		});
 		return deletedUser;
+	}
+
+	async findrole(id: string): Promise<ProjectRole[] | null> {
+		const roles = await this.getModel().projectRole.findMany({
+			where: {
+				projectId: id,
+			},
+		});
+		return roles ?? null;}
+	
+
+	async finduserid(id: string): Promise<string[] | null> {
+		const users = await this.getModel().projectRole.findMany({
+			where: {
+				projectId: id,
+			},
+			select: {
+				userId: true, // Fetch only the userId field
+			},
+		});
+		return users?.map((user) => user.userId) ?? null; // Map results to an array of user IDs or return null
 	}
 }
