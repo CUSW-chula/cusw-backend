@@ -162,7 +162,7 @@ export class ProjectService extends BaseService<Project> {
 
 		return project;
 	}
-	
+
 	async getProjectMoney(id: string): Promise<number[]> {
 		const project = await this.projectModel.findById(id);
 		if (!project) throw new NotFoundError("Project not found");
