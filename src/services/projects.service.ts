@@ -156,7 +156,7 @@ export class ProjectService extends BaseService<Project> {
 
 			// Delete the project itself
 			await this.projectModel.delete(projectId);
-		} catch (error) {
+		} catch (_error) {
 			throw new ServerErrorException(`Error deleting project`);
 		}
 

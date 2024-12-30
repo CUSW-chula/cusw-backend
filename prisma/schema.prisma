@@ -44,7 +44,8 @@ model Project {
   usedBudget     Float
   startDate      DateTime
   endDate        DateTime
-  projectRoles   ProjectRole[]    
+  projectRoles   ProjectRole[]   
+  tags           ProjectTag[] 
   tasks          Task[]           @relation("ProjectTasks") 
   files          File[]           @relation("ProjectFiles") 
   
@@ -108,6 +109,7 @@ model Tag {
   id     String  @id @default(cuid()) 
   name   String  @unique 
   tasks  TaskTag[]
+  projects ProjectTag[]
 
   @@map("tags") 
 }
@@ -168,6 +170,17 @@ model TaskTag {
   tag      Tag    @relation(fields: [tagId], references: [id]) 
 
   @@map("task_tags") 
+}
+
+model ProjectTag {
+  id          String  @id @default(cuid())
+  projectId   String
+  tagId       String
+
+  project     Project @relation(fields: [projectId], references: [id])
+  tag         Tag     @relation(fields: [tagId], references: [id])
+
+  @@map("project_tags")
 }
 
 enum Role { 
