@@ -1,5 +1,5 @@
 import { describe, expect, it, jest, beforeEach, mock } from "bun:test";
-import { TaskService } from "../../services/tasks.service";
+import { TaskService } from "../../v1/services/tasks.service";
 import { type PrismaClient } from "@prisma/client";
 import type Redis from "ioredis";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from "bun:test";
-import { UserService } from "../../services/users.service";
+import { UserService } from "../../v1/services/users.service";
 import type { PrismaClient } from "@prisma/client";
 import type Redis from "ioredis";
 
