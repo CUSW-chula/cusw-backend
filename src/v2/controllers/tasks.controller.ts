@@ -8,36 +8,23 @@ import { ActivityService } from "../services/activity-logs.service";
 import { EmojiClassService } from "../services/tasks/emoji.tasks.service";
 import { MoneyClassService } from "../services/tasks/money.tasks.service";
 import { UserTaskClassService } from "../services/tasks/user.tasks.service";
+import { TagService } from "../services/tag.service";
 
-export const TaskController = new Elysia({ prefix: "/tasks" })
-	.get("/", async ({ db, redis }: Context) => {
-		const taskService = new TaskService(db, redis);
-		const tasks = await taskService.getAllTask();
-		return tasks;
-	})
-
+export const TaskController = new Elysia({
+	prefix: "/tasks",
+	tags: ["Tasks", "Version 2"],
+})
 	.get(
-		"/project/:projectid",
-		async ({
-			params: { projectid },
-			db,
-			redis,
-		}: Context & { params: { projectid: string } }) => {
+		"/",
+		async ({ db, redis }: Context) => {
 			const taskService = new TaskService(db, redis);
-			const task = await taskService.getTaskByProjectId(projectid);
-			return task;
+			const tasks = await taskService.getAllTask();
+			return tasks;
 		},
-	)
-	.get(
-		"/child/:parentid",
-		async ({
-			params: { parentid },
-			db,
-			redis,
-		}: Context & { params: { parentid: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const task = await taskService.getTaskByParentTaskId(parentid);
-			return task;
+		{
+			detail: {
+				summary: "Get all tasks",
+			},
 		},
 	)
 	.get(
@@ -49,6 +36,38 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 		}: Context & { params: { id: string } }) => {
 			const taskService = new TaskService(db, redis);
 			const task = await taskService.getTaskById(id);
+			return task;
+		},
+		{
+			detail: {
+				summary: "Get task by task id with detail (creator and members)",
+			},
+		},
+	)
+	.get(
+		"/project/:projectid",
+		async ({
+			params: { projectid },
+			db,
+			redis,
+		}: Context & { params: { projectid: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskByProjectId(projectid);
+			return task;
+		},
+		{
+			detail: "Get all tasks by project id",
+		},
+	)
+	.get(
+		"/child/:parentid",
+		async ({
+			params: { parentid },
+			db,
+			redis,
+		}: Context & { params: { parentid: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const task = await taskService.getTaskByParentTaskId(parentid);
 			return task;
 		},
 	)
@@ -64,94 +83,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			return task;
 		},
 	)
-	.get(
-		"/title/:id",
-		async ({
-			params: { id },
-			db,
-			redis,
-		}: Context & { params: { id: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const title = await taskService.getTitleByTaskId(id);
-			return title;
-		},
-	)
-	.get(
-		"/description/:id",
-		async ({
-			params: { id },
-			db,
-			redis,
-		}: Context & { params: { id: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const description = await taskService.getDescriptionByTaskId(id);
-			return description;
-		},
-	)
-	.patch(
-		"/title",
-		async ({
-			body,
-			db,
-			redis,
-			cookie: { session },
-		}: Context & {
-			body: {
-				taskId: string;
-				title: string;
-			};
-			cookie: { session: Cookie<string> };
-		}) => {
-			const taskService = new TaskService(db, redis);
-			const userId = session.value;
-			const updateTitle = await taskService.updateTitleByTaskId(
-				body.taskId,
-				userId,
-				body.title,
-			);
-			WebSocket.broadcast("title edited", updateTitle);
-			return updateTitle;
-		},
-		{
-			body: t.Object({
-				taskId: t.String(),
-				title: t.String(),
-			}),
-		},
-	)
-
-	.patch(
-		"/description",
-		async ({
-			body,
-			db,
-			redis,
-			cookie: { session },
-		}: Context & {
-			body: {
-				taskId: string;
-				description: string;
-			};
-			cookie: { session: Cookie<string> };
-		}) => {
-			const taskService = new TaskService(db, redis);
-			const userId = session.value;
-			const updateDescription = await taskService.updateDescriptionByTaskId(
-				body.taskId,
-				userId,
-				body.description,
-			);
-			WebSocket.broadcast("description edited", updateDescription);
-			return updateDescription;
-		},
-		{
-			body: t.Object({
-				taskId: t.String(),
-				description: t.String(),
-			}),
-		},
-	)
-
 	.get(
 		"/getassign/:taskId",
 		async ({
@@ -320,18 +251,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 				taskId: t.String(),
 				userId: t.String(),
 			}),
-		},
-	)
-	.get(
-		"/status/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const taskStatus = await taskService.getStatusByTaskId(taskId);
-			return Response.json(taskStatus);
 		},
 	)
 	.patch(
@@ -560,20 +479,6 @@ export const TaskController = new Elysia({ prefix: "/tasks" })
 			}),
 		},
 	)
-
-	.get(
-		"/date/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const taskService = new TaskService(db, redis);
-			const date = await taskService.getDate(taskId);
-			return date;
-		},
-	)
-
 	.patch(
 		"/date",
 		async ({

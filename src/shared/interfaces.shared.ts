@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { $Enums, PrismaClient } from "@prisma/client";
 import type Redis from "ioredis";
 import type * as Minio from "minio";
 
@@ -7,3 +7,32 @@ export interface Context {
 	redis: Redis;
 	minio: Minio.Client;
 }
+
+export type User = {
+	id: string;
+	email: string;
+	name: string;
+} | null;
+
+export type Tag = {
+	id: string;
+	name: string;
+} | null;
+
+export type Task = {
+	id: string;
+	title: string;
+	description: string;
+	parentTaskId: string | null;
+	projectId: string;
+	startDate: Date | null;
+	endDate: Date | null;
+	expense: number;
+	createdById: string | null;
+	creator: User | null;
+	members: User[];
+	tags: Tag[];
+	budget: number;
+	advance: number;
+	status: $Enums.TaskStatus;
+};

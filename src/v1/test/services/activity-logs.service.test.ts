@@ -1,5 +1,5 @@
 import { describe, expect, it, jest, beforeEach } from "bun:test";
-import { ActivityService } from "../../v1/services/activity-logs.service";
+import { ActivityService } from "../../services/activity-logs.service";
 import { $Enums, type PrismaClient } from "@prisma/client";
 import type Redis from "ioredis";
 

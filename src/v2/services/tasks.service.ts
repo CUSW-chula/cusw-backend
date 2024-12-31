@@ -1,10 +1,5 @@
 import { TasksModel } from "../models/tasks.model";
-import {
-	$Enums,
-	TaskStatus,
-	type PrismaClient,
-	type Task,
-} from "@prisma/client";
+import { $Enums, TaskStatus, type PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -20,12 +15,15 @@ import {
 	ServerErrorException,
 	PermissionException,
 } from "../../core/exception.core";
+import { Task } from "../../shared/interfaces.shared";
+import { TagModel } from "../models/tag.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
 	private readonly userModel: UserModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
 	private readonly emojiModel: EmojiModel;
+	private readonly tagModel: TagModel;
 	private readonly taskTagModel: TaskTagModel;
 	private readonly fileModel: FilesModel;
 	private readonly activitiesLogsModel: ActivityLogsModel;
@@ -41,6 +39,7 @@ export class TaskService extends BaseService<Task> {
 		this.fileModel = new FilesModel(prisma);
 		this.activitiesLogsModel = new ActivityLogsModel(prisma);
 		this.commentModel = new CommentModel(prisma);
+		this.tagModel = new TagModel(prisma);
 	}
 
 	protected getTaskModel() {
@@ -65,8 +64,32 @@ export class TaskService extends BaseService<Task> {
 		if (cacheTasks) return cacheTasks as Task[];
 
 		const tasks = await this.taskModel.findAll();
-		await this.setToCache(cacheKey, tasks);
-		return tasks;
+		const tasksWithDetail = await Promise.all(
+			tasks.map(async (task) => {
+				const creator = await this.userModel.findById(task.createdById ?? "");
+				const membersAssignment = await this.taskAssignmentModel.findByTaskId(
+					task.id,
+				);
+				const members = membersAssignment
+					? await Promise.all(
+							membersAssignment.map(async (member) => {
+								return await this.userModel.findById(member.userId);
+							}),
+						)
+					: [];
+				const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
+				const tags = tagsInTask
+					? await Promise.all(
+							tagsInTask.map(async (tag) => {
+								return await this.tagModel.findById(tag.tagId);
+							}),
+						)
+					: [];
+				return { ...task, creator, members, tags };
+			}),
+		);
+		await this.setToCache(cacheKey, tasksWithDetail);
+		return tasksWithDetail;
 	}
 
 	async updateTask(
@@ -97,7 +120,12 @@ export class TaskService extends BaseService<Task> {
 		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
 
 		// Update and return the task
-		return await this.taskModel.update(taskId, updatedTask);
+		try {
+			await this.taskModel.update(taskId, updatedTask);
+			return await this.getTaskById(taskId);
+		} catch (_error) {
+			throw new ServerErrorException(`Error updating task with ID ${taskId}:`);
+		}
 	}
 
 	async createTask(task: Partial<Task>): Promise<Task> {
@@ -128,7 +156,8 @@ export class TaskService extends BaseService<Task> {
 			await this.invalidateCache(`tasks:project:${task.projectId}`);
 			await this.invalidateCache(`projects:${task.projectId}`);
 			await this.invalidateCache(`tasks:parent:${task.parentTaskId}`);
-			return await this.taskModel.create(newTask);
+			const createdTask = await this.taskModel.create(newTask);
+			return await this.getTaskById(createdTask.id);
 		}
 		throw new ValidationException("Title cann't be null");
 	}
@@ -137,10 +166,34 @@ export class TaskService extends BaseService<Task> {
 		const cacheKey = `tasks:project:${projectIdId}`;
 		const cacheTask = await this.getFromCache(cacheKey);
 		if (cacheTask) return cacheTask as Task[];
-		const task = await this.taskModel.findByProjectId(projectIdId);
-		if (!task) throw new NotFoundException("Task not found");
-		await this.setToCache(cacheKey, task);
-		return task;
+		const tasks = await this.taskModel.findByProjectId(projectIdId);
+		if (!tasks) throw new NotFoundException("Task not found");
+		const tasksWithDetail = await Promise.all(
+			tasks.map(async (task) => {
+				const creator = await this.userModel.findById(task.createdById ?? "");
+				const membersAssignment = await this.taskAssignmentModel.findByTaskId(
+					task.id,
+				);
+				const members = membersAssignment
+					? await Promise.all(
+							membersAssignment.map(async (member) => {
+								return await this.userModel.findById(member.userId);
+							}),
+						)
+					: [];
+				const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
+				const tags = tagsInTask
+					? await Promise.all(
+							tagsInTask.map(async (tag) => {
+								return await this.tagModel.findById(tag.tagId);
+							}),
+						)
+					: [];
+				return { ...task, creator, members, tags };
+			}),
+		);
+		await this.setToCache(cacheKey, tasksWithDetail);
+		return tasksWithDetail;
 	}
 
 	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
@@ -148,10 +201,34 @@ export class TaskService extends BaseService<Task> {
 		const cacheTask = await this.getFromCache(cacheKey);
 		if (cacheTask) return cacheTask as Task[];
 
-		const task = await this.taskModel.findByParentTaskId(parentTaskId);
-		if (!task) throw new NotFoundException("Task not found");
-		await this.setToCache(cacheKey, task);
-		return task;
+		const tasks = await this.taskModel.findByParentTaskId(parentTaskId);
+		if (!tasks) throw new NotFoundException("Task not found");
+		const tasksWithDetail = await Promise.all(
+			tasks.map(async (task) => {
+				const creator = await this.userModel.findById(task.createdById ?? "");
+				const membersAssignment = await this.taskAssignmentModel.findByTaskId(
+					task.id,
+				);
+				const members = membersAssignment
+					? await Promise.all(
+							membersAssignment.map(async (member) => {
+								return await this.userModel.findById(member.userId);
+							}),
+						)
+					: [];
+				const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
+				const tags = tagsInTask
+					? await Promise.all(
+							tagsInTask.map(async (tag) => {
+								return await this.tagModel.findById(tag.tagId);
+							}),
+						)
+					: [];
+				return { ...task, creator, members, tags };
+			}),
+		);
+		await this.setToCache(cacheKey, tasksWithDetail);
+		return tasksWithDetail;
 	}
 
 	async getTaskById(taskId: string): Promise<Task> {
@@ -161,8 +238,29 @@ export class TaskService extends BaseService<Task> {
 
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
-		await this.setToCache(cacheKey, task);
-		return task;
+
+		const creator = await this.userModel.findById(task.createdById ?? "");
+		const membersAssignment = await this.taskAssignmentModel.findByTaskId(
+			task.id,
+		);
+		const members = membersAssignment
+			? await Promise.all(
+					membersAssignment.map(async (member) => {
+						return await this.userModel.findById(member.userId);
+					}),
+				)
+			: [];
+		const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
+		const tags = tagsInTask
+			? await Promise.all(
+					tagsInTask.map(async (tag) => {
+						return await this.tagModel.findById(tag.tagId);
+					}),
+				)
+			: [];
+		const taskWithDetail = { ...task, creator, members, tags };
+		await this.setToCache(cacheKey, taskWithDetail);
+		return taskWithDetail;
 	}
 
 	async deleteTask(taskId: string): Promise<Task> {
@@ -187,94 +285,15 @@ export class TaskService extends BaseService<Task> {
 			await this.fileModel.deleteByTaskId(taskId);
 			await this.activitiesLogsModel.deleteByTaskId(taskId);
 			await this.commentModel.deleteByTaskId(taskId);
+			const task = await this.getTaskById(taskId);
 			await this.taskModel.delete(taskId);
 			await this.invalidateCache(cacheKey);
+			const projectId = task.projectId;
+			await this.invalidateCache(`tasks:project:${projectId}`);
+			return task;
 		} catch (_error) {
 			throw new ServerErrorException(`Error deleting task with ID ${taskId}:`);
 		}
-		const projectId = task.projectId;
-		await this.invalidateCache(`tasks:project:${projectId}`);
-		return task;
-	}
-
-	async getTitleByTaskId(taskId: string): Promise<{ title: string }> {
-		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new NotFoundException("Task not found");
-		return {
-			title: task.title,
-		};
-	}
-
-	async getDescriptionByTaskId(
-		taskId: string,
-	): Promise<{ description: string }> {
-		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new NotFoundException("Task not found");
-		return {
-			description: task.description,
-		};
-	}
-
-	async updateTitleByTaskId(
-		taskId: string,
-		userId: string,
-		title: string,
-	): Promise<Task> {
-		const isUserExist = await this.userModel.findById(userId);
-		if (!isUserExist) throw new NotFoundException("User not found");
-
-		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new NotFoundException("Task not found");
-
-		if (isTaskExist.createdById !== userId)
-			throw new PermissionException("You dont have permission to edit");
-
-		const newTitle = {
-			title: title,
-		};
-		const updateTitles = await this.taskModel.update(taskId, newTitle);
-		return updateTitles;
-	}
-
-	async updateDescriptionByTaskId(
-		taskId: string,
-		userId: string,
-		description: string,
-	): Promise<Task> {
-		const isUserExist = await this.userModel.findById(userId);
-		if (!isUserExist) throw new NotFoundException("User not found");
-
-		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new NotFoundException("Task not found");
-
-		const taskAssignment = await this.taskAssignmentModel.findByTaskIdAndUserId(
-			taskId,
-			userId,
-		);
-
-		if (!taskAssignment && isTaskExist.createdById !== userId)
-			throw new ServerErrorException("Unexpected error User not found");
-		const newTitle = {
-			description: description,
-		};
-		const updateDescription = await this.taskModel.update(taskId, newTitle);
-
-		return updateDescription;
-	}
-
-	async getStatusByTaskId(taskId: string): Promise<TaskStatus> {
-		const cacheKey = `status:${taskId}`;
-		const cacheStatus = await this.getFromCache(cacheKey);
-		if (cacheStatus) {
-			const task = cacheStatus as Task;
-			return task.status;
-		}
-
-		const isTaskExist = await this.taskModel.findById(taskId);
-		if (!isTaskExist) throw new NotFoundException("Task not found");
-		await this.setToCache(cacheKey, isTaskExist);
-		const taskStatus = isTaskExist.status;
-		return taskStatus;
 	}
 
 	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
@@ -308,7 +327,7 @@ export class TaskService extends BaseService<Task> {
 				);
 		}
 
-		const changedStatusTask = await this.taskModel.update(taskId, newStatus);
+		const updatedTask = await this.taskModel.update(taskId, newStatus);
 
 		const parentTask = await this.taskModel.findParentTask(taskId);
 		if (parentTask && newTaskStatus === "Done") {
@@ -319,23 +338,21 @@ export class TaskService extends BaseService<Task> {
 					if (task.status !== "Done") isAllDone = false;
 				}
 			}
-			if (isAllDone) this.taskModel.update(parentTask.id, newStatus);
+			if (isAllDone) await this.taskModel.update(parentTask.id, newStatus);
 		}
 		await this.invalidateCache(`status:${taskId}`);
-		return changedStatusTask;
+		return this.getTaskById(updatedTask.id);
 	}
 
 	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
 		const taskList: Task[] = [];
-		const task = await this.taskModel.findById(taskId);
+		const task = await this.getTaskById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
 
 		let currentTask = task;
 		taskList.push(currentTask);
 		while (currentTask.parentTaskId) {
-			const parentTask = await this.taskModel.findById(
-				currentTask.parentTaskId,
-			);
+			const parentTask = await this.getTaskById(currentTask.parentTaskId);
 			if (!parentTask) break;
 			taskList.push(parentTask);
 			currentTask = parentTask;
@@ -350,34 +367,25 @@ export class TaskService extends BaseService<Task> {
 
 		if (!task.parentTaskId) return null;
 
-		const parentTask = await this.taskModel.findById(task.parentTaskId);
+		const parentTask = await this.getTaskById(task.parentTaskId);
 		if (!parentTask) throw new NotFoundException("Parent task not found");
 
 		return parentTask;
 	}
 
-	async getDate(taskId: string): Promise<(Date | null)[]> {
-		const task = await this.taskModel.findById(taskId);
-		if (!task) throw new NotFoundException("Task not found");
-		return [task.startDate, task.endDate];
-	}
-
 	async updateDate(
-		taskID: string,
+		taskId: string,
 		startDate: Date | null,
 		endDate: Date | null,
 	): Promise<Task> {
-		const task = await this.taskModel.findById(taskID);
+		const isTaskExist = await this.taskModel.findById(taskId);
+		if (!isTaskExist) throw new NotFoundException("Task not found");
 
-		//First step check if task isn't exist
-		if (!task) throw new NotFoundException("Task not found");
-
-		//Second step update date that assign in.
-		const updateDate = await this.taskModel.update(taskID, {
+		const updatedTask = await this.taskModel.update(taskId, {
 			startDate: startDate,
 			endDate: endDate,
 		});
-
-		return updateDate;
+		await this.invalidateCache(`tasks:${taskId}`);
+		return this.getTaskById(updatedTask.id);
 	}
 }

@@ -1,3 +1,4 @@
+// Import dependencies
 import { Elysia, t } from "elysia";
 import { PrismaClient } from "@prisma/client";
 import swagger from "@elysiajs/swagger";
@@ -5,29 +6,15 @@ import Redis from "ioredis";
 import * as Minio from "minio";
 import cors from "@elysiajs/cors";
 import jwt from "@elysiajs/jwt";
+import { Exception, UnauthorizedException } from "./core/exception.core";
 
-import { UserController } from "./v1/controllers/users.controller";
-import { ProjectController } from "./v1/controllers/projects.controller";
-import { CommentController } from "./v1/controllers/comment.controller";
-import { TaskController } from "./v1/controllers/tasks.controller";
-import { TagController } from "./v1/controllers/tag.controller";
-import { FileController } from "./v1/controllers/files.controller";
-import { ActivityController } from "./v1/controllers/activity-logs.controller";
+// Import controllers
+import controllersV1 from "./v1/controllers";
+import controllersV2 from "./v2/controllers";
 
-import { ProjectController as ProjectController2 } from "./v2/controllers/projects.controller";
-import { UserController as UserController2 } from "./v2/controllers/users.controller";
-import { CommentController as CommentController2 } from "./v2/controllers/comment.controller";
-import { TaskController as TaskController2 } from "./v2/controllers/tasks.controller";
-import { TagController as TagController2 } from "./v2/controllers/tag.controller";
-import { FileController as FileController2 } from "./v2/controllers/files.controller";
-import { ActivityController as ActivityController2 } from "./v2/controllers/activity-logs.controller";
-
-// Initialize clients
+// Initialize services
 const prisma = new PrismaClient();
-const redis = new Redis({
-	host: "localhost",
-	port: 6379,
-});
+const redis = new Redis({ host: "localhost", port: 6379 });
 const minioClient = new Minio.Client({
 	endPoint: "localhost",
 	port: 9000,
@@ -36,39 +23,9 @@ const minioClient = new Minio.Client({
 	secretKey: process.env.MINIO_SECRET_KEY ?? "",
 });
 
-// Version configuration
-const versions = {
-	v1: {
-		controllers: [
-			ProjectController,
-			UserController,
-			TaskController,
-			CommentController,
-			TagController,
-			FileController,
-			ActivityController,
-		],
-	},
-	v2: {
-		controllers: [
-			ProjectController2,
-			UserController2,
-			TaskController2,
-			CommentController2,
-			TagController2,
-			FileController2,
-			ActivityController2,
-		],
-	},
-};
-
-// App initialization
+// Initialize Elysia app
 const app = new Elysia()
-	.use(
-		swagger({
-			path: "/swagger",
-		}),
-	)
+	.use(swagger({ version: "1.0.0" }))
 	.use(
 		cors({
 			origin: [
@@ -87,21 +44,58 @@ const app = new Elysia()
 	)
 	.decorate("db", prisma)
 	.decorate("redis", redis)
-	.decorate("minio", minioClient)
-	.get("/sign/:id", async ({ jwt, params }) => {
-		const auth = await jwt.sign(params);
-		return `${auth}`;
-	});
+	.decorate("minio", minioClient);
 
-// Add versioned routes dynamically
-Object.entries(versions).forEach(([version, { controllers }]) => {
-	app.group(`/${version}/api`, (api) => {
-		controllers.forEach((controller) => {
-			api.use(controller);
-		});
-		return api;
-	});
+// Route for signing a token
+app.get("/sign/:id", async ({ jwt, params }) => {
+	const auth = await jwt.sign(params);
+	return `${auth}`;
 });
+
+// Middleware for handling authorization and grouping routes by version
+app.guard(
+	{
+		headers: t.Object({
+			authorization: t.TemplateLiteral("Bearer ${string}"),
+		}),
+	},
+	(app) =>
+		app
+			.error({ Exception })
+			.onBeforeHandle(
+				async ({
+					headers: { authorization },
+					jwt,
+					set,
+					cookie: { session },
+				}) => {
+					const token = authorization.split(" ")[1];
+					const user = await jwt.verify(token);
+					if (!user) {
+						throw new UnauthorizedException("Unauthorized");
+					}
+					set.status = 200;
+					session.set({
+						value: user.id,
+						httpOnly: true,
+						path: "/api",
+					});
+				},
+			)
+			.onError(({ error }) => {
+				if (error instanceof Exception) {
+					return Response.json(error.message, { status: error.statusCode });
+				}
+			})
+			.group("/v1/api", (api) => {
+				controllersV1.forEach((controller) => api.use(controller));
+				return api;
+			})
+			.group("/v2/api", (api) => {
+				controllersV2.forEach((controller) => api.use(controller));
+				return api;
+			}),
+);
 
 // Start the server
 app.listen(4000);
@@ -109,5 +103,4 @@ app.listen(4000);
 console.info(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
-
 console.info("🦊 API is running at http://localhost:4000/swagger");
