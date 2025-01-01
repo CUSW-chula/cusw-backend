@@ -123,4 +123,54 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const budgetList = await projectService.getProjectMoney(id);
 			return budgetList;
 		},
+	)
+
+	.patch(
+		"/daterange",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { startDate: string; endDate: string };
+		}) => {
+			try {
+				const parsedStartDate = new Date(body.startDate);
+				const parsedEndDate = new Date(body.endDate);
+
+				if (
+					isNaN(parsedStartDate.getTime()) ||
+					isNaN(parsedEndDate.getTime())
+				) {
+					throw new Error(
+						`Invalid date format. Received: startDate=${body.startDate}, endDate=${body.endDate}`,
+					);
+				}
+				if (parsedStartDate > parsedEndDate) {
+					throw new Error("startDate must be before or equal to endDate");
+				}
+
+				const projectService = new ProjectService(db, redis);
+				const projects = await projectService.getProjectByDateRange(
+					parsedStartDate,
+					parsedEndDate,
+				);
+
+				return { status: 200, data: projects };
+			} catch (error) {
+				return {
+					status: 400,
+					message:
+						error instanceof Error
+							? error.message
+							: "An unexpected error occurred",
+				};
+			}
+		},
+		{
+			body: t.Object({
+				startDate: t.String(),
+				endDate: t.String(),
+			}),
+		},
 	);

@@ -201,4 +201,15 @@ export class ProjectService extends BaseService<Project> {
 		}
 		return sum;
 	}
+
+	async getProjectByDateRange(
+		startDate: Date,
+		endDate: Date,
+	): Promise<Project[]> {
+		const projects = await this.projectModel.findByDateRange(
+			startDate,
+			endDate,
+		);
+		return projects;
+	}
 }

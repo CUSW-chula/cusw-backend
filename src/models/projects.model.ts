@@ -64,4 +64,11 @@ export class ProjectModel extends BaseModel<Project> {
 		});
 		return deletedUser;
 	}
+
+	async findByDateRange(startDate: Date, endDate: Date): Promise<Project[]> {
+		const projects = await this.getModel().project.findMany({
+			where: { startDate: { lte: endDate }, endDate: { gte: startDate } },
+		});
+		return projects;
+	}
 }
