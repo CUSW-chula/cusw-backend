@@ -1,20 +1,22 @@
-import { EmojiTaskUser, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { TaskService } from "../tasks.service";
 import Redis from "ioredis";
 import {
 	NotFoundException,
 	PermissionException,
 } from "../../../core/exception.core";
+import { Emoji } from "../../../shared/interfaces.shared";
 
 export class EmojiClassService extends TaskService {
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(prisma, redis);
 	}
+
 	async addEmojiOnTask(
 		emoji: string,
 		userId: string,
 		taskId: string,
-	): Promise<EmojiTaskUser> {
+	): Promise<Emoji> {
 		const isUserExist = await this.getUserModel().findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
 
@@ -32,7 +34,14 @@ export class EmojiClassService extends TaskService {
 			userId: userId,
 		});
 
-		return addEmojiOnTask;
+		const emojiTaskUser = {
+			id: addEmojiOnTask.id,
+			emoji: addEmojiOnTask.emoji,
+			taskId: addEmojiOnTask.taskId,
+			user: isUserExist,
+		};
+
+		return emojiTaskUser;
 	}
 
 	async checkEmojiUserIdAndByTaskId(
@@ -55,21 +64,33 @@ export class EmojiClassService extends TaskService {
 		else return true;
 	}
 
-	async getAllEmojiByTaskId(taskId: string): Promise<EmojiTaskUser[]> {
+	async getAllEmojiByTaskId(taskId: string): Promise<Emoji[]> {
 		const isTaskExist = await this.getTaskModel().findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
 		const emojiOnTasks = await this.getEmojiModel().findAllByTaskId(taskId);
 		if (!emojiOnTasks || emojiOnTasks.length === 0)
 			throw new NotFoundException("No emoji add to this task");
-		return emojiOnTasks;
+		const emojis = await Promise.all(
+			emojiOnTasks.map(async (emoji) => {
+				const user = await this.getUserModel().findById(emoji.userId);
+				if (!user) throw new NotFoundException("User not found");
+				return {
+					id: emoji.id,
+					emoji: emoji.emoji,
+					taskId: emoji.taskId,
+					user: user,
+				};
+			}),
+		);
+		return emojis;
 	}
 
 	async updateEmojiByTaskId(
 		newEmoji: string,
 		userId: string,
 		taskId: string,
-	): Promise<EmojiTaskUser> {
+	): Promise<Emoji> {
 		const isUserExist = await this.getUserModel().findById(userId);
 		if (!isUserExist) {
 			throw new NotFoundException("User not found");
@@ -95,6 +116,12 @@ export class EmojiClassService extends TaskService {
 			emojis.id,
 			newEmojis,
 		);
-		return updatedEmoji;
+		const emojiTaskUser = {
+			id: updatedEmoji.id,
+			emoji: updatedEmoji.emoji,
+			taskId: updatedEmoji.taskId,
+			user: isUserExist,
+		};
+		return emojiTaskUser;
 	}
 }

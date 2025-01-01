@@ -1,10 +1,11 @@
-import { BudgetStatus, PrismaClient, Task } from "@prisma/client";
+import { BudgetStatus, PrismaClient } from "@prisma/client";
 import { TaskService } from "../tasks.service";
 import Redis from "ioredis";
 import {
 	NotFoundException,
 	ValidationException,
 } from "../../../core/exception.core";
+import { Task } from "../../../shared/interfaces.shared";
 
 export class MoneyClassService extends TaskService {
 	constructor(prisma: PrismaClient, redis: Redis) {
@@ -110,7 +111,7 @@ export class MoneyClassService extends TaskService {
 				advance: advance,
 				expense: expense,
 			});
-			return updateMoney;
+			return await this.getTaskById(updateMoney.id);
 		}
 
 		//Third step check if input money isn't only one value
@@ -132,7 +133,7 @@ export class MoneyClassService extends TaskService {
 			expense: expense,
 		});
 		setStatusBudgets();
-		return addMoney;
+		return await this.getTaskById(addMoney.id);
 	}
 
 	async deleteMoney(
@@ -208,6 +209,6 @@ export class MoneyClassService extends TaskService {
 			expense: expense,
 		});
 		setStatusBudgets();
-		return updateMoney;
+		return await this.getTaskById(updateMoney.id);
 	}
 }

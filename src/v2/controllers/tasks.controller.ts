@@ -1,5 +1,5 @@
 import { type Cookie, Elysia, t } from "elysia";
-import { type Context } from "../../shared/interfaces.shared";
+import { Emoji, type Context } from "../../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { TaskStatus, EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
@@ -8,7 +8,6 @@ import { ActivityService } from "../services/activity-logs.service";
 import { EmojiClassService } from "../services/tasks/emoji.tasks.service";
 import { MoneyClassService } from "../services/tasks/money.tasks.service";
 import { UserTaskClassService } from "../services/tasks/user.tasks.service";
-import { TagService } from "../services/tag.service";
 
 export const TaskController = new Elysia({
 	prefix: "/tasks",
@@ -70,6 +69,11 @@ export const TaskController = new Elysia({
 			const task = await taskService.getTaskByParentTaskId(parentid);
 			return task;
 		},
+		{
+			detail: {
+				summary: "Get all child tasks by parent task id",
+			},
+		},
 	)
 	.delete(
 		"/:id",
@@ -82,18 +86,10 @@ export const TaskController = new Elysia({
 			const task = await taskService.deleteTask(id);
 			return task;
 		},
-	)
-	.get(
-		"/getassign/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const userTaskClassService = new UserTaskClassService(db, redis);
-			const users: User[] =
-				await userTaskClassService.getAsignUserInTaskByTaskId(taskId);
-			return users;
+		{
+			detail: {
+				summary: "Delete task by task id",
+			},
 		},
 	)
 	//patch data only task title and description
@@ -125,6 +121,9 @@ export const TaskController = new Elysia({
 				title: t.String(),
 				description: t.String(),
 			}),
+			detail: {
+				summary: "Update task title and description",
+			},
 		},
 	)
 
@@ -177,6 +176,9 @@ export const TaskController = new Elysia({
 				startDate: t.Date(),
 				endDate: t.Date(),
 			}),
+			detail: {
+				summary: "Create a new task",
+			},
 		},
 	)
 	.post(
@@ -191,14 +193,13 @@ export const TaskController = new Elysia({
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
-			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const assignTask = await userTaskClassService.assigningTaskToUser(
 				body.taskId,
 				body.userId,
 			);
-			const usersAssign = await userService.getUserById(assignTask.userId);
+			const usersAssign = assignTask.user;
 			WebSocket.broadcast("assigned", usersAssign);
 			const assignActivity = await activityService.postActivity(
 				body.taskId,
@@ -214,6 +215,9 @@ export const TaskController = new Elysia({
 				taskId: t.String(),
 				userId: t.String(),
 			}),
+			detail: {
+				summary: "Assign task to user",
+			},
 		},
 	)
 	.delete(
@@ -228,14 +232,13 @@ export const TaskController = new Elysia({
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
-			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const unAssignTask = await userTaskClassService.unAssigningTaskToUser(
 				body.taskId,
 				body.userId,
 			);
-			const unAssignUser = await userService.getUserById(unAssignTask.userId);
+			const unAssignUser = unAssignTask.user;
 			WebSocket.broadcast("unassigned", unAssignUser);
 			const unassignActivity = await activityService.postActivity(
 				body.taskId,
@@ -251,6 +254,9 @@ export const TaskController = new Elysia({
 				taskId: t.String(),
 				userId: t.String(),
 			}),
+			detail: {
+				summary: "Unassign task from user",
+			},
 		},
 	)
 	.patch(
@@ -289,6 +295,9 @@ export const TaskController = new Elysia({
 				taskId: t.String(),
 				newTaskStatus: t.String(),
 			}),
+			detail: {
+				summary: "Change task status",
+			},
 		},
 	)
 	.post(
@@ -317,22 +326,12 @@ export const TaskController = new Elysia({
 				taskId: t.String(),
 				emoji: t.String(),
 			}),
+			detail: {
+				tags: ["Emoji", "Version 2"],
+				summary: "Add emoji to task",
+			},
 		},
 	)
-	.get(
-		"/emoji/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const emojiClassService = new EmojiClassService(db, redis);
-			const emoji: EmojiTaskUser[] =
-				await emojiClassService.getAllEmojiByTaskId(taskId);
-			return emoji;
-		},
-	)
-
 	.get(
 		"/emoji/:taskId/:userId",
 		async ({
@@ -345,8 +344,33 @@ export const TaskController = new Elysia({
 				await emojiClassService.checkEmojiUserIdAndByTaskId(taskId, userId);
 			return Response.json(check);
 		},
+		{
+			detail: {
+				tags: ["Emoji", "Version 2"],
+				summary: "Check is user already add emoji to task",
+			},
+		},
 	)
 
+	.get(
+		"/emoji/:taskId",
+		async ({
+			params: { taskId },
+			db,
+			redis,
+		}: Context & { params: { taskId: string } }) => {
+			const emojiClassService = new EmojiClassService(db, redis);
+			const emoji: Emoji[] =
+				await emojiClassService.getAllEmojiByTaskId(taskId);
+			return emoji;
+		},
+		{
+			detail: {
+				tags: ["Emoji", "Version 2"],
+				summary: "Get all emoji with detail by task id",
+			},
+		},
+	)
 	.patch(
 		"/emoji",
 		async ({
@@ -373,6 +397,10 @@ export const TaskController = new Elysia({
 				emoji: t.String(),
 				taskId: t.String(),
 			}),
+			detail: {
+				tags: ["Emoji", "Version 2"],
+				summary: "Update emoji on task",
+			},
 		},
 	)
 
@@ -387,6 +415,11 @@ export const TaskController = new Elysia({
 			const parentTask = await taskService.getRecursiveParentTaskList(taskId);
 			return parentTask;
 		},
+		{
+			detail: {
+				summary: "Get all parent task recursively",
+			},
+		},
 	)
 
 	.get(
@@ -400,32 +433,12 @@ export const TaskController = new Elysia({
 			const parentTask = await taskService.getParentTask(taskId);
 			return parentTask;
 		},
-	)
-	.get(
-		"/money/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const moneyClassService = new MoneyClassService(db, redis);
-			const money = await moneyClassService.getMoney(taskId);
-			return money;
+		{
+			detail: {
+				summary: "Get parent task by task id",
+			},
 		},
 	)
-
-	// .get(
-	// 	"/money/all/:taskId",
-	// 	async ({
-	// 		params: { taskId },
-	// 		db,
-	// 		redis,
-	// 	}: Context & { params: { taskId: string } }) => {
-	// 		const moneyClassService = new MoneyClassService(db, redis);
-	// 		const money = await moneyClassService.getAllMoney(taskId);
-	// 		return money;
-	// 	},
-	// )
 	.post(
 		"/money",
 		async ({
@@ -457,6 +470,10 @@ export const TaskController = new Elysia({
 				advance: t.Number(),
 				expense: t.Number(),
 			}),
+			detail: {
+				tags: ["Money", "Version 2"],
+				summary: "Add money to task",
+			},
 		},
 	)
 
@@ -477,6 +494,10 @@ export const TaskController = new Elysia({
 			body: t.Object({
 				taskID: t.String(),
 			}),
+			detail: {
+				tags: ["Money", "Version 2"],
+				summary: "Delete money from task",
+			},
 		},
 	)
 	.patch(
@@ -507,5 +528,9 @@ export const TaskController = new Elysia({
 				startDate: t.Union([t.Date(), t.Null()]),
 				endDate: t.Union([t.Date(), t.Null()]),
 			}),
+			detail: {
+				tags: ["Date", "Version 2"],
+				summary: "Update task date",
+			},
 		},
 	);

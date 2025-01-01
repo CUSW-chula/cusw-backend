@@ -35,4 +35,17 @@ export type Task = {
 	budget: number;
 	advance: number;
 	status: $Enums.TaskStatus;
+	subtasks: Task[];
+};
+
+export type TaskAssignment = {
+	user: User;
+	task: Task;
+};
+
+export type Emoji = {
+	id: string;
+	emoji: string;
+	taskId: string;
+	user: User;
 };

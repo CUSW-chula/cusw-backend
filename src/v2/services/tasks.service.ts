@@ -85,7 +85,16 @@ export class TaskService extends BaseService<Task> {
 							}),
 						)
 					: [];
-				return { ...task, creator, members, tags };
+				const _subtasks = await this.taskModel.findSubTask(task.id);
+				const subtasks = _subtasks
+					? await Promise.all(
+							_subtasks.map(async (subtask) => {
+								const task = await this.getTaskById(subtask.id);
+								return task;
+							}),
+						)
+					: [];
+				return { ...task, creator, members, tags, subtasks };
 			}),
 		);
 		await this.setToCache(cacheKey, tasksWithDetail);
@@ -189,7 +198,16 @@ export class TaskService extends BaseService<Task> {
 							}),
 						)
 					: [];
-				return { ...task, creator, members, tags };
+				const _subtasks = await this.taskModel.findSubTask(task.id);
+				const subtasks = _subtasks
+					? await Promise.all(
+							_subtasks.map(async (subtask) => {
+								const task = await this.getTaskById(subtask.id);
+								return task;
+							}),
+						)
+					: [];
+				return { ...task, creator, members, tags, subtasks };
 			}),
 		);
 		await this.setToCache(cacheKey, tasksWithDetail);
@@ -224,7 +242,17 @@ export class TaskService extends BaseService<Task> {
 							}),
 						)
 					: [];
-				return { ...task, creator, members, tags };
+				const _subtasks = await this.taskModel.findSubTask(task.id);
+				const subtasks = _subtasks
+					? await Promise.all(
+							_subtasks.map(async (subtask) => {
+								const task = await this.getTaskById(subtask.id);
+								return task;
+							}),
+						)
+					: [];
+
+				return { ...task, creator, members, tags, subtasks };
 			}),
 		);
 		await this.setToCache(cacheKey, tasksWithDetail);
@@ -258,7 +286,16 @@ export class TaskService extends BaseService<Task> {
 					}),
 				)
 			: [];
-		const taskWithDetail = { ...task, creator, members, tags };
+		const _subtasks = await this.taskModel.findSubTask(task.id);
+		const subtasks = _subtasks
+			? await Promise.all(
+					_subtasks.map(async (subtask) => {
+						const task = await this.getTaskById(subtask.id);
+						return task;
+					}),
+				)
+			: [];
+		const taskWithDetail = { ...task, creator, members, tags, subtasks };
 		await this.setToCache(cacheKey, taskWithDetail);
 		return taskWithDetail;
 	}

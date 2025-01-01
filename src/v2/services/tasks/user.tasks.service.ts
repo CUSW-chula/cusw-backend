@@ -1,10 +1,11 @@
-import { PrismaClient, TaskAssignment, User } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { TaskService } from "../tasks.service";
 import Redis from "ioredis";
 import {
 	NotFoundException,
 	ValidationException,
 } from "../../../core/exception.core";
+import { TaskAssignment, User } from "../../../shared/interfaces.shared";
 
 export class UserTaskClassService extends TaskService {
 	constructor(prisma: PrismaClient, redis: Redis) {
@@ -63,12 +64,14 @@ export class UserTaskClassService extends TaskService {
 			});
 
 		// Assigning userTaskAssignment
-		const assignTaskToUser = await this.getTaskAssignmentModel().create({
+		await this.getTaskAssignmentModel().create({
 			taskId: taskId,
 			userId: userId,
 		});
 		await this.invalidateCache(cacheKey);
-		return assignTaskToUser;
+		const task = await this.getTaskById(taskId);
+		const tasksAssigment = { user: isUserExist, task: task };
+		return tasksAssigment;
 	}
 
 	async unAssigningTaskToUser(
@@ -90,9 +93,7 @@ export class UserTaskClassService extends TaskService {
 			throw new NotFoundException(
 				"Unexpected error tasks assignment not found",
 			);
-		const unAssigningTaskToUser = await this.getTaskAssignmentModel().delete(
-			taskAssignment.id,
-		);
+		await this.getTaskAssignmentModel().delete(taskAssignment.id);
 		const isTaskHasBeenAssigned =
 			await this.getTaskAssignmentModel().findByTaskId(taskId);
 		if (
@@ -102,6 +103,8 @@ export class UserTaskClassService extends TaskService {
 			await this.getTaskModel().update(taskId, {
 				status: "Unassigned",
 			});
+		const task = await this.getTaskById(taskId);
+		const unAssigningTaskToUser = { user: isUserExist, task: task };
 		return unAssigningTaskToUser;
 	}
 }
