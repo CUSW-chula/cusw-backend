@@ -156,7 +156,7 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 					parsedEndDate,
 				);
 
-				return { status: 200, data: projects };
+				return projects;
 			} catch (error) {
 				return {
 					status: 400,
