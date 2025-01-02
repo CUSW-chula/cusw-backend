@@ -36,6 +36,7 @@ export type Task = {
 	advance: number;
 	status: $Enums.TaskStatus;
 	subtasks: Task[];
+	emojis: Emoji[];
 };
 
 export type TaskAssignment = {

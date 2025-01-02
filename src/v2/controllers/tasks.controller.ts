@@ -351,26 +351,6 @@ export const TaskController = new Elysia({
 			},
 		},
 	)
-
-	.get(
-		"/emoji/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const emojiClassService = new EmojiClassService(db, redis);
-			const emoji: Emoji[] =
-				await emojiClassService.getAllEmojiByTaskId(taskId);
-			return emoji;
-		},
-		{
-			detail: {
-				tags: ["Emoji", "Version 2"],
-				summary: "Get all emoji with detail by task id",
-			},
-		},
-	)
 	.patch(
 		"/emoji",
 		async ({

@@ -1,5 +1,5 @@
 import { TasksModel } from "../models/tasks.model";
-import { $Enums, TaskStatus, type PrismaClient } from "@prisma/client";
+import { TaskStatus, type PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -15,7 +15,7 @@ import {
 	ServerErrorException,
 	PermissionException,
 } from "../../core/exception.core";
-import { Task } from "../../shared/interfaces.shared";
+import { Emoji, Task } from "../../shared/interfaces.shared";
 import { TagModel } from "../models/tag.model";
 
 export class TaskService extends BaseService<Task> {
@@ -66,35 +66,7 @@ export class TaskService extends BaseService<Task> {
 		const tasks = await this.taskModel.findAll();
 		const tasksWithDetail = await Promise.all(
 			tasks.map(async (task) => {
-				const creator = await this.userModel.findById(task.createdById ?? "");
-				const membersAssignment = await this.taskAssignmentModel.findByTaskId(
-					task.id,
-				);
-				const members = membersAssignment
-					? await Promise.all(
-							membersAssignment.map(async (member) => {
-								return await this.userModel.findById(member.userId);
-							}),
-						)
-					: [];
-				const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
-				const tags = tagsInTask
-					? await Promise.all(
-							tagsInTask.map(async (tag) => {
-								return await this.tagModel.findById(tag.tagId);
-							}),
-						)
-					: [];
-				const _subtasks = await this.taskModel.findSubTask(task.id);
-				const subtasks = _subtasks
-					? await Promise.all(
-							_subtasks.map(async (subtask) => {
-								const task = await this.getTaskById(subtask.id);
-								return task;
-							}),
-						)
-					: [];
-				return { ...task, creator, members, tags, subtasks };
+				return await this.getTaskById(task.id);
 			}),
 		);
 		await this.setToCache(cacheKey, tasksWithDetail);
@@ -179,35 +151,7 @@ export class TaskService extends BaseService<Task> {
 		if (!tasks) throw new NotFoundException("Task not found");
 		const tasksWithDetail = await Promise.all(
 			tasks.map(async (task) => {
-				const creator = await this.userModel.findById(task.createdById ?? "");
-				const membersAssignment = await this.taskAssignmentModel.findByTaskId(
-					task.id,
-				);
-				const members = membersAssignment
-					? await Promise.all(
-							membersAssignment.map(async (member) => {
-								return await this.userModel.findById(member.userId);
-							}),
-						)
-					: [];
-				const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
-				const tags = tagsInTask
-					? await Promise.all(
-							tagsInTask.map(async (tag) => {
-								return await this.tagModel.findById(tag.tagId);
-							}),
-						)
-					: [];
-				const _subtasks = await this.taskModel.findSubTask(task.id);
-				const subtasks = _subtasks
-					? await Promise.all(
-							_subtasks.map(async (subtask) => {
-								const task = await this.getTaskById(subtask.id);
-								return task;
-							}),
-						)
-					: [];
-				return { ...task, creator, members, tags, subtasks };
+				return await this.getTaskById(task.id);
 			}),
 		);
 		await this.setToCache(cacheKey, tasksWithDetail);
@@ -223,36 +167,7 @@ export class TaskService extends BaseService<Task> {
 		if (!tasks) throw new NotFoundException("Task not found");
 		const tasksWithDetail = await Promise.all(
 			tasks.map(async (task) => {
-				const creator = await this.userModel.findById(task.createdById ?? "");
-				const membersAssignment = await this.taskAssignmentModel.findByTaskId(
-					task.id,
-				);
-				const members = membersAssignment
-					? await Promise.all(
-							membersAssignment.map(async (member) => {
-								return await this.userModel.findById(member.userId);
-							}),
-						)
-					: [];
-				const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
-				const tags = tagsInTask
-					? await Promise.all(
-							tagsInTask.map(async (tag) => {
-								return await this.tagModel.findById(tag.tagId);
-							}),
-						)
-					: [];
-				const _subtasks = await this.taskModel.findSubTask(task.id);
-				const subtasks = _subtasks
-					? await Promise.all(
-							_subtasks.map(async (subtask) => {
-								const task = await this.getTaskById(subtask.id);
-								return task;
-							}),
-						)
-					: [];
-
-				return { ...task, creator, members, tags, subtasks };
+				return await this.getTaskById(task.id);
 			}),
 		);
 		await this.setToCache(cacheKey, tasksWithDetail);
@@ -295,7 +210,26 @@ export class TaskService extends BaseService<Task> {
 					}),
 				)
 			: [];
-		const taskWithDetail = { ...task, creator, members, tags, subtasks };
+		const _emojis = await this.emojiModel.findAllByTaskId(task.id);
+		const emojis: Emoji[] = await Promise.all(
+			_emojis.flat().map(async (emoji) => {
+				const user = await this.userModel.findById(emoji.userId);
+				return {
+					emoji: emoji.emoji,
+					id: emoji.id,
+					taskId: emoji.taskId,
+					user: user,
+				};
+			}),
+		);
+		const taskWithDetail = {
+			...task,
+			creator,
+			members,
+			tags,
+			subtasks,
+			emojis,
+		};
 		await this.setToCache(cacheKey, taskWithDetail);
 		return taskWithDetail;
 	}

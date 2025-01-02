@@ -64,28 +64,6 @@ export class EmojiClassService extends TaskService {
 		else return true;
 	}
 
-	async getAllEmojiByTaskId(taskId: string): Promise<Emoji[]> {
-		const isTaskExist = await this.getTaskModel().findById(taskId);
-		if (!isTaskExist) throw new NotFoundException("Task not found");
-
-		const emojiOnTasks = await this.getEmojiModel().findAllByTaskId(taskId);
-		if (!emojiOnTasks || emojiOnTasks.length === 0)
-			throw new NotFoundException("No emoji add to this task");
-		const emojis = await Promise.all(
-			emojiOnTasks.map(async (emoji) => {
-				const user = await this.getUserModel().findById(emoji.userId);
-				if (!user) throw new NotFoundException("User not found");
-				return {
-					id: emoji.id,
-					emoji: emoji.emoji,
-					taskId: emoji.taskId,
-					user: user,
-				};
-			}),
-		);
-		return emojis;
-	}
-
 	async updateEmojiByTaskId(
 		newEmoji: string,
 		userId: string,
