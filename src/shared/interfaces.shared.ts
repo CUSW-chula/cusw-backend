@@ -49,7 +49,7 @@ export type Prorject = {
 	owner: User[];
 	members: User[];
 	tasks: Task[];
-}
+};
 
 export type TaskAssignment = {
 	user: User;
