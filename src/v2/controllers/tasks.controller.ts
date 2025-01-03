@@ -152,7 +152,19 @@ export const TaskController = new Elysia({
 			const taskService = new TaskService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			const task = await taskService.createTask(body);
+			const task = await taskService.createTask({
+				title: body.title,
+				description: body.description,
+				budget: body.budget,
+				advance: body.advance,
+				expense: body.expense,
+				status: body.status,
+				parentTaskId: body.parentTaskId,
+				projectId: body.projectId,
+				startDate: body.startDate,
+				endDate: body.endDate,
+				createdById: userId,
+			});
 			WebSocket.broadcast("task", task);
 			const createTaskActivity = await activityService.postActivity(
 				task.id,

@@ -29,7 +29,7 @@ export type Task = {
 	endDate: Date | null;
 	expense: number;
 	createdById: string | null;
-	creator: User | null;
+	owner: User | null;
 	members: User[];
 	tags: Tag[];
 	budget: number;
@@ -38,6 +38,18 @@ export type Task = {
 	subtasks: Task[];
 	emojis: Emoji[];
 };
+
+export type Prorject = {
+	id: string;
+	title: string;
+	description: string;
+	startDate: Date;
+	endDate: Date;
+	createdById: string;
+	owner: User[];
+	members: User[];
+	tasks: Task[];
+}
 
 export type TaskAssignment = {
 	user: User;

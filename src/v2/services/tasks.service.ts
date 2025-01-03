@@ -84,7 +84,7 @@ export class TaskService extends BaseService<Task> {
 
 		// Check if user exists based on the task's createdById
 		if (!existingTask.createdById)
-			throw new NotFoundException("Task creator ID not found");
+			throw new NotFoundException("Task owner ID not found");
 		const isUserExist = await this.userModel.findById(existingTask.createdById);
 		if (!isUserExist) throw new NotFoundException("User not found");
 
@@ -111,7 +111,7 @@ export class TaskService extends BaseService<Task> {
 
 	async createTask(task: Partial<Task>): Promise<Task> {
 		if (!task.createdById)
-			throw new ValidationException("No creator ID provided");
+			throw new ValidationException("No owner ID provided");
 		if (!task.projectId)
 			throw new ValidationException("No project ID provided");
 		const isUserExist = await this.userModel.findById(task.createdById);
@@ -182,7 +182,7 @@ export class TaskService extends BaseService<Task> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
 
-		const creator = await this.userModel.findById(task.createdById ?? "");
+		const owner = await this.userModel.findById(task.createdById ?? "");
 		const membersAssignment = await this.taskAssignmentModel.findByTaskId(
 			task.id,
 		);
@@ -224,7 +224,7 @@ export class TaskService extends BaseService<Task> {
 		);
 		const taskWithDetail = {
 			...task,
-			creator,
+			owner,
 			members,
 			tags,
 			subtasks,
