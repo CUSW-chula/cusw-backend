@@ -5,8 +5,7 @@ WORKDIR /app
 
 # Cache packages installation
 COPY package.json package.json
-COPY bun.lockb bun.lockb
-COPY prisma ./prisma  # Copy the Prisma schema
+COPY prisma ./prisma 
 
 RUN bun install
 RUN bunx prisma generate
