@@ -5,20 +5,19 @@ WORKDIR /app
 
 # Cache packages installation
 COPY package.json package.json
+COPY bun.lockb bun.lockb
+COPY prisma ./prisma  # Copy the Prisma schema
 
 RUN bun install
-RUN bunx prisma db push
 RUN bunx prisma generate
 
 COPY ./src ./src
 
 ENV NODE_ENV=production
 
-# Set environment variables passed from build arguments
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
-# Build the Bun server
 RUN bun build \
     --compile \
     --minify-whitespace \
