@@ -48,9 +48,12 @@ jobs:
             echo "TAG=latest" >> $GITHUB_ENV
           fi
 
-      # Step 6: Build the Docker image
+      # Step 6: Build the Docker image with secrets
       - name: Build Docker image
-        run: docker build . -t bunnybunbun37204/cusw-backend:${{ env.TAG }}
+        run: |
+          docker build . \
+            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            -t bunnybunbun37204/cusw-backend:${{ env.TAG }}
 
       # Step 7: Push Docker image to Docker Hub
       - name: Push Docker image to Docker Hub
@@ -80,7 +83,8 @@ jobs:
         run: |
           echo "Running lint checks..."
           bun run lint  # Run lint using Bun
+
       - name: Unit test
         run: |
-          echo "Running unit test..."
+          echo "Running unit tests..."
           bun test --coverage  # Run unit tests using Bun
