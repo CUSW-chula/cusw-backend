@@ -3,6 +3,10 @@ FROM oven/bun AS build
 
 WORKDIR /app
 
+# Install required system libraries for Prisma
+RUN apt-get update && apt-get install -y libgcc1 libssl-dev
+
+
 # Cache packages installation
 COPY package.json package.json
 COPY prisma ./prisma 
