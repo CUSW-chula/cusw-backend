@@ -30,6 +30,10 @@ FROM gcr.io/distroless/base
 
 WORKDIR /app
 
+COPY --from=build /app/server /app/server
+COPY --from=build /app/node_modules/.prisma /app/node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma /app/node_modules/@prisma
+
 COPY --from=build /app/server server
 
 ENV NODE_ENV=production

@@ -87,11 +87,11 @@ app.guard(
 					return Response.json(error.message, { status: error.statusCode });
 				}
 			})
-			.group("/v1/api", (api) => {
+			.group("/api/v1", (api) => {
 				controllersV1.forEach((controller) => api.use(controller));
 				return api;
 			})
-			.group("/v2/api", (api) => {
+			.group("/api/v2", (api) => {
 				controllersV2.forEach((controller) => api.use(controller));
 				return api;
 			}),
