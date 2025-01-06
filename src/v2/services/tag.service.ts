@@ -1,24 +1,30 @@
-import { PrismaClient, Tag, Task, TaskTag } from "@prisma/client";
+import { PrismaClient, ProjectTag, Tag, Task, TaskTag } from "@prisma/client";
 import { TagModel } from "../models/tag.model";
 import { TaskTagModel } from "../models/task-tag.model";
 import { BaseService } from "../../core/service.core";
 import { TasksModel } from "../models/tasks.model";
+import { ProjectModel } from "../models/projects.model";
 import Redis from "ioredis";
 import {
 	NotFoundException,
 	PermissionException,
 } from "../../core/exception.core";
+import { ProjectTagModel } from "../models/project-tag.model";
 
 export class TagService extends BaseService<Tag> {
 	private readonly tagModel: TagModel;
 	private readonly taskModel: TasksModel;
 	private readonly taskTagModel: TaskTagModel;
+	private readonly projectTagModel: ProjectTagModel;
+	private readonly projectModel: ProjectModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); // Set cache expiry to 60 seconds
 		this.taskModel = new TasksModel(prisma);
 		this.tagModel = new TagModel(prisma);
 		this.taskTagModel = new TaskTagModel(prisma);
+		this.projectModel = new ProjectModel(prisma);
+		this.projectTagModel = new ProjectTagModel(prisma);
 	}
 
 	// Fetch all tags, with caching
@@ -64,6 +70,27 @@ export class TagService extends BaseService<Tag> {
 
 		// Filter out any null results (tags not found)
 		return tagsInTask.filter((tag) => tag !== null) as Tag[];
+	}
+
+	async getAsignTagInTaskByProjectId(projectId: string): Promise<Tag[]> {
+		// Check if the project exists
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		// Retrieve all tag assignments for the task
+		const projectTag = await this.projectTagModel.findByProjectId(projectId);
+		if (!projectTag) throw new NotFoundException("No tag assigned to this project");
+
+		// Fetch each tag concurrently
+		const tagsInProject = await Promise.all(
+			projectTag.map(async (projectTag) => {
+				const tag = await this.tagModel.findById(projectTag.tagId);
+				return tag || null;
+			}),
+		);
+
+		// Filter out any null results (tags not found)
+		return tagsInProject.filter((tag) => tag !== null) as Tag[];
 	}
 
 	// Retrieve all tasks associated with a specific tag by tag ID
@@ -141,5 +168,62 @@ export class TagService extends BaseService<Tag> {
 		// Unassign the tag from the task
 		const unAssigningTagToTask = await this.taskTagModel.delete(taskTag.id);
 		return unAssigningTagToTask;
+	}
+
+	async assigningTagToProject(
+		projectId: string,
+		tagId: string,
+		userId: string,
+	): Promise<ProjectTag> {
+		// Check if the tag exists
+		const isTagExist = await this.tagModel.findById(tagId);
+		if (!isTagExist) throw new NotFoundException("Tag not found");
+
+		// Check if the project exists
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		const roles = await this.projectModel.findrole(projectId);
+
+		const OwnerId = roles?.find((role) => role.role === "ProjectOwner")?.userId;
+
+		const isUserCreatedTask = OwnerId === userId;
+		if (!isUserCreatedTask)
+			throw new PermissionException("You are not the creator of this task");
+
+		// Check for duplicate tag assignment
+		const tagExist = await this.projectTagModel.findByProjectIdAndTagId(
+			projectId,
+			tagId,
+		);
+		if (tagExist) throw new PermissionException("Duplicate Tag");
+
+		// Assign the tag to the task
+		const assignTagToProject = await this.projectTagModel.create({
+			tagId: tagId,
+			projectId: projectId,
+		});
+
+		if (!assignTagToProject)
+			throw new NotFoundException("Failed to assign tag to task");
+		return assignTagToProject;
+	}
+
+	async unAssigningTagToProject(projectId: string, tagId: string): Promise<ProjectTag> {
+		// Check if the tag exists
+		const isTagExist = await this.projectModel.findById(tagId);
+		if (!isTagExist) throw new NotFoundException("Tag not found");
+
+		// Check if the project exists
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		// Find the tag-task association
+		const projectTag = await this.projectTagModel.findByProjectIdAndTagId(projectId, tagId);
+		if (!projectTag) throw new NotFoundException("Assignment not found");
+
+		// Unassign the tag from the project
+		const unAssigningTagToProject = await this.projectTagModel.delete(projectTag.id);
+		return unAssigningTagToProject;
 	}
 }

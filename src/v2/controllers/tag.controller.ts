@@ -37,6 +37,19 @@ export const TagController = new Elysia({ prefix: "/tags" })
 	)
 
 	.get(
+		"/getassigntag/:projectId",
+		async ({
+			params: { projectId: projectId },
+			db,
+			redis,
+		}: Context & { params: { projectId: string } }) => {
+			const tagService = new TagService(db, redis);
+			const tags: Tag[] = await tagService.getAsignTagInTaskByProjectId(projectId);
+			return tags;
+		},
+	)
+
+	.get(
 		"/getassigntask/:tagId",
 		async ({
 			params: { tagId },
@@ -49,14 +62,14 @@ export const TagController = new Elysia({ prefix: "/tags" })
 		},
 	)
 	.post(
-		"/assign",
+		"/assign/:taskId",
 		async ({
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { tagid: string; taskId: string; tagId: string };
+			body: {taskId: string; tagId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			//const taskService = new TaskService(db, redis);
@@ -86,8 +99,45 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			}),
 		},
 	)
+	.post(
+		"/assign/:projectId",
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: { projectId: string; tagId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const tagService = new TagService(db, redis);
+			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
+			const assignTag = await tagService.assigningTagToProject(
+				body.projectId,
+				body.tagId,
+				userId,
+			);
+			const assignTags = await tagService.getTagById(assignTag.tagId);
+			WebSocket.broadcast("assigned-tags", assignTags);
+			const tagAddActivity = await activityService.postActivity(
+				body.projectId,
+				$Enums.ActivityAction.ADDED,
+				`a tag name "${assignTags.name}"`,
+				userId,
+			);
+			WebSocket.broadcast("activity", tagAddActivity);
+			return assignTags;
+		},
+		{
+			body: t.Object({
+				projectId: t.String(),
+				tagId: t.String(),
+			}),
+		},
+	)
 	.delete(
-		"/unassigned",
+		"/unassigned/:taskId",
 		async ({
 			body,
 			db,
@@ -121,4 +171,41 @@ export const TagController = new Elysia({ prefix: "/tags" })
 				tagId: t.String(),
 			}),
 		},
+	)
+	.delete(
+		"/unassigned/:projectId",
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: { projectId: string; tagId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const tagService = new TagService(db, redis);
+			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
+			const unAssignTaskTag = await tagService.unAssigningTagToProject(
+				body.projectId,
+				body.tagId,
+			);
+			const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
+			WebSocket.broadcast("unassigned-tag", unAssignTag);
+			const tagUnassignActivity = await activityService.postActivity(
+				body.projectId,
+				$Enums.ActivityAction.REMOVED,
+				`a tag name "${unAssignTag.name}"`,
+				userId,
+			);
+			WebSocket.broadcast("activity", tagUnassignActivity);
+			return unAssignTag;
+		},
+		{
+			body: t.Object({
+				projectId: t.String(),
+				tagId: t.String(),
+			}),
+		},
 	);
+
