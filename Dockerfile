@@ -1,31 +1,53 @@
-# Use a specific version of the Bun image
-FROM oven/bun:1.1.30
+# Build Stage
+FROM oven/bun AS build
 
-# Set the working directory
 WORKDIR /app
 
-# Copy the Prisma schema and other initial files for better caching
-COPY package.json ./
-COPY tsconfig.json ./
-COPY prisma ./prisma
+# Install required system libraries for Prisma
+RUN apt-get update && apt-get install -y libgcc1 libssl-dev
 
-# Install dependencies (will only re-run if package.json or lock files change)
+
+# Cache packages installation
+COPY package.json package.json
+COPY prisma ./prisma 
+
 RUN bun install
-
-# Generate Prisma client
 RUN bunx prisma generate
 
-# Install OpenSSL (required by some libraries)
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+COPY ./src ./src
 
-# Copy the rest of the application files
-COPY src ./src
+ENV NODE_ENV=production
 
-# Uncomment if you have public assets to include
-# COPY public ./public
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 
-# Expose the application port
+RUN bun build \
+    --compile \
+    --minify-whitespace \
+    --minify-syntax \
+    --target bun \
+    --outfile server \
+    ./src/index.ts
+
+# Deployment Stage
+FROM gcr.io/distroless/base
+
+WORKDIR /app
+
+COPY --from=build /app/server /app/server
+COPY --from=build /app/node_modules/.prisma /app/node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma /app/node_modules/@prisma
+
+# Copy required system libraries for Prisma
+COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/libgcc_s.so.1
+COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/libstdc++.so.6
+COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1
+COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+
+COPY --from=build /app/server server
+
+ENV NODE_ENV=production
+
+CMD ["./server"]
+
 EXPOSE 4000
-
-# Command to run the application
-CMD ["bun", "run", "src/index.ts"]
