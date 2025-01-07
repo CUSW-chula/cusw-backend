@@ -1,7 +1,6 @@
 import type { Project, ProjectRole } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
 
-
 export class ProjectModel extends BaseModel<Project> {
 	[x: string]: any;
 	async findAll(): Promise<Project[]> {

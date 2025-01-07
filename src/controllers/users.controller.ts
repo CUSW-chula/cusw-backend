@@ -2,7 +2,6 @@ import { Elysia, t } from "elysia";
 import { UserService } from "../services/users.service";
 import { type Context } from "../shared/interfaces.shared";
 
-
 export const UserController = new Elysia({ prefix: "/users" })
 	// Get all users
 	.get("/", async ({ db, redis }: Context) => {
@@ -43,7 +42,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 		}: Context & { params: { id: string } }) => {
 			const userService = new UserService(db, redis);
 			const user = await userService.getUserOwnersByProjectId(id);
-			return user
+			return user;
 		},
 	)
 
@@ -57,7 +56,7 @@ export const UserController = new Elysia({ prefix: "/users" })
 		}: Context & { params: { id: string } }) => {
 			const userService = new UserService(db, redis);
 			const user = await userService.getUserMemberByProjectId(id);
-			return user
+			return user;
 		},
 	)
 
