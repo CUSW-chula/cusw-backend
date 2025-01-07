@@ -1,6 +1,6 @@
 import type { Project, ProjectRole } from "@prisma/client";
 import { BaseModel } from "../core/model.core";
-import { ValidationException } from "../core/exception.core";
+
 
 export class ProjectModel extends BaseModel<Project> {
 	[x: string]: any;
