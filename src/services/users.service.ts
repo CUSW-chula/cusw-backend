@@ -112,7 +112,7 @@ export class UserService extends BaseService<User> {
 			throw new ValidationException("Invalid projectId");
 		}
 
-		const cacheKey = `users:project:${projectId}:owners`;
+		const cacheKey = `users:project:${projectId}:member`;
 		const cachedUsers = await this.getFromCache(cacheKey);
 		if (cachedUsers) return cachedUsers as User[];
 
@@ -131,7 +131,7 @@ export class UserService extends BaseService<User> {
 			.map((role) => role.userId);
 
 		if (userIds.length === 0)
-			throw new NotFoundException("No Project Owners found");
+			throw new NotFoundException("No Project member found");
 
 		// ดึงข้อมูลผู้ใช้ตาม userIds
 		const users = await Promise.all(
