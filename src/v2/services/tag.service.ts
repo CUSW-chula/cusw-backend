@@ -79,7 +79,8 @@ export class TagService extends BaseService<Tag> {
 
 		// Retrieve all tag assignments for the task
 		const projectTag = await this.projectTagModel.findByProjectId(projectId);
-		if (!projectTag) throw new NotFoundException("No tag assigned to this project");
+		if (!projectTag)
+			throw new NotFoundException("No tag assigned to this project");
 
 		// Fetch each tag concurrently
 		const tagsInProject = await Promise.all(
@@ -209,7 +210,10 @@ export class TagService extends BaseService<Tag> {
 		return assignTagToProject;
 	}
 
-	async unAssigningTagToProject(projectId: string, tagId: string): Promise<ProjectTag> {
+	async unAssigningTagToProject(
+		projectId: string,
+		tagId: string,
+	): Promise<ProjectTag> {
 		// Check if the tag exists
 		const isTagExist = await this.projectModel.findById(tagId);
 		if (!isTagExist) throw new NotFoundException("Tag not found");
@@ -219,11 +223,16 @@ export class TagService extends BaseService<Tag> {
 		if (!isProjectExist) throw new NotFoundException("Project not found");
 
 		// Find the tag-task association
-		const projectTag = await this.projectTagModel.findByProjectIdAndTagId(projectId, tagId);
+		const projectTag = await this.projectTagModel.findByProjectIdAndTagId(
+			projectId,
+			tagId,
+		);
 		if (!projectTag) throw new NotFoundException("Assignment not found");
 
 		// Unassign the tag from the project
-		const unAssigningTagToProject = await this.projectTagModel.delete(projectTag.id);
+		const unAssigningTagToProject = await this.projectTagModel.delete(
+			projectTag.id,
+		);
 		return unAssigningTagToProject;
 	}
 }

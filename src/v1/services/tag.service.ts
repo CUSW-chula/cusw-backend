@@ -4,6 +4,8 @@ import { TaskTagModel } from "../models/task-tag.model";
 import { BaseService } from "../../core/service.core";
 import { TasksModel } from "../models/tasks.model";
 import Redis from "ioredis";
+import { ProjectModel } from "../models/projects.model";
+import { ProjectTagModel } from "../models/project-tag.model";
 import {
 	NotFoundException,
 	PermissionException,
@@ -13,12 +15,16 @@ export class TagService extends BaseService<Tag> {
 	private readonly tagModel: TagModel;
 	private readonly taskModel: TasksModel;
 	private readonly taskTagModel: TaskTagModel;
+	private readonly projectModel: ProjectModel;
+	private readonly projectTagModel: ProjectTagModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); // Set cache expiry to 60 seconds
 		this.taskModel = new TasksModel(prisma);
 		this.tagModel = new TagModel(prisma);
 		this.taskTagModel = new TaskTagModel(prisma);
+		this.projectModel = new ProjectModel(prisma);
+		this.projectTagModel = new ProjectTagModel(prisma);
 	}
 
 	// Fetch all tags, with caching
@@ -86,6 +92,28 @@ export class TagService extends BaseService<Tag> {
 
 		// Filter out any null results (tasks not found)
 		return tagsInTask.filter((task) => task !== null) as Task[];
+	}
+
+	async getAsignTagInTaskByProjectId(projectId: string): Promise<Tag[]> {
+		// Check if the project exists
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		// Retrieve all tag assignments for the task
+		const projectTag = await this.projectTagModel.findByProjectId(projectId);
+		if (!projectTag)
+			throw new NotFoundException("No tag assigned to this project");
+
+		// Fetch each tag concurrently
+		const tagsInProject = await Promise.all(
+			projectTag.map(async (projectTag) => {
+				const tag = await this.tagModel.findById(projectTag.tagId);
+				return tag || null;
+			}),
+		);
+
+		// Filter out any null results (tags not found)
+		return tagsInProject.filter((tag) => tag !== null) as Tag[];
 	}
 
 	// Assign a tag to a task

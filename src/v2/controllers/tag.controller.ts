@@ -23,44 +23,6 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			return tags;
 		},
 	)
-	.get(
-		"/getassigntag/:taskId",
-		async ({
-			params: { taskId },
-			db,
-			redis,
-		}: Context & { params: { taskId: string } }) => {
-			const tagService = new TagService(db, redis);
-			const tags: Tag[] = await tagService.getAsignTagInTaskByTaskId(taskId);
-			return tags;
-		},
-	)
-
-	.get(
-		"/getassigntag/:projectId",
-		async ({
-			params: { projectId: projectId },
-			db,
-			redis,
-		}: Context & { params: { projectId: string } }) => {
-			const tagService = new TagService(db, redis);
-			const tags: Tag[] = await tagService.getAsignTagInTaskByProjectId(projectId);
-			return tags;
-		},
-	)
-
-	.get(
-		"/getassigntask/:tagId",
-		async ({
-			params: { tagId },
-			db,
-			redis,
-		}: Context & { params: { tagId: string } }) => {
-			const tagService = new TagService(db, redis);
-			const tasks: Task[] = await tagService.getAsignTaskInTagByTagId(tagId);
-			return tasks;
-		},
-	)
 	.post(
 		"/assign/:taskId",
 		async ({
@@ -69,7 +31,7 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: {taskId: string; tagId: string };
+			body: { taskId: string; tagId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			//const taskService = new TaskService(db, redis);
@@ -208,4 +170,3 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			}),
 		},
 	);
-

@@ -23,6 +23,19 @@ export const TagController = new Elysia({ prefix: "/tags" })
 			return tags;
 		},
 	)
+		.get(
+			"/getassigntag/:projectId",
+			async ({
+				params: { projectId: projectId },
+				db,
+				redis,
+			}: Context & { params: { projectId: string } }) => {
+				const tagService = new TagService(db, redis);
+				const tags: Tag[] =
+					await tagService.getAsignTagInTaskByProjectId(projectId);
+				return tags;
+			},
+		)
 	.get(
 		"/getassigntag/:taskId",
 		async ({
