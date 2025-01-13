@@ -5,12 +5,23 @@ import { ActivityService } from "../services/activity-logs.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { $Enums } from "@prisma/client";
 
-export const ProjectController = new Elysia({ prefix: "/projects" })
-	.get("/", async ({ db, redis }: Context) => {
-		const projectService = new ProjectService(db, redis);
-		const projects = await projectService.getAllProjects();
-		return projects;
-	})
+export const ProjectController = new Elysia({
+	prefix: "/projects",
+	tags: ["Projects", "Version 2"],
+})
+	.get(
+		"/",
+		async ({ db, redis }: Context) => {
+			const projectService = new ProjectService(db, redis);
+			const projects = await projectService.getAllProjects();
+			return projects;
+		},
+		{
+			detail: {
+				summary: "Get all projects",
+			},
+		},
+	)
 	.get(
 		"/:id",
 		async ({
@@ -21,6 +32,11 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			const projectService = new ProjectService(db, redis);
 			const project = await projectService.getProjectById(id);
 			return project;
+		},
+		{
+			detail: {
+				summary: "Get a project by id",
+			},
 		},
 	)
 	.post(
@@ -60,6 +76,9 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 				startDate: t.Date(),
 				endDate: t.Date(),
 			}),
+			detail: {
+				summary: "Create a project",
+			},
 		},
 	)
 	.patch(
@@ -92,6 +111,9 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 				title: t.String(),
 				description: t.String(),
 			}),
+			detail: {
+				summary: "Update a project",
+			},
 		},
 	)
 	.delete(
@@ -110,17 +132,8 @@ export const ProjectController = new Elysia({ prefix: "/projects" })
 			body: t.Object({
 				projectId: t.String(),
 			}),
-		},
-	)
-	.get(
-		"money/:id",
-		async ({
-			params: { id },
-			db,
-			redis,
-		}: Context & { params: { id: string } }) => {
-			const projectService = new ProjectService(db, redis);
-			const budgetList = await projectService.getProjectMoney(id);
-			return budgetList;
+			detail: {
+				summary: "Delete a project",
+			},
 		},
 	);

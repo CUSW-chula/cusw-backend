@@ -1,0 +1,1 @@
+INSERT INTO "projects" ("id", "title", "description", "budget", "advance", "expense", "startDate", "endDate") VALUES ('cm24w5yu000008tlglutu5czu', 'เบิกเงินในเวลา', 'ทดสอบ', 0, 0, 0, '1970-01-01 00:00:00', '1970-01-01 00:00:00');

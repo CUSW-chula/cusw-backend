@@ -41,9 +41,9 @@ export class ProjectModel extends BaseModel<Project> {
 				description: data.description ?? "",
 				startDate: data.startDate ?? new Date(),
 				endDate: data.endDate ?? new Date(),
-				expectedBudget: data.expectedBudget ?? 0,
-				realBudget: data.realBudget ?? 0,
-				usedBudget: data.usedBudget ?? 0,
+				budget: data.budget ?? 0,
+				advance: data.advance ?? 0,
+				expense: data.expense ?? 0,
 			},
 		});
 		return createdProject;

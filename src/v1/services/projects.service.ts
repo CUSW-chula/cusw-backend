@@ -76,9 +76,9 @@ export class ProjectService extends BaseService<Project> {
 				description: data.description,
 				startDate: data.startDate,
 				endDate: data.endDate,
-				expectedBudget: data.expectedBudget,
-				realBudget: data.realBudget,
-				usedBudget: data.usedBudget,
+				bundget: data.budget,
+				advance: data.advance,
+				expense: data.expense,
 			};
 			return await this.projectModel.create(newTask);
 		}

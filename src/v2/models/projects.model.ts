@@ -1,4 +1,4 @@
-import type { Project } from "@prisma/client";
+import type { Project, ProjectTag } from "@prisma/client";
 import type { ProjectRole } from "@prisma/client";
 import { BaseModel } from "../../core/model.core";
 
@@ -13,25 +13,22 @@ export class ProjectModel extends BaseModel<Project> {
 		return project;
 	}
 
-	async findrole(id: string): Promise<ProjectRole[] | null> {
+	async findTag(id: string): Promise<ProjectTag[] | null> {
+		const tags = await this.getModel().projectTag.findMany({
+			where: {
+				projectId: id,
+			},
+		});
+		return tags ?? null; // Ensures null is returned if no tags are found
+	}
+
+	async findRole(id: string): Promise<ProjectRole[] | null> {
 		const roles = await this.getModel().projectRole.findMany({
 			where: {
 				projectId: id,
 			},
 		});
 		return roles ?? null; // Ensures null is returned if no roles are found
-	}
-
-	async finduserid(id: string): Promise<string[] | null> {
-		const users = await this.getModel().projectRole.findMany({
-			where: {
-				projectId: id,
-			},
-			select: {
-				userId: true, // Fetch only the userId field
-			},
-		});
-		return users?.map((user) => user.userId) ?? null; // Map results to an array of user IDs or return null
 	}
 
 	async create(data: Partial<Project>): Promise<Project> {
@@ -41,9 +38,9 @@ export class ProjectModel extends BaseModel<Project> {
 				description: data.description ?? "",
 				startDate: data.startDate ?? new Date(),
 				endDate: data.endDate ?? new Date(),
-				expectedBudget: data.expectedBudget ?? 0,
-				realBudget: data.realBudget ?? 0,
-				usedBudget: data.usedBudget ?? 0,
+				budget: data.budget ?? 0,
+				advance: data.advance ?? 0,
+				expense: data.expense ?? 0,
 			},
 		});
 		return createdProject;

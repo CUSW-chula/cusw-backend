@@ -40,9 +40,9 @@ model Project {
   id             String           @id @default(cuid()) 
   title          String 
   description    String 
-  expectedBudget Float
-  realBudget     Float
-  usedBudget     Float
+  budget         Float 
+  advance        Float 
+  expense        Float
   startDate      DateTime
   endDate        DateTime
   projectRoles   ProjectRole[]   

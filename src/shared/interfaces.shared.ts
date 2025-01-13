@@ -39,16 +39,19 @@ export type Task = {
 	emojis: Emoji[];
 };
 
-export type Prorject = {
+export type Project = {
 	id: string;
 	title: string;
 	description: string;
+	budget: number;
+	advance: number;
+	expense: number;
 	startDate: Date;
 	endDate: Date;
-	createdById: string;
 	owner: User[];
 	members: User[];
 	tasks: Task[];
+	tags: Tag[];
 };
 
 export type TaskAssignment = {

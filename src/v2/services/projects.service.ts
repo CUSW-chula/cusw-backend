@@ -1,4 +1,4 @@
-import type { PrismaClient, Project } from "@prisma/client";
+import type { PrismaClient, Task } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import { ProjectModel } from "../models/projects.model";
 import type Redis from "ioredis";
@@ -17,6 +17,10 @@ import { TaskTagModel } from "../models/task-tag.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { UserModel } from "../models/users.model";
 import { BudgetStatus } from "@prisma/client";
+import { Project, User } from "../../shared/interfaces.shared";
+import { ProjectTagModel } from "../models/project-tag.model";
+import { TagModel } from "../models/tag.model";
+import { TaskService } from "./tasks.service";
 
 export class ProjectService extends BaseService<Project> {
 	private readonly projectModel: ProjectModel;
@@ -28,6 +32,9 @@ export class ProjectService extends BaseService<Project> {
 	private readonly activitiesLogsModel: ActivityLogsModel;
 	private readonly commentModel: CommentModel;
 	private readonly userModel: UserModel;
+	private readonly projectTagModel: ProjectTagModel;
+	private readonly tagModel: TagModel;
+	private readonly taskService: TaskService;
 
 	protected getTaskModel() {
 		return this.taskModel;
@@ -44,6 +51,9 @@ export class ProjectService extends BaseService<Project> {
 		this.activitiesLogsModel = new ActivityLogsModel(prisma);
 		this.commentModel = new CommentModel(prisma);
 		this.userModel = new UserModel(prisma);
+		this.projectTagModel = new ProjectTagModel(prisma);
+		this.tagModel = new TagModel(prisma);
+		this.taskService = new TaskService(prisma, redis);
 	}
 
 	async getAllProjects(): Promise<Project[]> {
@@ -52,12 +62,20 @@ export class ProjectService extends BaseService<Project> {
 
 		if (cacheProject) return cacheProject as Project[];
 
-		const projects = await this.projectModel.findAll();
+		const projectsFromDB = await this.projectModel.findAll();
+		const projects: Project[] = (
+			await Promise.all(
+				projectsFromDB.map(async (project) => {
+					const projectDetail = await this.getProjectById(project.id);
+					if (projectDetail !== null) return projectDetail;
+				}),
+			)
+		).filter((project): project is Project => project !== undefined);
 		await this.setToCache(cacheKey, projects);
 		return projects;
 	}
 
-	async getProjectById(id: string): Promise<Project | null> {
+	async getProjectById(id: string): Promise<Project> {
 		const cacheKey = `projects:${id}`;
 		const cacheProject = await this.getFromCache(cacheKey);
 
@@ -65,8 +83,52 @@ export class ProjectService extends BaseService<Project> {
 
 		const project = await this.projectModel.findById(id);
 		if (!project) throw new NotFoundError("Project not found");
-		await this.setToCache(cacheKey, project);
-		return project;
+		const projectRole = await this.projectModel.findRole(id);
+		const owner: User[] = projectRole
+			? await Promise.all(
+					projectRole
+						.filter((role) => role.role === "ProjectOwner")
+						.map(async (role) => {
+							const user = await this.userModel.findById(role.userId);
+							return user;
+						}),
+				)
+			: [];
+		const members: User[] = projectRole
+			? await Promise.all(
+					projectRole
+						.filter((role) => role.role === "Member")
+						.map(async (role) => {
+							const user = await this.userModel.findById(role.userId);
+							return user;
+						}),
+				)
+			: [];
+		const tagsFromDB = await this.projectTagModel.findByProjectId(id);
+		const tags = tagsFromDB
+			? await Promise.all(
+					tagsFromDB.map(async (tag) => {
+						const tagData = await this.tagModel.findById(tag.tagId);
+						return tagData;
+					}),
+				)
+			: [];
+		const tasksFromDB = await this.taskModel.findByProjectId(id);
+		const tasks = await Promise.all(
+			tasksFromDB.map(async (task) => {
+				const taskData = await this.taskService.getTaskById(task.id);
+				return taskData;
+			}),
+		);
+		const projectWithDetails = {
+			...project,
+			owner,
+			members,
+			tasks,
+			tags,
+		};
+		await this.setToCache(cacheKey, projectWithDetails);
+		return projectWithDetails;
 	}
 
 	async createProject(data: Partial<Project>): Promise<Project> {
@@ -76,11 +138,17 @@ export class ProjectService extends BaseService<Project> {
 				description: data.description,
 				startDate: data.startDate,
 				endDate: data.endDate,
-				expectedBudget: data.expectedBudget,
-				realBudget: data.realBudget,
-				usedBudget: data.usedBudget,
+				budget: data.budget,
+				advance: data.advance,
+				expense: data.expense,
 			};
-			return await this.projectModel.create(newTask);
+			const project = await this.projectModel.create(newTask);
+			const projectWithDetails = await this.getProjectById(project.id);
+			if (!projectWithDetails)
+				throw new ServerErrorException(
+					"Failed to retrieve the created project",
+				);
+			return projectWithDetails;
 		}
 		throw new ValidationException("Title cann't be null");
 	}
@@ -95,7 +163,7 @@ export class ProjectService extends BaseService<Project> {
 		if (!existingProject) throw new NotFoundException("Project not found");
 
 		// Get all roles associated with the project
-		const roles = await this.projectModel.findrole(projectId);
+		const roles = await this.projectModel.findRole(projectId);
 
 		const OwnerId = roles?.find((role) => role.role === "ProjectOwner")?.userId;
 		if (!OwnerId) throw new NotFoundException("Project Owner not found");
@@ -115,7 +183,10 @@ export class ProjectService extends BaseService<Project> {
 		await this.invalidateCache(`projects:project:${projectId}`);
 
 		// Update and return the project
-		return await this.projectModel.update(projectId, updatedProject);
+		await this.projectModel.update(projectId, updatedProject);
+		const project = await this.getProjectById(projectId);
+		await this.setToCache(`projects:${projectId}`, project);
+		return project;
 	}
 
 	async deleteProject(projectId: string): Promise<Project> {
@@ -155,12 +226,12 @@ export class ProjectService extends BaseService<Project> {
 			await this.invalidateCache("projects:all");
 
 			// Delete the project itself
+			const project = await this.getProjectById(projectId);
 			await this.projectModel.delete(projectId);
+			return project;
 		} catch (_error) {
 			throw new ServerErrorException(`Error deleting project`);
 		}
-
-		return project;
 	}
 
 	async getProjectMoney(
