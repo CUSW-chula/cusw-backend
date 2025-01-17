@@ -9,7 +9,10 @@ import { EmojiClassService } from "../services/tasks/emoji.tasks.service";
 import { MoneyClassService } from "../services/tasks/money.tasks.service";
 import { UserTaskClassService } from "../services/tasks/user.tasks.service";
 
-export const TaskController = new Elysia({ prefix: "/tasks" })
+export const TaskController = new Elysia({
+	prefix: "/tasks",
+	tags: ["Version 1"],
+})
 	.get("/", async ({ db, redis }: Context) => {
 		const taskService = new TaskService(db, redis);
 		const tasks = await taskService.getAllTask();

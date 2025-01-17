@@ -2,7 +2,10 @@ import { Elysia, t } from "elysia";
 import { UserService } from "../services/users.service";
 import { type Context } from "../../shared/interfaces.shared";
 
-export const UserController = new Elysia({ prefix: "/users" })
+export const UserController = new Elysia({
+	prefix: "/users",
+	tags: ["Version 2"],
+})
 	// Get all users
 	.get("/", async ({ db, redis }: Context) => {
 		const userService = new UserService(db, redis);

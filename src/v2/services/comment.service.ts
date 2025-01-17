@@ -113,7 +113,7 @@ export class CommentService extends BaseService<Comment> {
 			editTime: comment.editTime,
 		};
 		if (authorId !== comment.authorId)
-			throw new NotFoundException("This is not your comment");
+			throw new PermissionException("This is not your comment");
 		const editComment = await this.commentModel.update(id, newComment);
 		return {
 			id: editComment.id,

@@ -4,7 +4,10 @@ import { type Context } from "../../shared/interfaces.shared";
 import { type Comment } from "@prisma/client";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 
-export const CommentController = new Elysia({ prefix: "/comments" })
+export const CommentController = new Elysia({
+	prefix: "/comments",
+	tags: ["Version 1"],
+})
 	.get(
 		"/:id",
 		async ({
