@@ -39,6 +39,16 @@ export type Task = {
 	emojis: Emoji[];
 };
 
+export type Comment = {
+	id: string;
+	content: string;
+	taskId: string;
+	author: User;
+	createdAt: Date;
+	isDeleted: boolean;
+	editTime: Date | null;
+};
+
 export type Project = {
 	id: string;
 	title: string;

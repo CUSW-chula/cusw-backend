@@ -1,4 +1,4 @@
-import type { Project, ProjectTag } from "@prisma/client";
+import { $Enums, Project, ProjectTag } from "@prisma/client";
 import type { ProjectRole } from "@prisma/client";
 import { BaseModel } from "../../core/model.core";
 
@@ -22,13 +22,14 @@ export class ProjectModel extends BaseModel<Project> {
 		return tags ?? null; // Ensures null is returned if no tags are found
 	}
 
-	async findRole(id: string): Promise<ProjectRole[] | null> {
-		const roles = await this.getModel().projectRole.findMany({
+	async findRole(userId: string, projectId: string): Promise<$Enums.Role> {
+		const roles = await this.getModel().projectRole.findFirst({
 			where: {
-				projectId: id,
+				projectId: projectId,
+				userId: userId,
 			},
 		});
-		return roles ?? null; // Ensures null is returned if no roles are found
+		return roles?.role ?? $Enums.Role.Member; // Ensures a default role is returned if no roles are found
 	}
 
 	async create(data: Partial<Project>): Promise<Project> {

@@ -1,5 +1,5 @@
 import { CommentModel } from "../models/comment.model";
-import type { PrismaClient, Comment } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -9,6 +9,7 @@ import {
 	PermissionException,
 	ValidationException,
 } from "../../core/exception.core";
+import { Comment } from "../../shared/interfaces.shared";
 
 export class CommentService extends BaseService<Comment> {
 	private readonly commentModel: CommentModel;
@@ -27,13 +28,23 @@ export class CommentService extends BaseService<Comment> {
 		if (!isUserExist) {
 			throw new NotFoundException("User not found");
 		}
-		if (data.content !== null)
-			return await this.commentModel.create({
+		if (data.content !== null) {
+			const comment = await this.commentModel.create({
 				content: data.content,
 				createdAt: data.createdAt,
 				taskId: data.taskId,
 				authorId: authorId,
 			});
+			return {
+				id: comment.id,
+				content: comment.content,
+				createdAt: comment.createdAt,
+				taskId: comment.taskId,
+				author: isUserExist,
+				isDeleted: comment.isDelete,
+				editTime: comment.editTime,
+			};
+		}
 		throw new ValidationException("Content cann't be null");
 	}
 
@@ -43,7 +54,21 @@ export class CommentService extends BaseService<Comment> {
 
 		const comment = await this.commentModel.findByTaskId(taskId);
 		if (!comment) throw new NotFoundException("Comment not found");
-		return comment;
+		const commentWithDetail = await Promise.all(
+			comment.map(async (item) => {
+				const user = await this.userModel.findById(item.authorId);
+				return {
+					id: item.id,
+					content: item.content,
+					createdAt: item.createdAt,
+					taskId: item.taskId,
+					author: user,
+					isDeleted: item.isDelete,
+					editTime: item.editTime,
+				};
+			}),
+		);
+		return commentWithDetail;
 	}
 
 	async deleteComment(id: string, authorId: string): Promise<Comment> {
@@ -56,7 +81,15 @@ export class CommentService extends BaseService<Comment> {
 		if (authorId !== comment.authorId)
 			throw new PermissionException("This is not your comment");
 		const deleteComment = await this.commentModel.delete(id);
-		return deleteComment;
+		return {
+			id: deleteComment.id,
+			content: deleteComment.content,
+			createdAt: deleteComment.createdAt,
+			taskId: deleteComment.taskId,
+			author: isUserExist,
+			isDeleted: deleteComment.isDelete,
+			editTime: deleteComment.editTime,
+		};
 	}
 
 	async editComment(
@@ -70,7 +103,7 @@ export class CommentService extends BaseService<Comment> {
 		}
 		const comment = await this.commentModel.findById(id);
 		if (!comment) throw new NotFoundException("Comment not found");
-		const newComment: Comment = {
+		const newComment = {
 			id: comment.id,
 			content: newContent,
 			taskId: comment.taskId,
@@ -80,8 +113,16 @@ export class CommentService extends BaseService<Comment> {
 			editTime: comment.editTime,
 		};
 		if (authorId !== comment.authorId)
-			throw new NotFoundException("This is not your comment");
+			throw new PermissionException("This is not your comment");
 		const editComment = await this.commentModel.update(id, newComment);
-		return editComment;
+		return {
+			id: editComment.id,
+			content: editComment.content,
+			createdAt: editComment.createdAt,
+			taskId: editComment.taskId,
+			author: isUserExist,
+			isDeleted: editComment.isDelete,
+			editTime: editComment.editTime,
+		};
 	}
 }

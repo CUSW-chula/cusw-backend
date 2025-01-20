@@ -5,7 +5,10 @@ import { $Enums, Tag, Task } from "@prisma/client";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { ActivityService } from "../services/activity-logs.service";
 
-export const TagController = new Elysia({ prefix: "/tags" })
+export const TagController = new Elysia({
+	prefix: "/tags",
+	tags: ["Version 2"],
+})
 	.get("/", async ({ db, redis }: Context) => {
 		const tagService = new TagService(db, redis);
 		const tags = await tagService.getAllTag();

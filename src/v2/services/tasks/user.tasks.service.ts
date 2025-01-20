@@ -6,10 +6,13 @@ import {
 	ValidationException,
 } from "../../../core/exception.core";
 import { TaskAssignment, User } from "../../../shared/interfaces.shared";
+import { ProjectRoleModel } from "../../models/project-role.model";
 
 export class UserTaskClassService extends TaskService {
+	private readonly projectRoleModel: ProjectRoleModel;
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(prisma, redis);
+		this.projectRoleModel = new ProjectRoleModel(prisma);
 	}
 
 	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {

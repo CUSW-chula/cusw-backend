@@ -3,7 +3,10 @@ import { ActivityService } from "../services/activity-logs.service";
 import { type Context } from "../../shared/interfaces.shared";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 
-export const ActivityController = new Elysia({ prefix: "/activities" }).get(
+export const ActivityController = new Elysia({
+	prefix: "/activities",
+	tags: ["Version 2"],
+}).get(
 	"/:id",
 	async ({
 		params: { id },

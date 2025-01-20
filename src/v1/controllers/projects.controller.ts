@@ -5,7 +5,10 @@ import { ActivityService } from "../services/activity-logs.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { $Enums } from "@prisma/client";
 
-export const ProjectController = new Elysia({ prefix: "/projects" })
+export const ProjectController = new Elysia({
+	prefix: "/projects",
+	tags: ["Version 1"],
+})
 	.get("/", async ({ db, redis }: Context) => {
 		const projectService = new ProjectService(db, redis);
 		const projects = await projectService.getAllProjects();

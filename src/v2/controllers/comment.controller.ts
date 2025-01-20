@@ -1,10 +1,12 @@
 import { Cookie, Elysia, t } from "elysia";
 import { CommentService } from "../services/comment.service";
-import { type Context } from "../../shared/interfaces.shared";
-import { type Comment } from "@prisma/client";
+import { Comment, type Context } from "../../shared/interfaces.shared";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 
-export const CommentController = new Elysia({ prefix: "/comments" })
+export const CommentController = new Elysia({
+	prefix: "/comments",
+	tags: ["Comments", "Version 2"],
+})
 	.get(
 		"/:id",
 		async ({
@@ -17,6 +19,11 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 			const commentService = new CommentService(db, redis);
 			const comments = await commentService.getCommentByTaskId(id);
 			return comments;
+		},
+		{
+			detail: {
+				summary: "Get all comments by task id",
+			},
 		},
 	)
 	// Create a new user with try-catch for error handling
@@ -33,60 +40,70 @@ export const CommentController = new Elysia({ prefix: "/comments" })
 
 			const comment = await commentService.addComment(body, userId);
 			WebSocket.broadcast("comment", comment);
-			return { status: 200, body: { message: "Success" } };
+			return comment;
 		},
 		{
 			body: t.Object({
 				content: t.String(),
 				taskId: t.String(),
 			}),
+			detail: {
+				summary: "Add a new comment",
+			},
 		},
 	)
 	.delete(
-		"/",
+		"/:id",
 		async ({
-			body,
+			params: { id },
 			db,
 			redis,
 			cookie: { session },
-		}: Context & { body: Comment; cookie: { session: Cookie<string> } }) => {
+		}: Context & {
+			params: { id: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
-			const comment = await commentService.deleteComment(body.id, userId);
+			const comment = await commentService.deleteComment(id, userId);
 			WebSocket.broadcast("comment-delete", comment);
-			return { status: 200, body: { message: "Success" } };
+			return comment;
 		},
 		{
-			body: t.Object({
-				id: t.String(),
-			}),
+			detail: {
+				summary: "Delete a comment",
+			},
 		},
 	)
 	.patch(
-		"/",
+		"/:id",
 		async ({
+			params: { id },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: { id: string; content: string };
+			params: { id: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 			const comment = await commentService.editComment(
-				body.id,
+				id,
 				userId,
 				body.content,
 			);
 			WebSocket.broadcast("comment-edit", comment);
-			return { status: 200, body: { message: "Success" } };
+			return comment;
 		},
 		{
 			body: t.Object({
-				id: t.String(),
 				content: t.String(),
 			}),
+			detail: {
+				summary: "Edit a comment",
+			},
 		},
 	);

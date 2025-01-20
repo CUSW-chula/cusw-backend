@@ -1,9 +1,8 @@
 import { type Cookie, Elysia, t } from "elysia";
-import { Emoji, type Context } from "../../shared/interfaces.shared";
+import { type Context } from "../../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
-import { TaskStatus, EmojiTaskUser, Task, $Enums, User } from "@prisma/client";
-import { UserService } from "../services/users.service";
+import { TaskStatus, EmojiTaskUser, $Enums } from "@prisma/client";
 import { ActivityService } from "../services/activity-logs.service";
 import { EmojiClassService } from "../services/tasks/emoji.tasks.service";
 import { MoneyClassService } from "../services/tasks/money.tasks.service";
@@ -55,7 +54,9 @@ export const TaskController = new Elysia({
 			return task;
 		},
 		{
-			detail: "Get all tasks by project id",
+			detail: {
+				summary: "Get all tasks by project id",
+			},
 		},
 	)
 	.get(
@@ -94,21 +95,22 @@ export const TaskController = new Elysia({
 	)
 	//patch data only task title and description
 	.patch(
-		"/",
+		"/:id",
 		async ({
+			params: { id },
 			body,
 			db,
 			redis,
 		}: Context & {
+			params: { id: string };
 			body: {
-				taskId: string;
 				title: string;
 				description: string;
 			};
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const updateTaskId = await taskService.updateTask(
-				body.taskId,
+				id,
 				body.title,
 				body.description,
 			);
@@ -117,9 +119,8 @@ export const TaskController = new Elysia({
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
-				title: t.String(),
-				description: t.String(),
+				title: t.Optional(t.String()),
+				description: t.Optional(t.String()),
 			}),
 			detail: {
 				summary: "Update task title and description",

@@ -185,7 +185,7 @@ export class TaskService extends BaseService<Task> {
 		const cacheTask = await this.getFromCache(cacheKey);
 		if (cacheTask) return cacheTask as Task[];
 		const tasks = await this.taskModel.findByProjectId(projectIdId);
-		if (!tasks) throw new NotFoundException("Task not found");
+		if (!tasks) [];
 		const tasksWithDetail = await Promise.all(
 			tasks.map(async (task) => {
 				return await this.getTaskById(task.id);

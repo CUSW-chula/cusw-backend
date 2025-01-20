@@ -13,7 +13,10 @@ function truncateFileName(fileName: string, maxLength: number): string {
 		: fileName;
 }
 
-export const FileController = new Elysia({ prefix: "/file" })
+export const FileController = new Elysia({
+	prefix: "/file",
+	tags: ["Version 1"],
+})
 	.get(
 		"/:id",
 		async ({
