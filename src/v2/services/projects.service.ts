@@ -233,43 +233,4 @@ export class ProjectService extends BaseService<Project> {
 			throw new ServerErrorException(`Error deleting project`);
 		}
 	}
-
-	async getProjectMoney(
-		id: string,
-	): Promise<{ budget: number; advance: number; expense: number }> {
-		const project = await this.projectModel.findById(id);
-		if (!project) throw new NotFoundError("Project not found");
-		const sum = { budget: 0, advance: 0, expense: 0 };
-
-		const addToSum = (task: {
-			budget: number;
-			advance: number;
-			expense: number;
-		}) => {
-			sum.budget += task.budget;
-			sum.advance += task.advance;
-			sum.expense += task.expense;
-		};
-
-		//sum budget from subTasks
-		const calculateSubTaskSum = async (taskId: string) => {
-			const subTasks = await this.getTaskModel().findSubTask(taskId);
-			if (!subTasks || subTasks.length === 0) return;
-			for (const task of subTasks) {
-				if (
-					task.statusBudgets === BudgetStatus.Added ||
-					BudgetStatus.SubTasksAdded
-				) {
-					addToSum(task);
-					await calculateSubTaskSum(task.id);
-				}
-			}
-		};
-		const allTasks = await this.taskModel.findByProjectId(id);
-		for (const task of allTasks) {
-			addToSum(task);
-			await calculateSubTaskSum(task.id);
-		}
-		return sum;
-	}
 }

@@ -6,6 +6,7 @@ import { UserModel } from "../models/users.model";
 import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { EmojiModel } from "../models/emoji.model";
 import { TaskTagModel } from "../models/task-tag.model";
+import { ProjectModel } from "../models/projects.model";
 import { FilesModel } from "../models/files.model";
 import { ActivityLogsModel } from "../models/activity-logs.model";
 import { CommentModel } from "../models/comment.model";
@@ -15,12 +16,13 @@ import {
 	ServerErrorException,
 	PermissionException,
 } from "../../core/exception.core";
-import { Emoji, Task } from "../../shared/interfaces.shared";
+import { Project, Emoji, Task } from "../../shared/interfaces.shared";
 import { TagModel } from "../models/tag.model";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
 	private readonly userModel: UserModel;
+	private readonly projectModel: ProjectModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
 	private readonly emojiModel: EmojiModel;
 	private readonly tagModel: TagModel;
@@ -33,6 +35,7 @@ export class TaskService extends BaseService<Task> {
 		super(redis, 60); //
 		this.taskModel = new TasksModel(prisma);
 		this.userModel = new UserModel(prisma);
+		this.projectModel = new ProjectModel(prisma);
 		this.emojiModel = new EmojiModel(prisma);
 		this.taskAssignmentModel = new TasksAssignmentModel(prisma);
 		this.taskTagModel = new TaskTagModel(prisma);
@@ -56,6 +59,27 @@ export class TaskService extends BaseService<Task> {
 
 	protected getUserModel() {
 		return this.userModel;
+	}
+
+	protected getProjectModel() {
+		return this.projectModel;
+	}
+
+	protected updateProjectModel(
+		projectId: string,
+		updatedProject: {
+			budget: number;
+			advance: number;
+			expense: number;
+			id: string;
+			title: string;
+			description: string;
+			startDate: Date;
+			endDate: Date;
+		},
+	) {
+		this.projectModel.update(projectId, updatedProject);
+		// return;
 	}
 
 	async getAllTask(): Promise<Task[]> {
@@ -138,6 +162,19 @@ export class TaskService extends BaseService<Task> {
 			await this.invalidateCache(`projects:${task.projectId}`);
 			await this.invalidateCache(`tasks:parent:${task.parentTaskId}`);
 			const createdTask = await this.taskModel.create(newTask);
+
+			const existingProject = await this.projectModel.findById(task.projectId);
+			if (!existingProject) {
+				throw new ValidationException("Project cann't found");
+			}
+			const updatedProject = {
+				...existingProject,
+				budget: existingProject.budget + (task.budget ?? 0),
+				advance: existingProject.advance + (task.advance ?? 0),
+				expense: existingProject.expense + (task.expense ?? 0),
+			};
+			await this.projectModel.update(task.projectId, updatedProject);
+
 			return await this.getTaskById(createdTask.id);
 		}
 		throw new ValidationException("Title cann't be null");
@@ -261,6 +298,19 @@ export class TaskService extends BaseService<Task> {
 			await this.invalidateCache(cacheKey);
 			const projectId = task.projectId;
 			await this.invalidateCache(`tasks:project:${projectId}`);
+
+			const existingProject = await this.projectModel.findById(task.projectId);
+			if (!existingProject) {
+				throw new ValidationException("Project cann't found");
+			}
+			const updatedProject = {
+				...existingProject,
+				budget: existingProject.budget - (task.budget ?? 0),
+				advance: existingProject.advance - (task.advance ?? 0),
+				expense: existingProject.expense - (task.expense ?? 0),
+			};
+			await this.projectModel.update(task.projectId, updatedProject);
+
 			return task;
 		} catch (_error) {
 			throw new ServerErrorException(`Error deleting task with ID ${taskId}:`);

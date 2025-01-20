@@ -1,5 +1,6 @@
 import { BudgetStatus, PrismaClient } from "@prisma/client";
 import { TaskService } from "../tasks.service";
+import { ProjectService } from "../projects.service";
 import Redis from "ioredis";
 import {
 	NotFoundException,
@@ -18,33 +19,6 @@ export class MoneyClassService extends TaskService {
 		return [task.budget, task.advance, task.expense];
 	}
 
-	// async getAllMoney(taskId: string): Promise<number[]> {
-	// 	const task = await this.getTaskModel().findById(taskId);
-	// 	if (!task) throw new NotFoundException("Task not found");
-	// 	let sum = [task.budget, task.advance, task.expense];
-
-	// 	//sum budget from subTasks
-	// 	const subTask = async (taskId: string) => {
-	// 		const subTasks = await this.getTaskModel().findSubTask(taskId);
-	// 		if (subTasks === null) return null;
-	// 		for (const task of subTasks) {
-	// 			if (
-	// 				task.statusBudgets === BudgetStatus.Added ||
-	// 				BudgetStatus.SubTasksAdded
-	// 			) {
-	// 				sum = sum.map(
-	// 					(val, index) =>
-	// 						val + [task.budget, task.advance, task.expense][index],
-	// 				);
-	// 				await subTask(task.id);
-	// 			}
-	// 		}
-	// 	};
-
-	// 	await subTask(taskId);
-	// 	return sum;
-	// }
-
 	async addMoney(
 		taskID: string,
 		budget: number,
@@ -53,6 +27,7 @@ export class MoneyClassService extends TaskService {
 	): Promise<Task> {
 		const budgetList = [budget, advance, expense];
 		const task = await this.getTaskModel().findById(taskID);
+		const cacheKey = `tasks:${taskID}`;
 		// Check if all values are either null, undefined, or 0
 		const areAllBudgetsEmptyOrZero = (
 			budgetList: (number | undefined)[],
@@ -111,6 +86,26 @@ export class MoneyClassService extends TaskService {
 				advance: advance,
 				expense: expense,
 			});
+			const existingProject = await this.getProjectModel().findById(
+				task.projectId,
+			);
+			if (!existingProject) {
+				throw new ValidationException("Project cann't found");
+			}
+			const updatedProject = {
+				...existingProject,
+				budget: existingProject.budget - (task.budget ?? 0) + budget,
+				advance: existingProject.advance - (task.advance ?? 0) + advance,
+				expense: existingProject.expense - (task.expense ?? 0) + expense,
+			};
+			this.updateProjectModel(task.projectId, updatedProject);
+
+			await this.invalidateCache(cacheKey);
+			await this.invalidateCache(`tasks:project:${task.projectId}`);
+			await this.invalidateCache(`projects:${task.projectId}`);
+			await this.getTaskById(taskID);
+
+			await this.getTaskById(taskID);
 			return await this.getTaskById(updateMoney.id);
 		}
 
@@ -132,6 +127,25 @@ export class MoneyClassService extends TaskService {
 			advance: advance,
 			expense: expense,
 		});
+
+		const existingProject = await this.getProjectModel().findById(
+			task.projectId,
+		);
+		if (!existingProject) {
+			throw new ValidationException("Project cann't found");
+		}
+		const updatedProject = {
+			...existingProject,
+			budget: existingProject.budget + budget,
+			advance: existingProject.advance + advance,
+			expense: existingProject.expense + expense,
+		};
+		this.updateProjectModel(task.projectId, updatedProject);
+		await this.invalidateCache(cacheKey);
+		await this.invalidateCache(`tasks:project:${task.projectId}`);
+		await this.invalidateCache(`projects:${task.projectId}`);
+		await this.getTaskById(taskID);
+
 		setStatusBudgets();
 		return await this.getTaskById(addMoney.id);
 	}
@@ -208,6 +222,27 @@ export class MoneyClassService extends TaskService {
 			advance: advance,
 			expense: expense,
 		});
+
+		const existingProject = await this.getProjectModel().findById(
+			task.projectId,
+		);
+		if (!existingProject) {
+			throw new ValidationException("Project cann't found");
+		}
+		const updatedProject = {
+			...existingProject,
+			budget: existingProject.budget - task.budget,
+			advance: existingProject.advance - task.advance,
+			expense: existingProject.expense - task.expense,
+		};
+		this.updateProjectModel(task.projectId, updatedProject);
+
+		const cacheKey = `tasks:${taskID}`;
+		await this.invalidateCache(cacheKey);
+		await this.invalidateCache(`tasks:project:${task.projectId}`);
+		await this.invalidateCache(`projects:${task.projectId}`);
+		await this.getTaskById(taskID);
+
 		setStatusBudgets();
 		return await this.getTaskById(updateMoney.id);
 	}
