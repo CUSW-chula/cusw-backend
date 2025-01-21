@@ -163,6 +163,7 @@ export class TaskService extends BaseService<Task> {
 			await this.invalidateCache(`tasks:parent:${task.parentTaskId}`);
 			const createdTask = await this.taskModel.create(newTask);
 
+			// Update project money
 			const existingProject = await this.projectModel.findById(task.projectId);
 			if (!existingProject) {
 				throw new ValidationException("Project cann't found");
@@ -173,6 +174,10 @@ export class TaskService extends BaseService<Task> {
 				advance: existingProject.advance + (task.advance ?? 0),
 				expense: existingProject.expense + (task.expense ?? 0),
 			};
+			// Invalidate caches
+			await this.invalidateCache("projects:all");
+			await this.invalidateCache(`projects:${task.projectId}`);
+
 			await this.projectModel.update(task.projectId, updatedProject);
 
 			return await this.getTaskById(createdTask.id);
@@ -299,16 +304,21 @@ export class TaskService extends BaseService<Task> {
 			const projectId = task.projectId;
 			await this.invalidateCache(`tasks:project:${projectId}`);
 
+			// Step 4: update project money
 			const existingProject = await this.projectModel.findById(task.projectId);
-			if (!existingProject) {
+			if (!existingProject)
 				throw new ValidationException("Project cann't found");
-			}
 			const updatedProject = {
 				...existingProject,
 				budget: existingProject.budget - (task.budget ?? 0),
 				advance: existingProject.advance - (task.advance ?? 0),
 				expense: existingProject.expense - (task.expense ?? 0),
 			};
+			// Invalidate caches
+			await this.invalidateCache("projects:all");
+			await this.invalidateCache(`projects:${projectId}`);
+
+			// Update Project Money
 			await this.projectModel.update(task.projectId, updatedProject);
 
 			return task;
