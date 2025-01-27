@@ -1,9 +1,7 @@
 import { type Cookie, Elysia, t } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
-import { ActivityService } from "../services/activity-logs.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
-import { $Enums } from "@prisma/client";
 
 export const ProjectController = new Elysia({
 	prefix: "/projects",

@@ -75,3 +75,12 @@ export type Emoji = {
 	taskId: string;
 	user: User;
 };
+
+export type Activity = {
+	id: string;
+	action: $Enums.ActivityAction;
+	detail: string | null;
+	createdAt: Date;
+	task: Task;
+	user: User;
+};

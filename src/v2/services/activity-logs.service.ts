@@ -1,21 +1,28 @@
 import { ActivityLogsModel } from "../models/activity-logs.model";
-import type { PrismaClient, Activity, $Enums } from "@prisma/client";
+import type { PrismaClient, $Enums } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
 import { TasksModel } from "../models/tasks.model";
 import { NotFoundException } from "../../core/exception.core";
+import { Activity } from "../../shared/interfaces.shared";
+import { TaskService } from "./tasks.service";
+import { UserService } from "./users.service";
 
 export class ActivityService extends BaseService<Activity> {
 	private readonly activityModel: ActivityLogsModel;
 	private readonly userModel: UserModel;
 	private readonly taskModel: TasksModel;
+	private readonly taskService: TaskService;
+	private readonly userService: UserService;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 10); // 10 seconds
 		this.activityModel = new ActivityLogsModel(prisma);
 		this.userModel = new UserModel(prisma);
 		this.taskModel = new TasksModel(prisma);
+		this.taskService = new TaskService(prisma, redis);
+		this.userService = new UserService(prisma, redis);
 	}
 
 	async getActivityById(id: string): Promise<Activity[]> {
@@ -25,8 +32,19 @@ export class ActivityService extends BaseService<Activity> {
 
 		const activity = await this.activityModel.findByTaskId(id);
 		if (!activity) throw new NotFoundException("Activity not found");
-		await this.setToCache(cacheKey, activity);
-		return activity;
+		const activityWithDetails: Activity[] = await Promise.all(
+			activity.map(async (act) => {
+				const user = await this.userService.getUserById(act.userId ?? "");
+				const task = await this.taskService.getTaskById(act.taskId ?? "");
+				return {
+					...act,
+					user,
+					task,
+				};
+			}),
+		);
+		await this.setToCache(cacheKey, activityWithDetails);
+		return activityWithDetails;
 	}
 
 	async postActivity(
@@ -48,7 +66,12 @@ export class ActivityService extends BaseService<Activity> {
 			userId,
 			createdAt: new Date(),
 		});
+		const activityWithDetails: Activity = {
+			...activity,
+			user: isUserExist,
+			task: await this.taskService.getTaskById(taskId),
+		};
 		await this.invalidateCache(`activity:${activity.id}`);
-		return activity;
+		return activityWithDetails;
 	}
 }
