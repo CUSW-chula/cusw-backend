@@ -113,19 +113,21 @@ export const ProjectController = new Elysia({
 			db,
 			redis,
 			body,
+			cookie: { session },
 		}: Context & {
 			params: { id: string };
 			body: {
 				tagId: string;
-				userId: string;
 			};
+			cookie: { session: Cookie<string> };
 		}) => {
 			const projectId = id;
+			const userId = session.value;
 			const projectService = new ProjectService(db, redis);
 			const project = await projectService.assignTagToProject(
 				body.tagId,
 				projectId,
-				body.userId,
+				userId
 			);
 			WebSocket.broadcast("project", project);
 			return project;
@@ -133,7 +135,6 @@ export const ProjectController = new Elysia({
 		{
 			body: t.Object({
 				tagId: t.String(),
-				userId: t.String(),
 			}),
 			detail: {
 				summary: "Assign a tag to a project",
