@@ -194,6 +194,23 @@ export class ProjectService extends BaseService<Project> {
 		return project;
 	}
 
+	async assignTagToProject(
+		tagId: string,
+		projectId: string,
+		userId: string,
+	): Promise<Project> {
+		if (!tagId) throw new ValidationException("Tag ID is required");
+		if (!projectId) throw new ValidationException("Project ID is required");
+		const user = await this.userModel.findById(userId);
+		if (!user) throw new NotFoundException("User not found");
+		await this.projectTagModel.create({
+			tagId,
+			projectId,
+		});
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(projectId);
+	}
+
 	async deleteProject(projectId: string): Promise<Project> {
 		// Check if the project exists
 		const project = await this.projectModel.findById(projectId);

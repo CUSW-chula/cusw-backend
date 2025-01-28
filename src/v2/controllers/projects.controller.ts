@@ -106,6 +106,41 @@ export const ProjectController = new Elysia({
 			},
 		},
 	)
+	.patch(
+		"/tag/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+			body,
+		}: Context & {
+			params: { id: string };
+			body: {
+				tagId: string;
+				projectId: string;
+				userId: string;
+			};
+		}) => {
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.assignTagToProject(
+				body.tagId,
+				body.projectId,
+				body.userId,
+			);
+			WebSocket.broadcast("project", project);
+			return project;
+		},
+		{
+			body: t.Object({
+				tagId: t.String(),
+				projectId: t.String(),
+				userId: t.String(),
+			}),
+			detail: {
+				summary: "Assign a tag to a project",
+			},
+		},
+	)
 	.delete(
 		"/:id",
 		async ({
