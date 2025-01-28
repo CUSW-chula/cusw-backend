@@ -106,7 +106,7 @@ export const ProjectController = new Elysia({
 			},
 		},
 	)
-	.patch(
+	.post(
 		"/tag/:id",
 		async ({
 			params: { id },
