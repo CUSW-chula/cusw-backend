@@ -271,37 +271,28 @@ export class TaskService extends BaseService<Task> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
-		const newStatus = { status: newTaskStatus };
+		const updatedTask = await this.taskModel.update(taskId, {
+			status: newTaskStatus,
+		});
 
-		const subTasks = await this.taskModel.findSubTask(taskId);
-
-		if (subTasks && subTasks.length > 0) {
-			const getStatusValue = (status: String) => {
-				let value = 5;
-				if (status === "Unassigned") value = 0;
-				if (status === "Assigned") value = 1;
-				if (status === "UnderReview") value = 2;
-				if (status === "InRecheck") value = 3;
-				if (status === "Done") value = 4;
-				return value;
-			};
-			let lowestSubTaskStatusValue = getStatusValue(subTasks[0].status);
-
-			for (const subTask of subTasks) {
-				const subTasksStatusValue = getStatusValue(subTask.status);
-				if (subTasksStatusValue < lowestSubTaskStatusValue)
-					lowestSubTaskStatusValue = subTasksStatusValue;
+		if (newTaskStatus === TaskStatus.Done) {
+			const parentTask = await this.taskModel.findParentTask(taskId);
+			if (parentTask) {
+				await this.recursiveDoneParentTask(isTaskExist.id, newTaskStatus);
 			}
-			if (getStatusValue(newTaskStatus) > lowestSubTaskStatusValue)
-				throw new PermissionException(
-					"Cannot change status: Parent task status cannot exceed sub-task statuses.",
-				);
 		}
 
-		const updatedTask = await this.taskModel.update(taskId, newStatus);
+		await this.invalidateCache(`status:${taskId}`);
+		await this.invalidateCache("tasks:all");
+		await this.invalidateCache(`tasks:${taskId}`);
 
+		const finalTask = await this.getTaskById(updatedTask.id);
+		return finalTask;
+	}
+
+	async recursiveDoneParentTask(taskId: string, newTaskStatus: TaskStatus) {
 		const parentTask = await this.taskModel.findParentTask(taskId);
-		if (parentTask && newTaskStatus === "Done") {
+		if (parentTask) {
 			const friendTask = await this.taskModel.findSubTask(parentTask.id);
 			let isAllDone = true;
 			if (friendTask) {
@@ -309,10 +300,12 @@ export class TaskService extends BaseService<Task> {
 					if (task.status !== "Done") isAllDone = false;
 				}
 			}
-			if (isAllDone) await this.taskModel.update(parentTask.id, newStatus);
+			if (isAllDone) {
+				const newStatus = { status: newTaskStatus };
+				await this.taskModel.update(parentTask.id, newStatus);
+				this.recursiveDoneParentTask(parentTask.id, newTaskStatus);
+			}
 		}
-		await this.invalidateCache(`status:${taskId}`);
-		return this.getTaskById(updatedTask.id);
 	}
 
 	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
