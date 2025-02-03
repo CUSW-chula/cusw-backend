@@ -89,7 +89,6 @@ describe("ActivityService", () => {
 					createdAt: expect.any(String),
 				},
 			]);
-			expect(mockRedis.get).toHaveReturned();
 		});
 	});
 

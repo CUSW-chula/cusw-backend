@@ -22,6 +22,7 @@ import { ProjectTagModel } from "../models/project-tag.model";
 import { TagModel } from "../models/tag.model";
 import { TaskService } from "./tasks.service";
 import { ProjectRoleModel } from "../models/project-role.model";
+import { t } from "elysia";
 
 export class ProjectService extends BaseService<Project> {
 	private readonly projectModel: ProjectModel;
@@ -201,12 +202,35 @@ export class ProjectService extends BaseService<Project> {
 	): Promise<Project> {
 		if (!tagId) throw new ValidationException("Tag ID is required");
 		if (!projectId) throw new ValidationException("Project ID is required");
+		const projecttags = await this.projectTagModel.findByTagId(tagId);
+		const existtag = projecttags?.find((tag) => tag.projectId === projectId);
+		if (existtag)
+			throw new ValidationException("tags already assigned to project");
 		const user = await this.userModel.findById(userId);
 		if (!user) throw new NotFoundException("User not found");
 		await this.projectTagModel.create({
 			tagId,
 			projectId,
 		});
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(projectId);
+	}
+
+	async removeTagFromProject(
+		tagId: string,
+		projectId: string,
+		userId: string,
+	): Promise<Project> {
+		if (!tagId) throw new ValidationException("Tag ID is required");
+		if (!projectId) throw new ValidationException("Project ID is required");
+		const projecttags = await this.projectTagModel.findByProjectIdAndTagId(
+			projectId,
+			tagId,
+		);
+		if (!projecttags) throw new NotFoundException("Tag not found");
+		const user = await this.userModel.findById(userId);
+		if (!user) throw new NotFoundException("User not found");
+		await this.projectTagModel.delete(projecttags.id);
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(projectId);
 	}
