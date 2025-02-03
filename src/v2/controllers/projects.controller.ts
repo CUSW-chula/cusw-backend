@@ -127,7 +127,7 @@ export const ProjectController = new Elysia({
 			const project = await projectService.assignTagToProject(
 				body.tagId,
 				projectId,
-				userId
+				userId,
 			);
 			WebSocket.broadcast("project", project);
 			return project;

@@ -392,11 +392,11 @@ export class TaskService extends BaseService<Task> {
 		return taskList.reverse();
 	}
 
-	async getParentTask(taskId: string): Promise<Task | null> {
+	async getParentTask(taskId: string): Promise<Task | string> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
 
-		if (!task.parentTaskId) return null;
+		if (!task.parentTaskId) return task.projectId;
 
 		const parentTask = await this.getTaskById(task.parentTaskId);
 		if (!parentTask) throw new NotFoundException("Parent task not found");
