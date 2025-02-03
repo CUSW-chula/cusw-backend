@@ -2,6 +2,7 @@ import { type Cookie, Elysia, t } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
 import { WebSocket } from "../../shared/utils/websocket.utils";
+import { UserService } from "../services/users.service";
 
 export const ProjectController = new Elysia({
 	prefix: "/projects",
@@ -127,7 +128,7 @@ export const ProjectController = new Elysia({
 			const project = await projectService.assignTagToProject(
 				body.tagId,
 				projectId,
-				userId
+				userId,
 			);
 			WebSocket.broadcast("project", project);
 			return project;
@@ -156,6 +157,39 @@ export const ProjectController = new Elysia({
 		{
 			detail: {
 				summary: "Delete a project",
+			},
+		},
+	)
+
+	.post(
+		"/assignpin/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { id: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const projectId = id;
+			const userId = session.value;
+			const projectService = new ProjectService(db, redis);
+
+			// เรียกใช้งานฟังก์ชัน assign pin
+			const pinProject = await projectService.assigningpinToProject(
+				userId,
+				projectId,
+			);
+
+			// ส่งข้อมูลการเปลี่ยนแปลงผ่าน WebSocket
+			WebSocket.broadcast("pinProject", pinProject);
+
+			return pinProject;
+		},
+		{
+			detail: {
+				summary: "Assign a pin to a project",
 			},
 		},
 	);

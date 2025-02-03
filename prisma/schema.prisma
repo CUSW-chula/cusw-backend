@@ -19,7 +19,7 @@ model User {
   comments      Comment[] 
   activities    Activity[]
   emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
-
+  pinnedProject   PinProject[] 
 
   @@map("users") 
 }
@@ -49,7 +49,7 @@ model Project {
   tags           ProjectTag[] 
   tasks          Task[]           @relation("ProjectTasks") 
   files          File[]           @relation("ProjectFiles") 
-  
+  pinnedProject   PinProject[] 
   @@map("projects") 
 }
 
@@ -89,6 +89,7 @@ model Task {
   activities     Activity[] 
   files          File[]         @relation("TaskFiles") 
   tags           TaskTag[]
+
   emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
 
   @@map("tasks") 
@@ -182,6 +183,16 @@ model ProjectTag {
   tag         Tag     @relation(fields: [tagId], references: [id])
 
   @@map("project_tags")
+}
+
+model PinProject { 
+  id       String @id @default(cuid())  
+  userId    String 
+  projectId   String
+
+  user      User        @relation(fields: [userId], references: [id]) 
+  project    Project @relation(fields: [projectId], references: [id])
+  @@map("pins_project") 
 }
 
 enum Role { 

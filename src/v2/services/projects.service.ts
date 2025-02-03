@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PinProject, PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import { ProjectModel } from "../models/projects.model";
 import type Redis from "ioredis";
@@ -22,6 +22,7 @@ import { ProjectTagModel } from "../models/project-tag.model";
 import { TagModel } from "../models/tag.model";
 import { TaskService } from "./tasks.service";
 import { ProjectRoleModel } from "../models/project-role.model";
+import { PinProjectModel } from "../models/pin-project.model";
 
 export class ProjectService extends BaseService<Project> {
 	private readonly projectModel: ProjectModel;
@@ -37,6 +38,7 @@ export class ProjectService extends BaseService<Project> {
 	private readonly tagModel: TagModel;
 	private readonly projectRoleModel: ProjectRoleModel;
 	private readonly taskService: TaskService;
+	private readonly pinProject: PinProjectModel;
 
 	protected getTaskModel() {
 		return this.taskModel;
@@ -57,6 +59,7 @@ export class ProjectService extends BaseService<Project> {
 		this.tagModel = new TagModel(prisma);
 		this.projectRoleModel = new ProjectRoleModel(prisma);
 		this.taskService = new TaskService(prisma, redis);
+		this.pinProject = new PinProjectModel(prisma);
 	}
 
 	async getAllProjects(): Promise<Project[]> {
@@ -257,5 +260,33 @@ export class ProjectService extends BaseService<Project> {
 			const error = _error as Error;
 			throw new ServerErrorException(`Error deleting project ${error.message}`);
 		}
+	}
+
+	async assigningpinToProject(
+		userId: string,
+		projectId: string,
+	): Promise<PinProject> {
+		// ตรวจสอบว่าผู้ใช้มีอยู่จริง
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		// ตรวจสอบว่าโปรเจกต์มีอยู่จริง
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		// ตรวจสอบว่าผู้ใช้ได้ Pin โปรเจกต์นี้ไปแล้วหรือยัง
+		const existingPin = await this.pinProject.findFirst({
+			where: { userId, projectId },
+		});
+
+		// ถ้ายังไม่มี ให้สร้าง Pin ใหม่
+		const assignPinToProject = await this.pinProject.create({
+			userId,
+			projectId,
+		});
+
+		if (!assignPinToProject) throw new Error("Failed to assign pin to project");
+
+		return assignPinToProject;
 	}
 }
