@@ -69,6 +69,8 @@ export class UserTaskClassService extends TaskService {
 			userId: userId,
 		});
 		await this.invalidateCache(cacheKey);
+		await this.invalidateCache("tasks:all");
+		await this.invalidateCache(`tasks:${taskId}`);
 		const task = await this.getTaskById(taskId);
 		const tasksAssigment = { user: isUserExist, task: task };
 		return tasksAssigment;
@@ -78,6 +80,7 @@ export class UserTaskClassService extends TaskService {
 		taskId: string,
 		userId: string,
 	): Promise<TaskAssignment> {
+		const cacheKey = `status:${taskId}`;
 		// First step check if user exists
 		const isUserExist = await this.getUserModel().findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
@@ -103,6 +106,10 @@ export class UserTaskClassService extends TaskService {
 			await this.getTaskModel().update(taskId, {
 				status: "Unassigned",
 			});
+
+		await this.invalidateCache(cacheKey);
+		await this.invalidateCache("tasks:all");
+		await this.invalidateCache(`tasks:${taskId}`);
 		const task = await this.getTaskById(taskId);
 		const unAssigningTaskToUser = { user: isUserExist, task: task };
 		return unAssigningTaskToUser;
