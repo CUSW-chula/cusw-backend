@@ -162,7 +162,7 @@ export const ProjectController = new Elysia({
 	)
 
 	.post(
-		"/assignpin/:id",
+		"/pin/:projectId",
 		async ({
 			params: { id },
 			db,
@@ -170,16 +170,16 @@ export const ProjectController = new Elysia({
 			cookie: { session },
 		}: Context & {
 			params: { id: string };
+			
 			cookie: { session: Cookie<string> };
 		}) => {
 			const projectId = id;
 			const userId = session.value;
-			const projectService = new ProjectService(db, redis);
-
-			// เรียกใช้งานฟังก์ชัน assign pin
+			const projectService = new ProjectService(db, redis)
 			const pinProject = await projectService.assigningpinToProject(
 				userId,
 				projectId,
+				
 			);
 
 			// ส่งข้อมูลการเปลี่ยนแปลงผ่าน WebSocket
@@ -192,4 +192,54 @@ export const ProjectController = new Elysia({
 				summary: "Assign a pin to a project",
 			},
 		},
+	)
+
+	.delete(
+		"/pin/:projectId",
+		async ({
+			params: { id },
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { id: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const projectId = id;
+			const userId = session.value;
+			const projectService = new ProjectService(db, redis);
+			
+			const unpinProject = await projectService.unAssigningPinToProject(userId, projectId);
+	
+			// ส่งข้อมูลการเปลี่ยนแปลงผ่าน WebSocket
+			WebSocket.broadcast("unpinProject", unpinProject);
+	
+			return unpinProject;
+		},
+		{
+			detail: {
+				summary: "Remove a pin from a project",
+			},
+		}
+
+		
+	)
+	.get(
+		"/pin/:userId",
+		async ({
+			params: { userId },
+			db,
+			redis,
+		}: Context & { params: { userId: string } }) => {
+			const projectService = new ProjectService(db, redis);
+			const pinnedProjects = await projectService.getAllPinInProjectByUserId(userId);
+			return pinnedProjects;
+		},
+		{
+			detail: {
+				summary: "Get all pinned projects by user id",
+			},
+		}
 	);
+
+	

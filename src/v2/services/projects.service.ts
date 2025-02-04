@@ -25,6 +25,9 @@ import { ProjectRoleModel } from "../models/project-role.model";
 import { PinProjectModel } from "../models/pin-project.model";
 
 export class ProjectService extends BaseService<Project> {
+	static unAssigningPinToProject(taskId: any, tagId: any) {
+		throw new Error("Method not implemented.");
+	}
 	private readonly projectModel: ProjectModel;
 	private readonly taskModel: TasksModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
@@ -268,16 +271,15 @@ export class ProjectService extends BaseService<Project> {
 	): Promise<PinProject> {
 		// ตรวจสอบว่าผู้ใช้มีอยู่จริง
 		const isUserExist = await this.userModel.findById(userId);
-		if (!isUserExist) throw new NotFoundException("User not found");
+		try {
+			if (!isUserExist) throw new NotFoundException("User not found");
 
 		// ตรวจสอบว่าโปรเจกต์มีอยู่จริง
 		const isProjectExist = await this.projectModel.findById(projectId);
 		if (!isProjectExist) throw new NotFoundException("Project not found");
 
 		// ตรวจสอบว่าผู้ใช้ได้ Pin โปรเจกต์นี้ไปแล้วหรือยัง
-		const existingPin = await this.pinProject.findFirst({
-			where: { userId, projectId },
-		});
+		
 
 		// ถ้ายังไม่มี ให้สร้าง Pin ใหม่
 		const assignPinToProject = await this.pinProject.create({
@@ -288,5 +290,50 @@ export class ProjectService extends BaseService<Project> {
 		if (!assignPinToProject) throw new Error("Failed to assign pin to project");
 
 		return assignPinToProject;
+		} catch (error) {
+			throw new Error("External error");
+			
+		}
+		
 	}
-}
+
+	async unAssigningPinToProject(userId: string, projectId: string): Promise<PinProject> {
+			// Check if the tag exists
+			const isProjectExist = await this.projectModel.findById(projectId);
+			if (!isProjectExist) throw new NotFoundException("Project not found");
+	
+			// Check if the task exists
+			const isUserExist = await this.userModel.findById(userId);
+			if (!isUserExist) throw new NotFoundException("User not found");
+	
+			// Find the tag-task association
+			const pinProject = await this.pinProject.findByUserIdAndProjectId(userId, projectId);
+			if (!pinProject) throw new NotFoundException("PinProject not found");
+	
+			// Unassign the tag from the task
+			const unAssigningPinToProject = await this.pinProject.delete(pinProject.id);
+			return unAssigningPinToProject;
+		}
+
+		async getAllPinInProjectByUserId(userId: string): Promise<string[]> {
+			// Check if the user exists
+			const isUserExist = await this.userModel.findById(userId);
+			if (!isUserExist) throw new NotFoundException("User not found");
+		
+			// Fetch all pinned projects
+			const allPinProject = await this.pinProject.findAll();
+			
+			// Filter projects by userId and extract projectId
+			const allProjectId: string[] = allPinProject
+				.filter((pin: PinProject) => pin.userId === userId)
+				.map((pin: PinProject) => pin.projectId);
+			
+			return allProjectId;
+		}
+		
+	}
+
+	
+
+	
+
