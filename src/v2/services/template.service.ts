@@ -81,7 +81,6 @@ export class TemplateService extends BaseService<Template> {
 			return savedFile;
 		}
 		throw new BadRequestException("Require file type JSON");
-		
 	}
 
 	async removeTemplate(fileId: string): Promise<Template> {
