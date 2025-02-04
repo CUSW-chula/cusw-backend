@@ -5,8 +5,8 @@ import * as Minio from "minio";
 import Redis from "ioredis";
 import mime from "mime-types"; // Import mime-types library to get the content type by extension
 import {
-	NotFoundException,
 	BadRequestException,
+	NotFoundException,
 	ServerErrorException,
 } from "../../core/exception.core";
 
@@ -39,48 +39,49 @@ export class TemplateService extends BaseService<Template> {
 
 		// Get the MIME type based on the file extension
 		const contentType = mime.lookup(file.name) || "application/octet-stream";
-		if (contentType === "application/json") {
-			await this.minIoClient.putObject(
-				bucketName,
-				fileKey,
-				fileBuffer,
-				file.size,
-				{
-					"Content-Type": contentType,
-				},
+		if(contentType==="application/json"){
+		console.log(mime.lookup(file.name))
+		await this.minIoClient.putObject(
+			bucketName,
+			fileKey,
+			fileBuffer,
+			file.size,
+			{
+				"Content-Type": contentType,
+			},
+		);
+
+		const fileUrl = "http://localhost:9000/cusw-workspace/" + fileKey;
+		let filePath = fileUrl;
+
+		// Check if in production and if the URL starts with localhost
+		if (
+			process.env.NODE_ENV === "production" &&
+			fileUrl.startsWith("http://localhost")
+		) {
+			// Replace 'localhost' with your production domain
+			filePath = fileUrl.replace(
+				"http://localhost:9000",
+				"https://cusw-workspace.sa.chula.ac.th",
 			);
-
-			const fileUrl = "http://localhost:9000/cusw-workspace/" + fileKey;
-			let filePath = fileUrl;
-
-			// Check if in production and if the URL starts with localhost
-			if (
-				process.env.NODE_ENV === "production" &&
-				fileUrl.startsWith("http://localhost")
-			) {
-				// Replace 'localhost' with your production domain
-				filePath = fileUrl.replace(
-					"http://localhost:9000",
-					"https://cusw-workspace.sa.chula.ac.th",
-				);
-			}
-
-			const savedFile = await this.templateModel.create({
-				createdAt: new Date(),
-				filePath: filePath,
-				fileName: file.name,
-				fileSize: file.size,
-				uploadedBy: authorId,
-			});
-
-			if (!savedFile) throw new ServerErrorException("Failed to save file");
-
-			const cacheKey = "template:all";
-			await this.invalidateCache(cacheKey);
-
-			return savedFile;
 		}
+
+		const savedFile = await this.templateModel.create({
+			createdAt: new Date(),
+			filePath: filePath,
+			fileName: file.name,
+			fileSize: file.size,
+			uploadedBy: authorId,
+		});
+
+		if (!savedFile) throw new ServerErrorException("Failed to save file");
+
+		const cacheKey = "template:all";
+		await this.invalidateCache(cacheKey);
+
+		return savedFile;}
 		throw new BadRequestException("Require file type JSON");
+		
 	}
 
 	async removeTemplate(fileId: string): Promise<Template> {
