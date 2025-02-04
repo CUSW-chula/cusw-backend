@@ -11,16 +11,12 @@ function truncateFileName(fileName: string, maxLength: number): string {
 }
 
 export const TemplateController = new Elysia({
-	prefix: "/file",
+	prefix: "/template",
 	tags: ["Version 2"],
 })
 	.get(
 		"/",
-		async ({
-			db,
-			redis,
-			minio,
-		}: Context & { params: { id: string } }) => {
+		async ({ db, redis, minio }: Context & { params: { id: string } }) => {
 			const templateService = new TemplateService(db, redis, minio);
 			const files = await templateService.getAllFile();
 			return files;
@@ -42,10 +38,7 @@ export const TemplateController = new Elysia({
 		}) => {
 			const templateService = new TemplateService(db, redis, minio);
 			const userId = session.value;
-			const savedFile = await templateService.uploadTemplate(
-				file,
-				userId,
-			);
+			const savedFile = await templateService.uploadTemplate(file, userId);
 			if (!savedFile) {
 				return Response.json("file couldn't be saved", { status: 500 });
 			}
@@ -93,7 +86,7 @@ export const TemplateController = new Elysia({
 		},
 		{
 			body: t.Object({
-				fileId: t.String(),
+				templateId: t.String(),
 			}),
 		},
 	);
