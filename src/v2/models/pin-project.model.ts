@@ -2,57 +2,46 @@ import type { PinProject } from "@prisma/client";
 import { BaseModel } from "../../core/model.core";
 
 export class PinProjectModel extends BaseModel<PinProject> {
-	findFirst(arg0: { where: { userId: string; projectId: string } }) {
-		throw new Error("Method not implemented.");
-	}
 	async findAll(): Promise<PinProject[]> {
-		const pinProject = await this.getModel().pinProject.findMany();
-		return pinProject;
+		return await this.getModel().pinProject.findMany();
 	}
+
 	async findById(id: string): Promise<PinProject | null> {
-		const pinProject = await this.getModel().pinProject.findUnique({
-			where: { id },
-		});
-		return pinProject;
+		return await this.getModel().pinProject.findUnique({ where: { id } });
 	}
+
 	async findByUserIdAndProjectId(
-			userId: string,
-			projectId: string,
-		): Promise<PinProject | null> {
-			const pinProject = await this.getModel().pinProject.findFirst({
-				where: {
-					userId: userId,
-					projectId: projectId,
-				},
-			});
-			return pinProject;
-		}
+		userId: string,
+		projectId: string,
+	): Promise<PinProject | null> {
+		return await this.getModel().pinProject.findFirst({
+			where: { userId, projectId },
+		});
+	}
+
 	async create(data: Partial<PinProject>): Promise<PinProject> {
-		const createdpinProject = await this.getModel().pinProject.create({
+		if (!data.userId || !data.projectId) {
+			throw new Error("User ID and Project ID are required");
+		}
+		return await this.getModel().pinProject.create({
 			data: {
-				projectId: data.projectId ?? "",
-				userId: data.userId ?? "",
+				userId: data.userId,
+				projectId: data.projectId,
 			},
 		});
-		return createdpinProject;
 	}
+
 	async update(
 		id: string,
 		data: Partial<{ userId: string; projectID: string }>,
 	): Promise<PinProject> {
-		const updatedPinProject = await this.getModel().pinProject.update({
-			where: {
-				id: id,
-			},
-			data: data,
+		return await this.getModel().pinProject.update({
+			where: { id },
+			data,
 		});
-		return updatedPinProject;
 	}
 
 	async delete(id: string): Promise<PinProject> {
-		const deletedPinProject = await this.getModel().pinProject.delete({
-			where: { id },
-		});
-		return deletedPinProject;
+		return await this.getModel().pinProject.delete({ where: { id } });
 	}
 }
