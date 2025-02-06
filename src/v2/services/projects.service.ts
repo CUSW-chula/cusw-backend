@@ -157,6 +157,7 @@ export class ProjectService extends BaseService<Project> {
 				throw new ServerErrorException(
 					"Failed to retrieve the created project",
 				);
+			await this.invalidateCache("projects:all");
 			return projectWithDetails;
 		}
 		throw new ValidationException("Title cann't be null");
