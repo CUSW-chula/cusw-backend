@@ -16,6 +16,8 @@ model User {
   assignedTasks TaskAssignment[] 
   createdTasks  Task[]           @relation("CreatedTasks") 
   uploadedFiles File[]           @relation("UploadedFiles") 
+  templateFiles Template[]       @relation("TemplateFiles") 
+
   comments      Comment[] 
   activities    Activity[]
   emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
@@ -159,6 +161,19 @@ model File {
   uploader   User     @relation("UploadedFiles", fields: [uploadedBy], references: [id]) 
 
   @@map("files") 
+}
+
+model Template { 
+  id         String  @id @default(cuid()) 
+  filePath   String 
+  fileSize   Float   
+  fileName   String
+  uploadedBy String 
+  createdAt  DateTime  @default(now()) 
+
+  uploader   User     @relation("TemplateFiles", fields: [uploadedBy], references: [id]) 
+
+  @@map("template") 
 }
 
 // Join table for many-to-many relationship between Task and Tag
