@@ -59,9 +59,6 @@ COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/
 
-# Copy entrypoint script
-COPY --from=build --chown=nonroot:nonroot /app/entrypoint.sh .
-
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=4000
