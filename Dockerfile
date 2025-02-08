@@ -4,7 +4,7 @@ ARG DATABASE_URL
 
 WORKDIR /usr/src/app
 
-COPY package*.json bun.lockb ./
+COPY package*.json ./
 COPY prisma ./prisma/
 
 RUN bun install
