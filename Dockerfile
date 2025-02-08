@@ -1,84 +1,18 @@
-# Build Stage
-FROM oven/bun:1.0 AS build
+FROM oven/bun:1
 
-# Install system dependencies for Prisma
-RUN apt-get update && \
-    apt-get install -y \
-    openssl \
-    libgcc1 \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+ARG DATABASE_URL
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Create directory structure first
-RUN mkdir -p \
-    prisma \
-    generated/client \
-    node_modules/.prisma
+COPY package*.json bun.lockb ./
+COPY prisma ./prisma/
 
-# Copy package files and schema
-COPY package.json .
-COPY prisma/schema.prisma ./prisma/
-
-# Install dependencies
 RUN bun install
 
-# Generate Prisma client to custom directory
-RUN bunx prisma generate --schema=./prisma/schema.prisma
+RUN bun run prisma:prod
 
-# Verify generation output
-RUN ls -la generated/client
-
-# Copy application source
 COPY . .
 
-# Build application
-RUN bun build \
-    --compile \
-    --minify \
-    --target bun \
-    --outfile server \
-    ./src/index.ts
+ENV NODE_ENV production
 
-# Runtime Stage
-FROM gcr.io/distroless/base:nonroot
-
-WORKDIR /app
-
-# Create necessary directories
-RUN mkdir -p \
-    generated/client \
-    node_modules/.prisma \
-    prisma
-
-# Copy built application
-COPY --from=build --chown=nonroot:nonroot /app/server /app/server
-
-# Copy generated Prisma client
-COPY --from=build --chown=nonroot:nonroot /app/generated/client ./generated/client
-
-# Copy Prisma engine files
-COPY --from=build --chown=nonroot:nonroot \
-    /app/node_modules/.prisma \
-    /app/node_modules/.prisma
-
-# Copy system libraries
-COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/x86_64-linux-gnu/
-COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/
-COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/
-COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/
-
-# Environment variables
-ENV NODE_ENV=production
-ENV PORT=4000
-ENV DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
-ENV JWT_SECRET=${JWT_SECRET}
-ENV MINIO_ROOT_USER=${MINIO_ROOT_USER}
-ENV MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-ENV POSTGRES_DB=${POSTGRES_DB}
-ENV POSTGRES_USER=${POSTGRES_USER}
-ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-
-EXPOSE 4000
-CMD ["./server"]
+CMD [ "bun", "start" ]

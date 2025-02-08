@@ -7,12 +7,14 @@
     "build": "bun build --compile --minify-whitespace --minify-syntax --target bun --outfile server ./src/index.ts",
     "db:push": "bunx prisma db push",
     "db:studio": "bunx prisma studio",
+    "prisma:prod": "prisma migrate deploy",
     "prepare": "husky",
     "commit": "git-cz",
     "lint": "bunx biome lint ./src",
     "lint:fix": "bunx biome lint --write ./src",
     "format": "bunx biome format ./src",
-    "format:fix": "bunx biome format --write ./src"
+    "format:fix": "bunx biome format --write ./src",
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.2.0",
