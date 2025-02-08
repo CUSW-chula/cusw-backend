@@ -45,15 +45,18 @@ WORKDIR /app
 COPY --from=build --chown=nonroot:nonroot /app/server /app/server
 COPY --from=build --chown=nonroot:nonroot /app/prisma ./prisma
 
-# Copy Prisma engine and client
+# Copy Prisma-related files
 COPY --from=build --chown=nonroot:nonroot \
     /app/node_modules/.prisma \
     /app/node_modules/.prisma
 COPY --from=build --chown=nonroot:nonroot \
     /app/node_modules/@prisma \
     /app/node_modules/@prisma
+COPY --from=build --chown=nonroot:nonroot \
+    /app/node_modules/prisma \
+    /app/node_modules/prisma
 
-# Copy required system libraries with correct paths
+# Copy required system libraries
 COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/x86_64-linux-gnu/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/
