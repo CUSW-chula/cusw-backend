@@ -12,17 +12,21 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json  ./
+COPY package.json ./
 COPY prisma ./prisma
 
 # Install dependencies
-RUN bun install 
+RUN bun install
 
-# Generate Prisma client
+# Generate Prisma client to custom directory
 RUN bunx prisma generate
 
 # Copy application source
 COPY . .
+
+# Set build arguments
+ARG DATABASE_URL
+ARG NODE_ENV=production
 
 # Build application
 RUN bun build \
@@ -41,7 +45,10 @@ WORKDIR /app
 COPY --from=build --chown=nonroot:nonroot /app/server /app/server
 COPY --from=build --chown=nonroot:nonroot /app/prisma ./prisma
 
-# Copy Prisma-related files
+# Copy generated Prisma client
+COPY --from=build --chown=nonroot:nonroot /app/generated ./generated
+
+# Copy Prisma engine and dependencies
 COPY --from=build --chown=nonroot:nonroot \
     /app/node_modules/.prisma \
     /app/node_modules/.prisma
@@ -58,7 +65,7 @@ COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux
 COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/
 
-# Set environment variables
+# Environment variables
 ENV NODE_ENV=production
 ENV PORT=4000
 ENV DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
