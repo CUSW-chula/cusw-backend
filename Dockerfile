@@ -24,10 +24,6 @@ RUN bunx prisma generate
 # Copy application source
 COPY . .
 
-# Set build arguments
-ARG DATABASE_URL
-ARG NODE_ENV=production
-
 # Build application
 RUN bun build \
     --compile \
