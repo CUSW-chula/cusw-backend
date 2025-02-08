@@ -11,22 +11,27 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json ./
-COPY prisma ./prisma
+# Create directory structure first
+RUN mkdir -p \
+    prisma \
+    generated/client \
+    node_modules/.prisma
+
+# Copy package files and schema
+COPY package.json .
+COPY prisma/schema.prisma ./prisma/
 
 # Install dependencies
 RUN bun install
 
 # Generate Prisma client to custom directory
-RUN bunx prisma generate
+RUN bunx prisma generate --schema=./prisma/schema.prisma
+
+# Verify generation output
+RUN ls -la generated/client
 
 # Copy application source
 COPY . .
-
-# Set build arguments
-ARG DATABASE_URL
-ARG NODE_ENV=production
 
 # Build application
 RUN bun build \
@@ -41,25 +46,24 @@ FROM gcr.io/distroless/base:nonroot
 
 WORKDIR /app
 
+# Create necessary directories
+RUN mkdir -p \
+    generated/client \
+    node_modules/.prisma \
+    prisma
+
 # Copy built application
 COPY --from=build --chown=nonroot:nonroot /app/server /app/server
-COPY --from=build --chown=nonroot:nonroot /app/prisma ./prisma
 
 # Copy generated Prisma client
-COPY --from=build --chown=nonroot:nonroot /app/generated ./generated
+COPY --from=build --chown=nonroot:nonroot /app/generated/client ./generated/client
 
-# Copy Prisma engine and dependencies
+# Copy Prisma engine files
 COPY --from=build --chown=nonroot:nonroot \
     /app/node_modules/.prisma \
     /app/node_modules/.prisma
-COPY --from=build --chown=nonroot:nonroot \
-    /app/node_modules/@prisma \
-    /app/node_modules/@prisma
-COPY --from=build --chown=nonroot:nonroot \
-    /app/node_modules/prisma \
-    /app/node_modules/prisma
 
-# Copy required system libraries
+# Copy system libraries
 COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/x86_64-linux-gnu/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/
 COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/
