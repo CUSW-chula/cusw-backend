@@ -46,7 +46,7 @@ COPY --from=build --chown=nonroot:nonroot /app/server /app/server
 COPY --from=build --chown=nonroot:nonroot /app/prisma ./prisma
 
 # Copy generated Prisma client
-COPY --from=build --chown=nonroot:nonroot /app/generated ./generated
+COPY --from=build --chown=nonroot:nonroot /app/prisma/generated ./generated
 
 # Copy Prisma engine and dependencies
 COPY --from=build --chown=nonroot:nonroot \
