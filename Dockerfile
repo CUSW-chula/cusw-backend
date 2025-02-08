@@ -66,11 +66,12 @@ COPY --from=build --chown=nonroot:nonroot /app/entrypoint.sh .
 ENV NODE_ENV=production
 ENV PORT=4000
 ENV DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
-
-# Set permissions and entrypoint
-USER nonroot
-RUN chmod +x entrypoint.sh
-ENTRYPOINT ["./entrypoint.sh"]
+ENV JWT_SECRET = ${JWT_SECRET}
+ENV MINIO_ROOT_USER = ${MINIO_ROOT_USER}
+ENV MINIO_ROOT_PASSWORD = ${MINIO_ROOT_PASSWORD}
+ENV POSTGRES_DB = ${POSTGRES_DB}
+ENV POSTGRES_USER = ${POSTGRES_USER}
+ENV POSTGRES_PASSWORD = ${POSTGRES_PASSWORD}
 
 EXPOSE 4000
 CMD ["./server"]
