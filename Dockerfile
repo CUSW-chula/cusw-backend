@@ -16,7 +16,7 @@ COPY package.json  ./
 COPY prisma ./prisma
 
 # Install dependencies
-RUN bun install --ci --frozen-lockfile
+RUN bun install 
 
 # Generate Prisma client
 RUN bunx prisma generate
