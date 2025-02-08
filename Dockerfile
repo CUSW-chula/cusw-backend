@@ -53,22 +53,22 @@ COPY --from=build --chown=nonroot:nonroot \
     /app/node_modules/@prisma \
     /app/node_modules/@prisma
 
-# Copy required system libraries
-COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/
-COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/
-COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/
-COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/
+# Copy required system libraries with correct paths
+COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/x86_64-linux-gnu/
+COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/
+COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/
+COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=4000
 ENV DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
-ENV JWT_SECRET = ${JWT_SECRET}
-ENV MINIO_ROOT_USER = ${MINIO_ROOT_USER}
-ENV MINIO_ROOT_PASSWORD = ${MINIO_ROOT_PASSWORD}
-ENV POSTGRES_DB = ${POSTGRES_DB}
-ENV POSTGRES_USER = ${POSTGRES_USER}
-ENV POSTGRES_PASSWORD = ${POSTGRES_PASSWORD}
+ENV JWT_SECRET=${JWT_SECRET}
+ENV MINIO_ROOT_USER=${MINIO_ROOT_USER}
+ENV MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+ENV POSTGRES_DB=${POSTGRES_DB}
+ENV POSTGRES_USER=${POSTGRES_USER}
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 EXPOSE 4000
 CMD ["./server"]
