@@ -12,7 +12,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lockb ./
+COPY package.json  ./
 COPY prisma ./prisma
 
 # Install dependencies
