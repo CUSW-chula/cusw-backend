@@ -1,53 +1,76 @@
 # Build Stage
-FROM oven/bun AS build
+FROM oven/bun:1.0 AS build
+
+# Install system dependencies for Prisma
+RUN apt-get update && \
+    apt-get install -y \
+    openssl \
+    libgcc1 \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install required system libraries for Prisma
-RUN apt-get update && apt-get install -y libgcc1 libssl-dev
+# Copy package files
+COPY package.json bun.lockb ./
+COPY prisma ./prisma
 
+# Install dependencies
+RUN bun install --ci --frozen-lockfile
 
-# Cache packages installation
-COPY package.json package.json
-COPY prisma ./prisma 
-
-RUN bun install
+# Generate Prisma client
 RUN bunx prisma generate
 
-COPY ./src ./src
+# Copy application source
+COPY . .
 
-ENV NODE_ENV=production
-
+# Set build arguments
 ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
+ARG NODE_ENV=production
 
+# Build application
 RUN bun build \
     --compile \
-    --minify-whitespace \
-    --minify-syntax \
+    --minify \
     --target bun \
     --outfile server \
     ./src/index.ts
 
-# Deployment Stage
-FROM gcr.io/distroless/base
+# Runtime Stage
+FROM gcr.io/distroless/base:nonroot
 
 WORKDIR /app
 
-COPY --from=build /app/server /app/server
-COPY --from=build /app/node_modules/.prisma /app/node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma /app/node_modules/@prisma
+# Copy built application
+COPY --from=build --chown=nonroot:nonroot /app/server /app/server
+COPY --from=build --chown=nonroot:nonroot /app/prisma ./prisma
 
-# Copy required system libraries for Prisma
-COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/libgcc_s.so.1
-COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/libstdc++.so.6
-COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1
-COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+# Copy Prisma engine and client
+COPY --from=build --chown=nonroot:nonroot \
+    /app/node_modules/.prisma \
+    /app/node_modules/.prisma
+COPY --from=build --chown=nonroot:nonroot \
+    /app/node_modules/@prisma \
+    /app/node_modules/@prisma
 
-COPY --from=build /app/server server
+# Copy required system libraries
+COPY --from=build /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/
+COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/
+COPY --from=build /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/
+COPY --from=build /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/
 
+# Copy entrypoint script
+COPY --from=build --chown=nonroot:nonroot /app/entrypoint.sh .
+
+# Set environment variables
 ENV NODE_ENV=production
+ENV PORT=4000
+ENV DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
 
-CMD ["./server"]
+# Set permissions and entrypoint
+USER nonroot
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]
 
 EXPOSE 4000
+CMD ["./server"]
