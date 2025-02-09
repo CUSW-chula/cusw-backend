@@ -62,6 +62,7 @@ export type Project = {
 	members: User[];
 	tasks: Task[];
 	tags: Tag[];
+	isPinned: Boolean;
 };
 
 export type TaskAssignment = {
@@ -83,4 +84,10 @@ export type Activity = {
 	createdAt: Date;
 	task: Task;
 	user: User;
+};
+
+export type PinProject = {
+	id: string;
+	userId: string;
+	projectId: string;
 };

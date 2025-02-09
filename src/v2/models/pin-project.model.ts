@@ -13,10 +13,21 @@ export class PinProjectModel extends BaseModel<PinProject> {
 	async findByUserIdAndProjectId(
 		userId: string,
 		projectId: string,
-	): Promise<PinProject | null> {
-		return await this.getModel().pinProject.findFirst({
+	): Promise<Boolean> {
+		const pin = await this.getModel().pinProject.findFirst({
 			where: { userId, projectId },
 		});
+		return !!pin;
+	}
+
+	async findByUserIdAndProjectIdO(
+		userId: string,
+		projectId: string,
+	): Promise<PinProject | null> {
+		const pin = await this.getModel().pinProject.findFirst({
+			where: { userId, projectId },
+		});
+		return pin;
 	}
 
 	async create(data: Partial<PinProject>): Promise<PinProject> {
@@ -43,5 +54,12 @@ export class PinProjectModel extends BaseModel<PinProject> {
 
 	async delete(id: string): Promise<PinProject> {
 		return await this.getModel().pinProject.delete({ where: { id } });
+	}
+
+	async findByProjectId(id: string): Promise<PinProject[] | null> {
+		const pinned = await this.getModel().pinProject.findMany({
+			where: { projectId: id },
+		});
+		return pinned;
 	}
 }
