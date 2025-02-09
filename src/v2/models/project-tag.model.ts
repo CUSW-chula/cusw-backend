@@ -61,4 +61,14 @@ export class ProjectTagModel extends BaseModel<ProjectTag> {
 		});
 		return projectTags;
 	}
+
+	async findByProjectIdAndTagId(
+		projectId: string,
+		tagId: string,
+	): Promise<ProjectTag | null> {
+		const projectTags = await this.getModel().projectTag.findFirst({
+			where: { projectId: projectId, tagId: tagId },
+		});
+		return projectTags;
+	}
 }

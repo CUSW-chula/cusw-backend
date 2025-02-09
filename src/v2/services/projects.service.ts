@@ -24,8 +24,12 @@ import { TaskService } from "./tasks.service";
 import { ProjectRoleModel } from "../models/project-role.model";
 import { PinProjectModel } from "../models/pin-project.model";
 import { Cookie } from "elysia";
+import { t } from "elysia";
 
 export class ProjectService extends BaseService<Project> {
+	removeTagFromProject(tagId: string, projectId: string, userId: string) {
+		throw new Error("Method not implemented.");
+	}
 	private readonly projectModel: ProjectModel;
 	private readonly taskModel: TasksModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
@@ -166,6 +170,7 @@ export class ProjectService extends BaseService<Project> {
 				throw new ServerErrorException(
 					"Failed to retrieve the created project",
 				);
+			await this.invalidateCache("projects:all");
 			return projectWithDetails;
 		}
 		throw new ValidationException("Title cann't be null");
@@ -211,6 +216,10 @@ export class ProjectService extends BaseService<Project> {
 	): Promise<Project> {
 		if (!tagId) throw new ValidationException("Tag ID is required");
 		if (!projectId) throw new ValidationException("Project ID is required");
+		const projecttags = await this.projectTagModel.findByTagId(tagId);
+		const existtag = projecttags?.find((tag) => tag.projectId === projectId);
+		if (existtag)
+			throw new ValidationException("tags already assigned to project");
 		const user = await this.userModel.findById(userId);
 		if (!user) throw new NotFoundException("User not found");
 		await this.projectTagModel.create({

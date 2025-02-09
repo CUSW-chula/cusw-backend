@@ -85,7 +85,7 @@ app.guard(
 			.onError(({ set, error }) => {
 				if (error instanceof Exception) {
 					set.status = error.statusCode;
-					return Response.json(error.message);
+					return Response.json(error.message, { status: error.statusCode });
 				}
 			})
 			.group("/api/v1", (api) => {

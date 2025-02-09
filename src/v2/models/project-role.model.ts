@@ -24,7 +24,7 @@ export class ProjectRoleModel extends BaseModel<ProjectRole> {
 		const createdProjectRoles = await this.getModel().projectRole.create({
 			data: {
 				projectId: data.projectId ?? "",
-				role: "ProjectOwner",
+				role: data.role ?? "Member",
 				userId: data.userId ?? "",
 			},
 		});

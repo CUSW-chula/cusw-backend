@@ -35,7 +35,7 @@ export class FilesModel extends BaseModel<File> {
 				fileSize: data.fileSize ?? 0,
 				fileName: data.fileName ?? "",
 				createdAt: data.createdAt ?? new Date(),
-				taskId: data.taskId ?? "",
+				taskId: data.taskId,
 				projectId: data.projectId,
 				uploadedBy: data.uploadedBy ?? "",
 			},
