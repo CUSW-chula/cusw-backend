@@ -9,6 +9,7 @@ import {
 	NotFoundException,
 	ServerErrorException,
 } from "../../core/exception.core";
+import { randomUUID } from "crypto";
 
 export class TemplateService extends BaseService<Template> {
 	private readonly templateModel: TemplateModel;
@@ -33,7 +34,8 @@ export class TemplateService extends BaseService<Template> {
 
 	async uploadTemplate(file: Blob, authorId: string): Promise<Template | null> {
 		const bucketName = "cusw-workspace";
-		const fileKey = `template-${file.name}`;
+		const id = randomUUID();
+		const fileKey = `template-${id}-${file.name}`;
 		const arrBuf = await file.arrayBuffer();
 		const fileBuffer = Buffer.from(arrBuf);
 
