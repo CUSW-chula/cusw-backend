@@ -128,14 +128,16 @@ export const TaskController = new Elysia({
 		},
 	)
 	.post(
-		"/template",
+		"/template/:id",
 		async ({
+			params: { id },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: Task[];
+			params: { id: string },
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
@@ -143,6 +145,7 @@ export const TaskController = new Elysia({
 			const task = await taskService.createTaskWithSubTaskRecursive(
 				body,
 				userId,
+				id
 			);
 			return Response.json(task, { status: 200 });
 		},
