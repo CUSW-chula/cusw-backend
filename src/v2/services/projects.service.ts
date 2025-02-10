@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PinProject, PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import { ProjectModel } from "../models/projects.model";
 import type Redis from "ioredis";
@@ -22,6 +22,8 @@ import { ProjectTagModel } from "../models/project-tag.model";
 import { TagModel } from "../models/tag.model";
 import { TaskService } from "./tasks.service";
 import { ProjectRoleModel } from "../models/project-role.model";
+import { PinProjectModel } from "../models/pin-project.model";
+import { Cookie } from "elysia";
 import { t } from "elysia";
 
 export class ProjectService extends BaseService<Project> {
@@ -38,6 +40,7 @@ export class ProjectService extends BaseService<Project> {
 	private readonly tagModel: TagModel;
 	private readonly projectRoleModel: ProjectRoleModel;
 	private readonly taskService: TaskService;
+	private readonly pinProject: PinProjectModel;
 
 	protected getTaskModel() {
 		return this.taskModel;
@@ -58,19 +61,21 @@ export class ProjectService extends BaseService<Project> {
 		this.tagModel = new TagModel(prisma);
 		this.projectRoleModel = new ProjectRoleModel(prisma);
 		this.taskService = new TaskService(prisma, redis);
+		this.pinProject = new PinProjectModel(prisma);
 	}
 
-	async getAllProjects(): Promise<Project[]> {
+	async getAllProjects(userId: string): Promise<Project[]> {
 		const cacheKey = "projects:all";
 		const cacheProject = await this.getFromCache(cacheKey);
-
-		if (cacheProject) return cacheProject as Project[];
+		if (cacheProject) {
+			return cacheProject as Project[];
+		}
 
 		const projectsFromDB = await this.projectModel.findAll();
 		const projects: Project[] = (
 			await Promise.all(
 				projectsFromDB.map(async (project) => {
-					const projectDetail = await this.getProjectById(project.id);
+					const projectDetail = await this.getProjectById(userId, project.id);
 					if (projectDetail !== null) return projectDetail;
 				}),
 			)
@@ -79,7 +84,7 @@ export class ProjectService extends BaseService<Project> {
 		return projects;
 	}
 
-	async getProjectById(id: string): Promise<Project> {
+	async getProjectById(userId: string, id: string): Promise<Project> {
 		const cacheKey = `projects:${id}`;
 		const cacheProject = await this.getFromCache(cacheKey);
 
@@ -118,13 +123,18 @@ export class ProjectService extends BaseService<Project> {
 				)
 			: [];
 		const tasks = await this.taskService.getTaskByProjectId(id);
+		const isPinned =
+			(await this.pinProject.findByUserIdAndProjectId(userId, id)) ?? false;
+
 		const projectWithDetails = {
 			...project,
 			owner,
 			members,
 			tasks,
 			tags,
+			isPinned,
 		};
+
 		await this.setToCache(cacheKey, projectWithDetails);
 		return projectWithDetails;
 	}
@@ -152,7 +162,7 @@ export class ProjectService extends BaseService<Project> {
 				userId,
 			});
 
-			const projectWithDetails = await this.getProjectById(project.id);
+			const projectWithDetails = await this.getProjectById(userId, project.id);
 			if (!projectWithDetails)
 				throw new ServerErrorException(
 					"Failed to retrieve the created project",
@@ -191,7 +201,7 @@ export class ProjectService extends BaseService<Project> {
 
 		// Update and return the project
 		await this.projectModel.update(projectId, updatedProject);
-		const project = await this.getProjectById(projectId);
+		const project = await this.getProjectById(userId, projectId);
 		await this.setToCache(`projects:${projectId}`, project);
 		return project;
 	}
@@ -214,7 +224,7 @@ export class ProjectService extends BaseService<Project> {
 			projectId,
 		});
 		await this.invalidateCache(`projects:${projectId}`);
-		return this.getProjectById(projectId);
+		return this.getProjectById(userId, projectId);
 	}
 
 	async removeTagFromProject(
@@ -233,10 +243,10 @@ export class ProjectService extends BaseService<Project> {
 		if (!user) throw new NotFoundException("User not found");
 		await this.projectTagModel.delete(projecttags.id);
 		await this.invalidateCache(`projects:${projectId}`);
-		return this.getProjectById(projectId);
+		return this.getProjectById(userId, projectId);
 	}
 
-	async deleteProject(projectId: string): Promise<Project> {
+	async deleteProject(userId: string, projectId: string): Promise<Project> {
 		// Check if the project exists
 		const project = await this.projectModel.findById(projectId);
 		if (!project) {
@@ -273,7 +283,7 @@ export class ProjectService extends BaseService<Project> {
 			await this.invalidateCache("projects:all");
 
 			// Delete the project itself
-			const project = await this.getProjectById(projectId);
+			const project = await this.getProjectById(userId, projectId);
 			await this.projectRoleModel.deleteByProjectId(projectId);
 			await this.projectTagModel.deleteByProjectId(projectId);
 			await this.projectModel.delete(projectId);
@@ -282,5 +292,81 @@ export class ProjectService extends BaseService<Project> {
 			const error = _error as Error;
 			throw new ServerErrorException(`Error deleting project ${error.message}`);
 		}
+	}
+
+	async assigningPinToProject(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
+		// ตรวจสอบว่าผู้ใช้และโปรเจกต์มีอยู่จริง
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		// ตรวจสอบว่ามีการ Pin ไว้แล้วหรือไม่
+		const pinProject = await this.pinProject.findByUserIdAndProjectId(
+			userId,
+			projectId,
+		);
+		if (pinProject) return this.getProjectById(userId, projectId); // ถ้ามีแล้วให้คืนค่าเลย
+
+		// สร้าง Pin ใหม่
+		await this.pinProject.create({
+			userId,
+			projectId,
+		});
+
+		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId); // คืนค่าหลังจาก Pin
+	}
+	
+	async unAssigningPinToProject(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
+		// ตรวจสอบว่าผู้ใช้และโปรเจกต์มีอยู่จริง
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		// ค้นหา Pin
+		const pinProject = await this.pinProject.findByUserIdAndProjectId(
+			userId,
+			projectId,
+		);
+		if (!pinProject) throw new NotFoundException("PinProject not found");
+
+		const pinProjectO = await this.pinProject.findByUserIdAndProjectIdO(
+			userId,
+			projectId,
+		);
+		if (!pinProjectO) throw new NotFoundException("PinProject not found");
+
+		// ลบ Pin
+		await this.pinProject.delete(pinProjectO.id);
+		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId);
+	}
+
+	async getAllPinInProjectByUserId(userId: string): Promise<string[]> {
+		// Check if the user exists
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		// Fetch all pinned projects
+		const allPinProject = await this.pinProject.findAll();
+
+		// Filter projects by userId and extract projectId
+		const allProjectId: string[] = allPinProject
+			.filter((pin: PinProject) => pin.userId === userId)
+			.map((pin: PinProject) => pin.projectId);
+
+		return allProjectId;
 	}
 }

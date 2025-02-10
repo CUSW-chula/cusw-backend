@@ -2,6 +2,7 @@ import { type Cookie, Elysia, t } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
 import { WebSocket } from "../../shared/utils/websocket.utils";
+import { UserService } from "../services/users.service";
 
 export const ProjectController = new Elysia({
 	prefix: "/projects",
@@ -9,9 +10,14 @@ export const ProjectController = new Elysia({
 })
 	.get(
 		"/",
-		async ({ db, redis }: Context) => {
+		async ({
+			db,
+			redis,
+			cookie: { session },
+		}: Context & { cookie: { session: Cookie<string> } }) => {
+			const userId = session.value;
 			const projectService = new ProjectService(db, redis);
-			const projects = await projectService.getAllProjects();
+			const projects = await projectService.getAllProjects(userId);
 			return projects;
 		},
 		{
@@ -26,9 +32,14 @@ export const ProjectController = new Elysia({
 			params: { id },
 			db,
 			redis,
-		}: Context & { params: { id: string } }) => {
+			cookie: { session },
+		}: Context & {
+			params: { id: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const userId = session.value;
 			const projectService = new ProjectService(db, redis);
-			const project = await projectService.getProjectById(id);
+			const project = await projectService.getProjectById(userId, id);
 			return project;
 		},
 		{
@@ -184,15 +195,89 @@ export const ProjectController = new Elysia({
 			params: { id },
 			db,
 			redis,
-		}: Context & { params: { id: string } }) => {
+			cookie: { session },
+		}: Context & {
+			cookie: { session: Cookie<string> };
+			params: { id: string };
+		}) => {
+			const userId = session.value;
 			const projectService = new ProjectService(db, redis);
-			const project = await projectService.deleteProject(id);
+			const project = await projectService.deleteProject(userId, id);
 			WebSocket.broadcast("project", project);
 			return project;
 		},
 		{
 			detail: {
 				summary: "Delete a project",
+			},
+		},
+	)
+
+	.post(
+		"/pin/:projectId",
+		async ({
+			params: { projectId },
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { projectId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const projectService = new ProjectService(db, redis);
+			const pinProject = await projectService.assigningPinToProject(
+				session.value,
+				projectId,
+			);
+			WebSocket.broadcast("pinProject", pinProject);
+			return pinProject;
+		},
+		{
+			detail: { summary: "Assign a pin to a project" },
+		},
+	)
+
+	// ✅ Unpin project
+	.delete(
+		"/pin/:projectId",
+		async ({
+			params: { projectId },
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { projectId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			if (!session?.value) throw new Error("Unauthorized");
+
+			const projectService = new ProjectService(db, redis);
+			const unpinProject = await projectService.unAssigningPinToProject(
+				session.value,
+				projectId,
+			);
+			WebSocket.broadcast("unpinProject", unpinProject);
+			return unpinProject;
+		},
+		{
+			detail: { summary: "Remove a pin from a project" },
+		},
+	)
+	.get(
+		"/pin/:userId",
+		async ({
+			params: { userId },
+			db,
+			redis,
+		}: Context & { params: { userId: string } }) => {
+			const projectService = new ProjectService(db, redis);
+			const pinnedProjects =
+				await projectService.getAllPinInProjectByUserId(userId);
+			return pinnedProjects;
+		},
+		{
+			detail: {
+				summary: "Get all pinned projects by user id",
 			},
 		},
 	);
