@@ -27,9 +27,6 @@ import { Cookie } from "elysia";
 import { t } from "elysia";
 
 export class ProjectService extends BaseService<Project> {
-	removeTagFromProject(tagId: string, projectId: string, userId: string) {
-		throw new Error("Method not implemented.");
-	}
 	private readonly projectModel: ProjectModel;
 	private readonly taskModel: TasksModel;
 	private readonly taskAssignmentModel: TasksAssignmentModel;
@@ -230,6 +227,25 @@ export class ProjectService extends BaseService<Project> {
 		return this.getProjectById(userId, projectId);
 	}
 
+	async removeTagFromProject(
+		tagId: string,
+		projectId: string,
+		userId: string,
+	): Promise<Project> {
+		if (!tagId) throw new ValidationException("Tag ID is required");
+		if (!projectId) throw new ValidationException("Project ID is required");
+		const projecttags = await this.projectTagModel.findByProjectIdAndTagId(
+			projectId,
+			tagId,
+		);
+		if (!projecttags) throw new NotFoundException("Tag not found");
+		const user = await this.userModel.findById(userId);
+		if (!user) throw new NotFoundException("User not found");
+		await this.projectTagModel.delete(projecttags.id);
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId);
+	}
+
 	async deleteProject(userId: string, projectId: string): Promise<Project> {
 		// Check if the project exists
 		const project = await this.projectModel.findById(projectId);
@@ -306,7 +322,7 @@ export class ProjectService extends BaseService<Project> {
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId); // คืนค่าหลังจาก Pin
 	}
-
+	
 	async unAssigningPinToProject(
 		userId: string,
 		projectId: string,
