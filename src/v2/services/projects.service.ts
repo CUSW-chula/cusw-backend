@@ -159,6 +159,7 @@ export class ProjectService extends BaseService<Project> {
 
 			await this.projectRoleModel.create({
 				projectId: project.id,
+				role: "ProjectOwner",
 				userId,
 			});
 
@@ -322,7 +323,7 @@ export class ProjectService extends BaseService<Project> {
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId); // คืนค่าหลังจาก Pin
 	}
-	
+
 	async unAssigningPinToProject(
 		userId: string,
 		projectId: string,

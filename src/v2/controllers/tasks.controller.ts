@@ -137,7 +137,7 @@ export const TaskController = new Elysia({
 			cookie: { session },
 		}: Context & {
 			body: Task[];
-			params: { id: string },
+			params: { id: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
@@ -145,7 +145,7 @@ export const TaskController = new Elysia({
 			const task = await taskService.createTaskWithSubTaskRecursive(
 				body,
 				userId,
-				id
+				id,
 			);
 			return Response.json(task, { status: 200 });
 		},

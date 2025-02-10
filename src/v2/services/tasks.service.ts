@@ -424,14 +424,18 @@ export class TaskService extends BaseService<Task> {
 	): Promise<Task[]> {
 		const newTasks: Task[] = [];
 		for (const task of templateTask) {
-			const newTask = await this.createTaskFromTemplate(task, userId, projectId);
+			const newTask = await this.createTaskFromTemplate(
+				task,
+				userId,
+				projectId,
+			);
 			await this.invalidateCache(`tasks:${newTask.id}`);
 			newTasks.push(newTask);
 			if (task.subtasks) {
 				const subtasks = await this.createTaskWithSubTaskRecursive(
 					task.subtasks,
 					userId,
-					projectId
+					projectId,
 				);
 				await this.invalidateCache(`tasks:${subtasks}`);
 				for (const subtask of subtasks) {
@@ -448,7 +452,7 @@ export class TaskService extends BaseService<Task> {
 	async createTaskFromTemplate(
 		templateTask: Task,
 		userId: string,
-		projectId: string
+		projectId: string,
 	): Promise<Task> {
 		const newTask: Partial<Task> = {
 			title: templateTask.title,
