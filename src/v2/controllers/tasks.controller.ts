@@ -1,5 +1,5 @@
 import { type Cookie, Elysia, t } from "elysia";
-import { type Context } from "../../shared/interfaces.shared";
+import { Task, type Context } from "../../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { TaskStatus, EmojiTaskUser, $Enums } from "@prisma/client";
@@ -127,7 +127,31 @@ export const TaskController = new Elysia({
 			},
 		},
 	)
-
+	.post(
+		"/template",
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: Task[];
+			cookie: { session: Cookie<string> };
+		}) => {
+			const taskService = new TaskService(db, redis);
+			const userId = session.value;
+			const task = await taskService.createTaskWithSubTaskRecursive(
+				body,
+				userId,
+			);
+			return Response.json(task, { status: 200 });
+		},
+		{
+			detail: {
+				summary: "Create a new task from template",
+			},
+		},
+	)
 	.post(
 		"/",
 		async ({

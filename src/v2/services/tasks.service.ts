@@ -176,6 +176,7 @@ export class TaskService extends BaseService<Task> {
 			};
 			// Invalidate caches
 			await this.invalidateCache("projects:all");
+			await this.invalidateCache(`tasks:${task.id}`);
 			await this.invalidateCache(`projects:${task.projectId}`);
 
 			await this.projectModel.update(task.projectId, updatedProject);
@@ -219,7 +220,10 @@ export class TaskService extends BaseService<Task> {
 	async getTaskById(taskId: string): Promise<Task> {
 		const cacheKey = `tasks:${taskId}`;
 		const cacheTask = await this.getFromCache(cacheKey);
-		if (cacheTask) return cacheTask as Task;
+		if (cacheTask) {
+			console.log("Get task from cache");
+			return cacheTask as Task;
+		}
 
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
@@ -411,5 +415,52 @@ export class TaskService extends BaseService<Task> {
 		});
 		await this.invalidateCache(`tasks:${taskId}`);
 		return this.getTaskById(updatedTask.id);
+	}
+
+	async createTaskWithSubTaskRecursive(
+		templateTask: Task[],
+		userId: string,
+	): Promise<Task[]> {
+		const newTasks: Task[] = [];
+		for (const task of templateTask) {
+			const newTask = await this.createTaskFromTemplate(task, userId);
+			await this.invalidateCache(`tasks:${newTask.id}`);
+			newTasks.push(newTask);
+			if (task.subtasks) {
+				const subtasks = await this.createTaskWithSubTaskRecursive(
+					task.subtasks,
+					userId,
+				);
+				await this.invalidateCache(`tasks:${subtasks}`);
+				for (const subtask of subtasks) {
+					await this.invalidateCache(`tasks:${subtask.id}`);
+					await this.taskModel.update(subtask.id, {
+						parentTaskId: newTask.id,
+					});
+				}
+			}
+		}
+		return newTasks;
+	}
+
+	async createTaskFromTemplate(
+		templateTask: Task,
+		userId: string,
+	): Promise<Task> {
+		const newTask: Partial<Task> = {
+			title: templateTask.title,
+			description: templateTask.description,
+			createdById: userId,
+			startDate: templateTask.startDate,
+			endDate: templateTask.endDate,
+			status: "Unassigned",
+			parentTaskId: null,
+			budget: 0,
+			advance: 0,
+			expense: 0,
+			subtasks: templateTask.subtasks,
+			projectId: templateTask.projectId,
+		};
+		return await this.createTask(newTask);
 	}
 }
