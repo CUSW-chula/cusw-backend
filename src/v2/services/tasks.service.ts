@@ -121,6 +121,7 @@ export class TaskService extends BaseService<Task> {
 
 		// Invalidate caches
 		await this.invalidateCache("tasks:all");
+		await this.invalidateCache(`projects:${updatedTask.projectId}`);
 		await this.invalidateCache(`tasks:project:${existingTask.projectId}`);
 		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
 
