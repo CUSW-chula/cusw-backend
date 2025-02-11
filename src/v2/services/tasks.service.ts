@@ -220,10 +220,7 @@ export class TaskService extends BaseService<Task> {
 	async getTaskById(taskId: string): Promise<Task> {
 		const cacheKey = `tasks:${taskId}`;
 		const cacheTask = await this.getFromCache(cacheKey);
-		if (cacheTask) {
-			console.log("Get task from cache");
-			return cacheTask as Task;
-		}
+		if (cacheTask) cacheTask as Task;
 
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
