@@ -11,6 +11,7 @@ import { Exception, UnauthorizedException } from "./core/exception.core";
 // Import controllers
 import controllersV1 from "./v1/controllers";
 import controllersV2 from "./v2/controllers";
+import { UserService } from "./v2/services/users.service";
 
 // Initialize services
 const prisma = new PrismaClient();
@@ -47,8 +48,13 @@ const app = new Elysia()
 	.decorate("minio", minioClient);
 
 // Route for signing a token
-app.get("/sign/:id", async ({ jwt, params }) => {
-	const auth = await jwt.sign(params);
+app.get("sign/:id", async ({ jwt, params }) => {
+	const userService = new UserService(prisma, redis);
+	const userId = await userService.getUserByEmail(params.id);
+	if (!userId?.id) {
+		throw new Error("User ID is undefined");
+	}
+	const auth = await jwt.sign({ id: userId.id });
 	return `${auth}`;
 });
 
