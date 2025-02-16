@@ -468,6 +468,7 @@ export const TaskController = new Elysia({
 			body,
 			db,
 			redis,
+			cookie: { session },
 		}: Context & {
 			body: {
 				taskID: string;
@@ -475,8 +476,11 @@ export const TaskController = new Elysia({
 				advance: number;
 				expense: number;
 			};
+			cookie: { session: Cookie<string> };
 		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
+			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			const addMoney = await moneyClassService.addMoney(
 				body.taskID,
 				body.budget,
@@ -484,6 +488,16 @@ export const TaskController = new Elysia({
 				body.expense,
 			);
 			WebSocket.broadcast("addMoney", addMoney);
+			const addMoneyActivity = await activityService.postActivity(
+				body.taskID,
+				$Enums.ActivityAction.ADDED,
+				"this task with " +
+					("budget " + body.budget ||
+						" advance " + body.advance ||
+						" expense " + body.expense),
+				userId,
+			);
+			WebSocket.broadcast("activity", addMoneyActivity);
 			return Response.json("Success", { status: 200 });
 		},
 		{
@@ -504,6 +518,7 @@ export const TaskController = new Elysia({
 		"/money",
 		async ({ body, db, redis }: Context & { body: { taskID: string } }) => {
 			const moneyClassService = new MoneyClassService(db, redis);
+			const activityService = new ActivityService(db, redis);
 			const deleteMoney = await moneyClassService.deleteMoney(
 				body.taskID,
 				0,
@@ -511,6 +526,12 @@ export const TaskController = new Elysia({
 				0,
 			);
 			WebSocket.broadcast("deleteMoney", deleteMoney);
+			const deleteMoneyActivity = await activityService.postActivity(
+				body.taskID,
+				$Enums.ActivityAction.DELETED,
+				"this task money",
+				"",
+			);
 			return Response.json("Success", { status: 200 });
 		},
 		{
