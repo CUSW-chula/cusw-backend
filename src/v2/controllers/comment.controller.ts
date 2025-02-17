@@ -39,7 +39,7 @@ export const CommentController = new Elysia({
 			const userId = session.value;
 
 			const comment = await commentService.addComment(body, userId);
-			WebSocket.broadcast("comment", comment);
+			WebSocket.broadcast(`comment:${body.taskId}`, comment);
 			return comment;
 		},
 		{
@@ -66,7 +66,7 @@ export const CommentController = new Elysia({
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 			const comment = await commentService.deleteComment(id, userId);
-			WebSocket.broadcast("comment-delete", comment);
+			WebSocket.broadcast(`comment-delete`, comment);
 			return comment;
 		},
 		{
@@ -95,7 +95,7 @@ export const CommentController = new Elysia({
 				userId,
 				body.content,
 			);
-			WebSocket.broadcast("comment-edit", comment);
+			WebSocket.broadcast(`comment-edit`, comment);
 			return comment;
 		},
 		{
