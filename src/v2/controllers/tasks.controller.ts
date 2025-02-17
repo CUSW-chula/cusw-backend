@@ -488,13 +488,14 @@ export const TaskController = new Elysia({
 				body.expense,
 			);
 			WebSocket.broadcast("addMoney", addMoney);
+			const moneyDetails = [];
+			if (body.budget) moneyDetails.push(`budget ${body.budget}`);
+			if (body.advance) moneyDetails.push(`advance ${body.advance}`);
+			if (body.expense) moneyDetails.push(`expense ${body.expense}`);
 			const addMoneyActivity = await activityService.postActivity(
 				body.taskID,
 				$Enums.ActivityAction.ADDED,
-				"this task with " +
-					("budget " + body.budget ||
-						" advance " + body.advance ||
-						" expense " + body.expense),
+				"this task with " + moneyDetails.join(", ") + " Baht",
 				userId,
 			);
 			WebSocket.broadcast("activity", addMoneyActivity);
@@ -532,6 +533,7 @@ export const TaskController = new Elysia({
 				"this task money",
 				"",
 			);
+			WebSocket.broadcast("activity", deleteMoneyActivity);
 			return Response.json("Success", { status: 200 });
 		},
 		{
