@@ -180,7 +180,6 @@ export const TaskController = new Elysia({
 			const taskService = new TaskService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			console.info(body.title, body.startDate);
 			const task = await taskService.createTask({
 				title: body.title,
 				description: body.description,
