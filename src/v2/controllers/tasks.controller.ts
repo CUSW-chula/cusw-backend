@@ -524,7 +524,15 @@ export const TaskController = new Elysia({
 
 	.delete(
 		"/money",
-		async ({ body, db, redis, cookie: { session } }: Context & { body: { taskID: string }; cookie: { session: Cookie<string> }; }) => {
+		async ({
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: { taskID: string };
+			cookie: { session: Cookie<string> };
+		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
