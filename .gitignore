@@ -44,4 +44,4 @@ bun.lockb
 package-lock.json
 **/*.bun
 
-server
+server.exe
