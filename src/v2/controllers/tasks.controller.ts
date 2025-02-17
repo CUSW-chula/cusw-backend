@@ -524,9 +524,10 @@ export const TaskController = new Elysia({
 
 	.delete(
 		"/money",
-		async ({ body, db, redis }: Context & { body: { taskID: string } }) => {
+		async ({ body, db, redis, cookie: { session } }: Context & { body: { taskID: string }; cookie: { session: Cookie<string> }; }) => {
 			const moneyClassService = new MoneyClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
+			const userId = session.value;
 			const deleteMoney = await moneyClassService.deleteMoney(
 				body.taskID,
 				0,
@@ -538,7 +539,7 @@ export const TaskController = new Elysia({
 				body.taskID,
 				$Enums.ActivityAction.DELETED,
 				"this task money",
-				"",
+				userId,
 			);
 			WebSocket.broadcast("activity", deleteMoneyActivity);
 			return Response.json("Success", { status: 200 });
