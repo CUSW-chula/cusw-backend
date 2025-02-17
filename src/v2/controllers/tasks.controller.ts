@@ -172,14 +172,15 @@ export const TaskController = new Elysia({
 				status: $Enums.TaskStatus;
 				parentTaskId: string;
 				projectId: string;
-				startDate: Date;
-				endDate: Date;
+				startDate: Date | null;
+				endDate: Date | null;
 			};
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
+			console.info(body.title, body.startDate);
 			const task = await taskService.createTask({
 				title: body.title,
 				description: body.description,
@@ -213,8 +214,8 @@ export const TaskController = new Elysia({
 				status: t.String(),
 				parentTaskId: t.String(),
 				projectId: t.String(),
-				startDate: t.Date(),
-				endDate: t.Date(),
+				startDate: t.Union([t.Date(), t.Null()]),
+				endDate: t.Union([t.Date(), t.Null()]),
 			}),
 			detail: {
 				summary: "Create a new task",

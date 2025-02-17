@@ -48,9 +48,9 @@ const app = new Elysia()
 	.decorate("minio", minioClient);
 
 // Route for signing a token
-app.get("sign/:id", async ({ jwt, params }) => {
+app.get("sign/:email", async ({ jwt, params }) => {
 	const userService = new UserService(prisma, redis);
-	const userId = await userService.getUserByEmail(params.id);
+	const userId = await userService.getUserByEmail(params.email);
 	if (!userId?.id) {
 		throw new Error("User ID is undefined");
 	}
