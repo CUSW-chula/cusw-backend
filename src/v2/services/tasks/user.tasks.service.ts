@@ -71,11 +71,12 @@ export class UserTaskClassService extends TaskService {
 			taskId: taskId,
 			userId: userId,
 		});
-		await this.projectRoleModel.create({
-			projectId: isTaskExist.projectId,
-			userId: userId,
-			role: "Member",
-		});
+
+		// await this.projectRoleModel.create({
+		// 	projectId: isTaskExist.projectId,
+		// 	userId: userId,
+		// 	role: "Member",
+		// });
 		await this.invalidateCache(cacheKey);
 		await this.invalidateCache("tasks:all");
 		await this.invalidateCache(`tasks:${taskId}`);
