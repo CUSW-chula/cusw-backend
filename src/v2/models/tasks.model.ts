@@ -50,8 +50,8 @@ export class TasksModel extends BaseModel<Task> {
 				parentTaskId: data.parentTaskId,
 				projectId: data.projectId ?? "",
 				createdById: data.createdById ?? "",
-				startDate: data.startDate ?? new Date(),
-				endDate: data.endDate ?? new Date(),
+				startDate: data.startDate,
+				endDate: data.endDate,
 			},
 		});
 		return createdProject;
