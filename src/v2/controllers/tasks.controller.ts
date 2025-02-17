@@ -492,11 +492,17 @@ export const TaskController = new Elysia({
 			if (body.budget) moneyDetails.push(`budget ${body.budget}`);
 			if (body.advance) moneyDetails.push(`advance ${body.advance}`);
 			if (body.expense) moneyDetails.push(`expense ${body.expense}`);
-			const formatMoney = (amount: number) => amount.toLocaleString('en-US');
+			const formatMoney = (amount: number) => amount.toLocaleString("en-US");
 			const addMoneyActivity = await activityService.postActivity(
 				body.taskID,
 				$Enums.ActivityAction.ADDED,
-				"this task with " + moneyDetails.map(detail => detail.replace(/\d+/, match => formatMoney(Number(match)))).join(", ") + " Baht",
+				"this task with " +
+					moneyDetails
+						.map((detail) =>
+							detail.replace(/\d+/, (match) => formatMoney(Number(match))),
+						)
+						.join(", ") +
+					" Baht",
 				userId,
 			);
 			WebSocket.broadcast("activity", addMoneyActivity);
