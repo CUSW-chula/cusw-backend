@@ -79,7 +79,7 @@ export const TagController = new Elysia({
 				`a tag name "${assignTags.name}"`,
 				userId,
 			);
-			WebSocket.broadcast("activity", tagAddActivity);
+			WebSocket.broadcast(`activity:${body.taskId}`, tagAddActivity);
 			return assignTags;
 		},
 		{
@@ -115,7 +115,7 @@ export const TagController = new Elysia({
 				`a tag name "${unAssignTag.name}"`,
 				userId,
 			);
-			WebSocket.broadcast("activity", tagUnassignActivity);
+			WebSocket.broadcast(`activity:${body.taskId}`, tagUnassignActivity);
 			return unAssignTag;
 		},
 		{

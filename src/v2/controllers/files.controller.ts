@@ -73,7 +73,7 @@ export const FileController = new Elysia({
 				savedFile.fileName,
 				userId,
 			);
-			WebSocket.broadcast("activity", uploadActivity);
+			WebSocket.broadcast(`activity:${taskId}`, uploadActivity);
 
 			return savedFile;
 		},
@@ -119,7 +119,7 @@ export const FileController = new Elysia({
 				removeFile.fileName,
 				removeFile.uploadedBy,
 			);
-			WebSocket.broadcast("activity", removeActivity);
+			WebSocket.broadcast(`activity:${removeFile.taskId}`, removeActivity);
 
 			return removeFile;
 		},
