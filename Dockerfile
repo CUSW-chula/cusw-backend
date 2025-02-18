@@ -16,7 +16,6 @@ RUN bun install
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production
-ENV DATABASE_URL=postgres://root:asd4263@localhost:5432/cusw-chula
 ENV PORT=3000
 ENV MINIO_ROOT_USER=minio
 
