@@ -189,12 +189,19 @@ export class ProjectService extends BaseService<Project> {
 		const isOwner = projectRole.find(
 			(role) => role.userId === userId && role.role === "ProjectOwner",
 		);
-		if (isOwner) return this.getProjectById(userId, projectId);
 
 		const isMember = projectRole.find(
 			(role) => role.userId === userId && role.role === "Member",
 		);
-		if (isMember) {
+		if (isOwner) {
+			await this.projectRoleModel.updateByProjectIDAndUserId(
+				projectId,
+				userId,
+				{
+					role: "Member",
+				},
+			);
+		} else if (isMember) {
 			await this.projectRoleModel.updateByProjectIDAndUserId(
 				projectId,
 				userId,
@@ -202,20 +209,12 @@ export class ProjectService extends BaseService<Project> {
 					role: "ProjectOwner",
 				},
 			);
-			if (isOwner) {
-				await this.projectRoleModel.updateByProjectIDAndUserId(
-					projectId,
-					userId,
-					{
-						role: "Member",
-					},
-				);
-			}
-			await this.invalidateCache("projects:all");
-			await this.invalidateCache(`projects:${projectId}`);
-			return this.getProjectById(userId, projectId);
+		} else {
+			throw new NotFoundException("User not found in project");
 		}
-		throw new NotFoundException("User not found in project");
+		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId);
 	}
 
 	async updateProject(
