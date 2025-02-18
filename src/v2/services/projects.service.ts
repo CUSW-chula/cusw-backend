@@ -210,7 +210,11 @@ export class ProjectService extends BaseService<Project> {
 				},
 			);
 		} else {
-			throw new NotFoundException("User not found in project");
+			await this.projectRoleModel.create({
+				userId: userId,
+				projectId: projectId,
+				role: "ProjectOwner",
+			});
 		}
 		await this.invalidateCache("projects:all");
 		await this.invalidateCache(`projects:${projectId}`);
