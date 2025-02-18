@@ -280,4 +280,26 @@ export const ProjectController = new Elysia({
 				summary: "Get all pinned projects by user id",
 			},
 		},
+	)
+	.patch(
+		"/owner",
+		async ({
+			query: { userId, projectId },
+			db,
+			redis,
+		}: Context & { query: { userId: string; projectId: string } }) => {
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.updateProjectOwner(
+				userId,
+				projectId,
+			);
+			const owner = project.owner;
+			WebSocket.broadcast(`owner:${projectId}`, owner);
+			return project;
+		},
+		{
+			detail: {
+				summary: "Get all pinned projects by user id",
+			},
+		},
 	);
