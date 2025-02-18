@@ -18,6 +18,7 @@ import {
 } from "../../core/exception.core";
 import { Project, Emoji, Task } from "../../shared/interfaces.shared";
 import { TagModel } from "../models/tag.model";
+import { TagService } from "../services/tag.service";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
@@ -30,6 +31,7 @@ export class TaskService extends BaseService<Task> {
 	private readonly fileModel: FilesModel;
 	private readonly activitiesLogsModel: ActivityLogsModel;
 	private readonly commentModel: CommentModel;
+	private readonly tagService: TagService;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
@@ -43,6 +45,7 @@ export class TaskService extends BaseService<Task> {
 		this.activitiesLogsModel = new ActivityLogsModel(prisma);
 		this.commentModel = new CommentModel(prisma);
 		this.tagModel = new TagModel(prisma);
+		this.tagService = new TagService(prisma, redis);
 	}
 
 	protected getTaskModel() {
@@ -466,6 +469,15 @@ export class TaskService extends BaseService<Task> {
 			subtasks: templateTask.subtasks,
 			projectId: projectId,
 		};
-		return await this.createTask(newTask);
+
+		const response = await this.createTask(newTask);
+
+		for (const tag of templateTask.tags) {
+			if (tag) {
+				this.tagService.assigningTagToTask(response.id, tag.id, userId);
+			}
+		}
+
+		return response;
 	}
 }
