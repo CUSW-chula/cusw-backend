@@ -299,7 +299,7 @@ export const ProjectController = new Elysia({
 		},
 		{
 			detail: {
-				summary: "Get all pinned projects by user id",
+				summary: "Change project owner",
 			},
 		},
 	);
