@@ -140,7 +140,7 @@ export const ProjectController = new Elysia({
 				projectId,
 				userId,
 			);
-			WebSocket.broadcast("assigned-tags-project", project);
+			WebSocket.broadcast(`assigned-tags-project:${projectId}`, project);
 			return project;
 		},
 		{
