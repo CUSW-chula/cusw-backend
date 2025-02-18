@@ -8,7 +8,6 @@
     "db:push": "bunx prisma db push",
     "db:studio": "bunx prisma studio",
     "prisma:prod": "prisma migrate deploy",
-    "prepare": "husky",
     "commit": "git-cz",
     "lint": "bunx biome lint ./src",
     "lint:fix": "bunx biome lint --write ./src",
