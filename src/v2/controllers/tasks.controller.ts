@@ -240,8 +240,8 @@ export const TaskController = new Elysia({
 				body.userId,
 			);
 			const usersAssign = assignTask.user;
-			WebSocket.broadcast("assigned", usersAssign);
-			WebSocket.broadcast("status-changed", assignTask.task);
+			WebSocket.broadcast(`assigned:${body.taskId}`, usersAssign);
+			WebSocket.broadcast(`status-changed:${body.taskId}`, assignTask.task);
 			const assignActivity = await activityService.postActivity(
 				body.taskId,
 				$Enums.ActivityAction.ASSIGNED,
@@ -280,8 +280,8 @@ export const TaskController = new Elysia({
 				body.userId,
 			);
 			const unAssignUser = unAssignTask.user;
-			WebSocket.broadcast("unassigned", unAssignUser);
-			WebSocket.broadcast("status-changed", unAssignTask.task);
+			WebSocket.broadcast(`unassigned${body.taskId}`, unAssignUser);
+			WebSocket.broadcast(`status-changed${body.taskId}`, unAssignTask.task);
 			const unassignActivity = await activityService.postActivity(
 				body.taskId,
 				$Enums.ActivityAction.UNASSIGNED,
