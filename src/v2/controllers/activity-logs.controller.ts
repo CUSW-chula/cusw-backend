@@ -18,7 +18,7 @@ export const ActivityController = new Elysia({
 		if (!activities) {
 			return Response.json("Activity not found", { status: 404 });
 		}
-		WebSocket.broadcast("activity", activities);
+		WebSocket.broadcast(`activity:${id}`, activities);
 		return activities;
 	},
 );

@@ -262,6 +262,29 @@ export const ProjectController = new Elysia({
 		{
 			detail: { summary: "Remove a pin from a project" },
 		},
+	)
+	
+	.patch(
+		"/owner",
+		async ({
+			query: { userId, projectId },
+			db,
+			redis,
+		}: Context & { query: { userId: string; projectId: string } }) => {
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.updateProjectOwner(
+				userId,
+				projectId,
+			);
+			const owner = project.owner;
+			WebSocket.broadcast(`owner:${projectId}`, owner);
+			return project;
+		},
+		{
+			detail: {
+				summary: "Change project owner",
+			},
+		},
 	);
 // .get(
 // 	"/pin/:userId",
