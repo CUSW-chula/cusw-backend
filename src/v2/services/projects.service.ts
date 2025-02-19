@@ -83,7 +83,6 @@ export class ProjectService extends BaseService<Project> {
 		await this.setToCache(cacheKey, projects);
 		return projects;
 	}
-	
 
 	async getProjectById(userId: string, id: string): Promise<Project> {
 		const cacheKey = `projects:${id}${userId}`;
@@ -124,8 +123,7 @@ export class ProjectService extends BaseService<Project> {
 				)
 			: [];
 		const tasks = await this.taskService.getTaskByProjectId(id);
-		const isPinned =
-			(await this.pinProject.findByUserIdAndProjectId(userId, id)) ;
+		const isPinned = await this.pinProject.findByUserIdAndProjectId(userId, id);
 
 		const projectWithDetails = {
 			...project,
@@ -169,7 +167,7 @@ export class ProjectService extends BaseService<Project> {
 				throw new ServerErrorException(
 					"Failed to retrieve the created project",
 				);
-				
+
 			await this.invalidateCache(`projects:${userId}`);
 			return projectWithDetails;
 		}
@@ -314,7 +312,6 @@ export class ProjectService extends BaseService<Project> {
 		const pinProject = await this.pinProject.findByUserIdAndProjectId(
 			userId,
 			projectId,
-			
 		);
 		if (pinProject) return this.getProjectById(userId, projectId); // ถ้ามีแล้วให้คืนค่าเลย
 
@@ -352,5 +349,4 @@ export class ProjectService extends BaseService<Project> {
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId);
 	}
-
 }
