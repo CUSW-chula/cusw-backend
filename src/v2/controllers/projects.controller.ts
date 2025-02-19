@@ -263,7 +263,7 @@ export const ProjectController = new Elysia({
 			detail: { summary: "Remove a pin from a project" },
 		},
 	)
-	
+
 	.patch(
 		"/owner",
 		async ({
