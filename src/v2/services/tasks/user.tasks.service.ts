@@ -115,6 +115,10 @@ export class UserTaskClassService extends TaskService {
 			await this.getTaskModel().update(taskId, {
 				status: "Unassigned",
 			});
+		await this.projectRoleModel.deleteByProjectIDandUserId(
+			userId,
+			isTaskExist.projectId,
+		);
 
 		await this.invalidateCache(cacheKey);
 		await this.invalidateCache("tasks:all");

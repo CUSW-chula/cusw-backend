@@ -140,7 +140,7 @@ export const ProjectController = new Elysia({
 				projectId,
 				userId,
 			);
-			WebSocket.broadcast("assigned-tags-project", project);
+			WebSocket.broadcast(`assigned-tags-project:${projectId}`, project);
 			return project;
 		},
 		{
@@ -278,6 +278,28 @@ export const ProjectController = new Elysia({
 		{
 			detail: {
 				summary: "Get all pinned projects by user id",
+			},
+		},
+	)
+	.patch(
+		"/owner",
+		async ({
+			query: { userId, projectId },
+			db,
+			redis,
+		}: Context & { query: { userId: string; projectId: string } }) => {
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.updateProjectOwner(
+				userId,
+				projectId,
+			);
+			const owner = project.owner;
+			WebSocket.broadcast(`owner:${projectId}`, owner);
+			return project;
+		},
+		{
+			detail: {
+				summary: "Change project owner",
 			},
 		},
 	);

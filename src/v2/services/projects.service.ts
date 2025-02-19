@@ -174,6 +174,53 @@ export class ProjectService extends BaseService<Project> {
 		throw new ValidationException("Title cann't be null");
 	}
 
+	async updateProjectOwner(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		const projectRole = await this.projectRoleModel.findByProjectId(projectId);
+		if (!projectRole) throw new NotFoundException("Project role not found");
+		const isOwner = projectRole.find(
+			(role) => role.userId === userId && role.role === "ProjectOwner",
+		);
+
+		const isMember = projectRole.find(
+			(role) => role.userId === userId && role.role === "Member",
+		);
+		if (isOwner) {
+			await this.projectRoleModel.updateByProjectIDAndUserId(
+				projectId,
+				userId,
+				{
+					role: "Member",
+				},
+			);
+		} else if (isMember) {
+			await this.projectRoleModel.updateByProjectIDAndUserId(
+				projectId,
+				userId,
+				{
+					role: "ProjectOwner",
+				},
+			);
+		} else {
+			await this.projectRoleModel.create({
+				userId: userId,
+				projectId: projectId,
+				role: "ProjectOwner",
+			});
+		}
+		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId);
+	}
+
 	async updateProject(
 		userId: string,
 		projectId: string,

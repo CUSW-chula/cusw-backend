@@ -30,10 +30,7 @@ export class ProjectRoleModel extends BaseModel<ProjectRole> {
 		});
 		return createdProjectRoles;
 	}
-	async update(
-		id: string,
-		data: Partial<{ projectId: string; roleId: string; userId: string }>,
-	): Promise<ProjectRole> {
+	async update(id: string, data: Partial<ProjectRole>): Promise<ProjectRole> {
 		const updatedProjectRole = await this.getModel().projectRole.update({
 			where: {
 				id: id,
@@ -43,11 +40,36 @@ export class ProjectRoleModel extends BaseModel<ProjectRole> {
 		return updatedProjectRole;
 	}
 
+	async updateByProjectIDAndUserId(
+		projectId: string,
+		userId: string,
+		data: Partial<ProjectRole>,
+	): Promise<number> {
+		const updatedProjectRole = await this.getModel().projectRole.updateMany({
+			where: {
+				projectId: projectId,
+				userId: userId,
+			},
+			data: data,
+		});
+		return updatedProjectRole.count;
+	}
+
 	async delete(id: string): Promise<ProjectRole> {
 		const deletedProjectRole = await this.getModel().projectRole.delete({
 			where: { id },
 		});
 		return deletedProjectRole;
+	}
+
+	async deleteByProjectIDandUserId(
+		userId: string,
+		projectId: string,
+	): Promise<number> {
+		const deletedProjectRole = await this.getModel().projectRole.deleteMany({
+			where: { userId: userId, projectId: projectId },
+		});
+		return deletedProjectRole.count;
 	}
 
 	async deleteByProjectId(projectId: string): Promise<number> {
