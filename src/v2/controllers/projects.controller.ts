@@ -263,21 +263,21 @@ export const ProjectController = new Elysia({
 			detail: { summary: "Remove a pin from a project" },
 		},
 	)
-	.get(
-		"/pin/:userId",
-		async ({
-			params: { userId },
-			db,
-			redis,
-		}: Context & { params: { userId: string } }) => {
-			const projectService = new ProjectService(db, redis);
-			const pinnedProjects =
-				await projectService.getAllPinInProjectByUserId(userId);
-			return pinnedProjects;
-		},
-		{
-			detail: {
-				summary: "Get all pinned projects by user id",
-			},
-		},
-	);
+	// .get(
+	// 	"/pin/:userId",
+	// 	async ({
+	// 		params: { userId },
+	// 		db,
+	// 		redis,
+	// 	}: Context & { params: { userId: string } }) => {
+	// 		const projectService = new ProjectService(db, redis);
+	// 		const pinnedProjects =
+	// 			await projectService.getAllPinInProjectByUserId(userId);
+	// 		return pinnedProjects;
+	// 	},
+	// 	{
+	// 		detail: {
+	// 			summary: "Get all pinned projects by user id",
+	// 		},
+	// 	},
+	// );
