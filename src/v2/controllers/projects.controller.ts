@@ -74,8 +74,8 @@ export const ProjectController = new Elysia({
 			body: t.Object({
 				title: t.String(),
 				description: t.String(),
-				startDate: t.Date(),
-				endDate: t.Date(),
+				startDate: t.Union([t.Date(), t.Null()]),
+				endDate: t.Union([t.Date(), t.Null()]),
 			}),
 			detail: {
 				summary: "Create a project",
