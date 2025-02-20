@@ -53,7 +53,8 @@ export class UserTaskClassService extends TaskService {
 
 		const isProjectOwner = await this.projectRoleModel.findByProjectIdAndUserId(
 			isTaskExist.projectId,
-			userId,)
+			userId,
+		);
 		if (isProjectOwner?.role === "ProjectOwner")
 			throw new ValidationException("Owner can't assign task to himself");
 
