@@ -110,8 +110,8 @@ export const ProjectController = new Elysia({
 			body: t.Object({
 				title: t.Optional(t.String()),
 				description: t.Optional(t.String()),
-				startDate: t.Optional(t.Date()),
-				endDate: t.Optional(t.Date()),
+				startDate: t.Optional(t.Union([t.Date(), t.Null()])),
+				endDate: t.Optional(t.Union([t.Date(), t.Null()])),
 			}),
 			detail: {
 				summary: "Update a project",
