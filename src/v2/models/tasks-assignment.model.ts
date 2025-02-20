@@ -65,6 +65,14 @@ export class TasksAssignmentModel extends BaseModel<TaskAssignment> {
 		return deletedTaskAssignment;
 	}
 
+	async deleteByUserId(userId: string): Promise<number> {
+		const deletedTaskAssignment =
+			await this.getModel().taskAssignment.deleteMany({
+				where: { userId: userId },
+			});
+		return deletedTaskAssignment.count;
+	}
+
 	async deleteByTaskId(taskId: string): Promise<number> {
 		const deletedTaskAssignment =
 			await this.getModel().taskAssignment.deleteMany({

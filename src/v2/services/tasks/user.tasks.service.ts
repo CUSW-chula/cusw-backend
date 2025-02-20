@@ -51,10 +51,24 @@ export class UserTaskClassService extends TaskService {
 		const isTaskExist = await this.getTaskModel().findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
+		const isProjectOwner = await this.projectRoleModel.findByProjectIdAndUserId(
+			isTaskExist.projectId,
+			userId,)
+		if (isProjectOwner?.role === "ProjectOwner")
+			throw new ValidationException("Owner can't assign task to himself");
+
 		// Check assigner is not the assignee
 		const isAssignerIsAssignee = isTaskExist.createdById === userId;
 		if (isAssignerIsAssignee)
 			throw new ValidationException("Assigner can't assign task to himself");
+
+		const isUserinProject =
+			await this.projectRoleModel.findByProjectIdAndUserId(
+				isTaskExist.projectId,
+				userId,
+			);
+		if (!isUserinProject)
+			throw new ValidationException("User is not in the project");
 
 		const isTaskHasBeenAssigned =
 			await this.getTaskAssignmentModel().findByTaskId(taskId);
@@ -70,11 +84,6 @@ export class UserTaskClassService extends TaskService {
 		await this.getTaskAssignmentModel().create({
 			taskId: taskId,
 			userId: userId,
-		});
-		await this.projectRoleModel.create({
-			projectId: isTaskExist.projectId,
-			userId: userId,
-			role: "Member",
 		});
 		await this.invalidateCache(cacheKey);
 		await this.invalidateCache("tasks:all");
@@ -114,10 +123,6 @@ export class UserTaskClassService extends TaskService {
 			await this.getTaskModel().update(taskId, {
 				status: "Unassigned",
 			});
-		await this.projectRoleModel.deleteByProjectIDandUserId(
-			userId,
-			isTaskExist.projectId,
-		);
 
 		await this.invalidateCache(cacheKey);
 		await this.invalidateCache("tasks:all");
