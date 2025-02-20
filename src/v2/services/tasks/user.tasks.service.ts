@@ -56,10 +56,11 @@ export class UserTaskClassService extends TaskService {
 		if (isAssignerIsAssignee)
 			throw new ValidationException("Assigner can't assign task to himself");
 
-		const isUserinProject = await this.projectRoleModel.findByProjectIdAndUserId(
-			isTaskExist.projectId,
-			userId,
-		);
+		const isUserinProject =
+			await this.projectRoleModel.findByProjectIdAndUserId(
+				isTaskExist.projectId,
+				userId,
+			);
 		if (!isUserinProject)
 			throw new ValidationException("User is not in the project");
 

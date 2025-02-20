@@ -422,7 +422,10 @@ export class ProjectService extends BaseService<Project> {
 		return allProjectId;
 	}
 
-	async assignMemberToProject(userId: string, projectId: string): Promise<Project> {
+	async assignMemberToProject(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
 		const isUserExist = await this.userModel.findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
 

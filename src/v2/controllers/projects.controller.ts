@@ -3,6 +3,7 @@ import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { UserService } from "../services/users.service";
+import { PermissionException } from "../../core/exception.core";
 
 export const ProjectController = new Elysia({
 	prefix: "/projects",
@@ -318,13 +319,18 @@ export const ProjectController = new Elysia({
 			};
 			cookie: { session: Cookie<string> };
 		}) => {
-			if (!session?.value) throw new Error("Unauthorized");
+			if (!session?.value) throw new PermissionException("Unauthorized");
 
 			const projectService = new ProjectService(db, redis);
-			const project = await projectService.getProjectById(session.value, projectId);
+			const project = await projectService.getProjectById(
+				session.value,
+				projectId,
+			);
 
-			if (!project.owner.some(user => user?.id === session.value)) {
-				throw new Error("Forbidden: Only the project owner can assign members.");
+			if (!project.owner.some((user) => user?.id === session.value)) {
+				throw new PermissionException(
+					"Forbidden: Only the project owner can assign members.",
+				);
 			}
 
 			const updatedProject = await projectService.assignMemberToProject(
@@ -353,16 +359,21 @@ export const ProjectController = new Elysia({
 			cookie: { session },
 		}: Context & {
 			params: { projectId: string };
-			body: { userId: string; };
+			body: { userId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
-			if (!session?.value) throw new Error("Unauthorized");
+			if (!session?.value) throw new PermissionException("Unauthorized");
 
 			const projectService = new ProjectService(db, redis);
-			const project = await projectService.getProjectById(session.value, projectId);
+			const project = await projectService.getProjectById(
+				session.value,
+				projectId,
+			);
 
-			if (!project.owner.some(user => user?.id === session.value)) {
-				throw new Error("Forbidden: Only the project owner can assign members.");
+			if (!project.owner.some((user) => user?.id === session.value)) {
+				throw new PermissionException(
+					"Forbidden: Only the project owner can assign members.",
+				);
 			}
 
 			const updatedProject = await projectService.removeMemberFromProject(
