@@ -421,4 +421,50 @@ export class ProjectService extends BaseService<Project> {
 
 		return allProjectId;
 	}
+
+	async assignMemberToProject(userId: string, projectId: string): Promise<Project> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		const projectRole = await this.projectRoleModel.findByProjectId(projectId);
+		if (!projectRole) throw new NotFoundException("Project role not found");
+		const isMember = projectRole.find(
+			(role) => role.userId === userId && role.role === "Member",
+		);
+		if (isMember) throw new ValidationException("User already a member");
+
+		await this.projectRoleModel.create({
+			projectId,
+			role: "Member",
+			userId,
+		});
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId);
+	}
+
+	async removeMemberFromProject(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		const projectRole = await this.projectRoleModel.findByProjectId(projectId);
+		if (!projectRole) throw new NotFoundException("Project role not found");
+		const isMember = projectRole.find(
+			(role) => role.userId === userId && role.role === "Member",
+		);
+		if (!isMember) throw new ValidationException("User not a member");
+
+		await this.projectRoleModel.deleteByProjectIDandUserId(projectId, userId);
+		await this.taskAssignmentModel.deleteByUserId(userId);
+		await this.invalidateCache(`projects:${projectId}`);
+		return this.getProjectById(userId, projectId);
+	}
 }

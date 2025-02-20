@@ -78,4 +78,14 @@ export class ProjectRoleModel extends BaseModel<ProjectRole> {
 		});
 		return deletedProjectRole.count;
 	}
+
+	async findByProjectIdAndUserId(
+		projectId: string,
+		userId: string,
+	): Promise<ProjectRole | null> {
+		const projectRole = await this.getModel().projectRole.findFirst({
+			where: { projectId: projectId, userId: userId },
+		});
+		return projectRole;
+	}
 }

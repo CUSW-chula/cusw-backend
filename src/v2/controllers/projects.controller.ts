@@ -302,4 +302,82 @@ export const ProjectController = new Elysia({
 				summary: "Change project owner",
 			},
 		},
+	)
+	.post(
+		"/assign/:projectId",
+		async ({
+			params: { projectId },
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { projectId: string };
+			body: {
+				userId: string;
+			};
+			cookie: { session: Cookie<string> };
+		}) => {
+			if (!session?.value) throw new Error("Unauthorized");
+
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.getProjectById(session.value, projectId);
+
+			if (!project.owner.some(user => user?.id === session.value)) {
+				throw new Error("Forbidden: Only the project owner can assign members.");
+			}
+
+			const updatedProject = await projectService.assignMemberToProject(
+				body.userId,
+				projectId,
+			);
+			WebSocket.broadcast(`assigned:${projectId}`, updatedProject);
+			return updatedProject;
+		},
+		{
+			body: t.Object({
+				userId: t.String(),
+			}),
+			detail: {
+				summary: "Add member to project",
+			},
+		},
+	)
+	.delete(
+		"/assign/:projectId",
+		async ({
+			params: { projectId },
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { projectId: string };
+			body: { userId: string; };
+			cookie: { session: Cookie<string> };
+		}) => {
+			if (!session?.value) throw new Error("Unauthorized");
+
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.getProjectById(session.value, projectId);
+
+			if (!project.owner.some(user => user?.id === session.value)) {
+				throw new Error("Forbidden: Only the project owner can assign members.");
+			}
+
+			const updatedProject = await projectService.removeMemberFromProject(
+				body.userId,
+				projectId,
+			);
+			WebSocket.broadcast(`unassigned:${projectId}`, updatedProject);
+			return updatedProject;
+		},
+		{
+			body: t.Object({
+				userId: t.String(),
+			}),
+			detail: {
+				summary: "Delete member to project",
+			},
+		},
 	);
