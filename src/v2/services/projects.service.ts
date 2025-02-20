@@ -340,6 +340,7 @@ export class ProjectService extends BaseService<Project> {
 			const project = await this.getProjectById(userId, projectId);
 			await this.projectRoleModel.deleteByProjectId(projectId);
 			await this.projectTagModel.deleteByProjectId(projectId);
+			await this.pinProject.deleteByUserIdAndProjectId(userId, projectId);
 			await this.projectModel.delete(projectId);
 			return project;
 		} catch (_error) {
