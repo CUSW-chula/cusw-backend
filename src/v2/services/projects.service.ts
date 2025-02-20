@@ -311,25 +311,9 @@ export class ProjectService extends BaseService<Project> {
 			// Find all tasks associated with the project
 			const tasks = await this.taskModel.findByProjectId(projectId);
 
-			// Delete all related entities for each task
-			if (tasks && tasks.length > 0) {
-				for (const task of tasks) {
-					const taskId = task.id;
-
-					// Delete all task-related data
-					await this.taskAssignmentModel.deleteByTaskId(taskId);
-					await this.taskTagModel.deleteByTaskId(taskId);
-					await this.emojiModel.deleteByTaskId(taskId);
-					await this.fileModel.deleteByTaskId(taskId);
-					await this.activitiesLogsModel.deleteByTaskId(taskId);
-					await this.commentModel.deleteByTaskId(taskId);
-
-					// Delete the task itself
-					await this.taskModel.delete(taskId);
-
-					// Invalidate cache for the task
-					await this.invalidateCache(`tasks:${taskId}`);
-				}
+			for (const task of tasks) {
+				// Delete all task assignments
+				await this.taskService.deleteTask(task.id);
 			}
 
 			// Invalidate cache related to the project
