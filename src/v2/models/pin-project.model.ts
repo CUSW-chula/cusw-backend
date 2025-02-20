@@ -59,7 +59,9 @@ export class PinProjectModel extends BaseModel<PinProject> {
 		userId: string,
 		projectId: string,
 	): Promise<PinProject> {
-		const pin = await this.getModel().pinProject.findFirst({ where: { userId, projectId } });
+		const pin = await this.getModel().pinProject.findFirst({
+			where: { userId, projectId },
+		});
 		if (!pin) {
 			throw new Error("Pin not found");
 		}

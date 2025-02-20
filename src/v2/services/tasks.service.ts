@@ -127,6 +127,9 @@ export class TaskService extends BaseService<Task> {
 		await this.invalidateCache(`projects:${updatedTask.projectId}`);
 		await this.invalidateCache(`tasks:project:${existingTask.projectId}`);
 		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
+		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateCache(`projects:all`);
+		await this.invalidateCache(`projects:${isUserExist.id}`);
 
 		// Update and return the task
 		try {
