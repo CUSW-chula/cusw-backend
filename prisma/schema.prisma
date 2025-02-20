@@ -45,8 +45,8 @@ model Project {
   budget         Float 
   advance        Float 
   expense        Float
-  startDate      DateTime
-  endDate        DateTime
+  startDate      DateTime?
+  endDate        DateTime?
   projectRoles   ProjectRole[]   
   tags           ProjectTag[] 
   tasks          Task[]           @relation("ProjectTasks") 

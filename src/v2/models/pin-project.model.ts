@@ -20,7 +20,7 @@ export class PinProjectModel extends BaseModel<PinProject> {
 		return !!pin;
 	}
 
-	async findByUserIdAndProjectIdO(
+	async findByUserIdAndProjectIdObject(
 		userId: string,
 		projectId: string,
 	): Promise<PinProject | null> {

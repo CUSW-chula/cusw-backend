@@ -65,7 +65,7 @@ export class ProjectService extends BaseService<Project> {
 	}
 
 	async getAllProjects(userId: string): Promise<Project[]> {
-		const cacheKey = "projects:all";
+		const cacheKey = `projects:${userId}`;
 		const cacheProject = await this.getFromCache(cacheKey);
 		if (cacheProject) {
 			return cacheProject as Project[];
@@ -85,7 +85,7 @@ export class ProjectService extends BaseService<Project> {
 	}
 
 	async getProjectById(userId: string, id: string): Promise<Project> {
-		const cacheKey = `projects:${id}`;
+		const cacheKey = `projects:${id}${userId}`;
 		const cacheProject = await this.getFromCache(cacheKey);
 
 		if (cacheProject) return cacheProject as Project;
@@ -123,8 +123,7 @@ export class ProjectService extends BaseService<Project> {
 				)
 			: [];
 		const tasks = await this.taskService.getTaskByProjectId(id);
-		const isPinned =
-			(await this.pinProject.findByUserIdAndProjectId(userId, id)) ?? false;
+		const isPinned = await this.pinProject.findByUserIdAndProjectId(userId, id);
 
 		const projectWithDetails = {
 			...project,
@@ -134,7 +133,7 @@ export class ProjectService extends BaseService<Project> {
 			tags,
 			isPinned,
 		};
-
+		await this.invalidateCache(`projects:${userId}`);
 		await this.setToCache(cacheKey, projectWithDetails);
 		return projectWithDetails;
 	}
@@ -168,7 +167,8 @@ export class ProjectService extends BaseService<Project> {
 				throw new ServerErrorException(
 					"Failed to retrieve the created project",
 				);
-			await this.invalidateCache("projects:all");
+
+			await this.invalidateCache(`projects:${userId}`);
 			return projectWithDetails;
 		}
 		throw new ValidationException("Title cann't be null");
@@ -244,7 +244,7 @@ export class ProjectService extends BaseService<Project> {
 		};
 
 		// Invalidate caches
-		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}${userId}`);
 		await this.invalidateCache(`projects:${projectId}`);
 
 		// Update and return the project
@@ -271,6 +271,7 @@ export class ProjectService extends BaseService<Project> {
 			tagId,
 			projectId,
 		});
+		await this.invalidateCache(`projects:${projectId}${userId}`);
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId);
 	}
@@ -290,6 +291,7 @@ export class ProjectService extends BaseService<Project> {
 		const user = await this.userModel.findById(userId);
 		if (!user) throw new NotFoundException("User not found");
 		await this.projectTagModel.delete(projecttags.id);
+		await this.invalidateCache(`projects:${projectId}${userId}`);
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId);
 	}
@@ -332,7 +334,7 @@ export class ProjectService extends BaseService<Project> {
 
 			// Invalidate cache related to the project
 			await this.invalidateCache(`projects:${projectId}`);
-			await this.invalidateCache("projects:all");
+			await this.invalidateCache(`projects:${projectId}${userId}`);
 
 			// Delete the project itself
 			const project = await this.getProjectById(userId, projectId);
@@ -370,7 +372,7 @@ export class ProjectService extends BaseService<Project> {
 			projectId,
 		});
 
-		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}${userId}`);
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId); // คืนค่าหลังจาก Pin
 	}
@@ -386,14 +388,7 @@ export class ProjectService extends BaseService<Project> {
 		const isProjectExist = await this.projectModel.findById(projectId);
 		if (!isProjectExist) throw new NotFoundException("Project not found");
 
-		// ค้นหา Pin
-		const pinProject = await this.pinProject.findByUserIdAndProjectId(
-			userId,
-			projectId,
-		);
-		if (!pinProject) throw new NotFoundException("PinProject not found");
-
-		const pinProjectO = await this.pinProject.findByUserIdAndProjectIdO(
+		const pinProjectO = await this.pinProject.findByUserIdAndProjectIdObject(
 			userId,
 			projectId,
 		);
@@ -401,7 +396,7 @@ export class ProjectService extends BaseService<Project> {
 
 		// ลบ Pin
 		await this.pinProject.delete(pinProjectO.id);
-		await this.invalidateCache("projects:all");
+		await this.invalidateCache(`projects:${projectId}${userId}`);
 		await this.invalidateCache(`projects:${projectId}`);
 		return this.getProjectById(userId, projectId);
 	}
