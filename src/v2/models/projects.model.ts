@@ -37,8 +37,8 @@ export class ProjectModel extends BaseModel<Project> {
 			data: {
 				title: data.title ?? "",
 				description: data.description ?? "",
-				startDate: data.startDate ?? null,
-				endDate: data.endDate ?? null,
+				startDate: data.startDate ?? new Date(),
+				endDate: data.endDate ?? new Date(),
 				budget: data.budget ?? 0,
 				advance: data.advance ?? 0,
 				expense: data.expense ?? 0,
