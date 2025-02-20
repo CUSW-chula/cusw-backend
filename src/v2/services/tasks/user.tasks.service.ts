@@ -51,6 +51,12 @@ export class UserTaskClassService extends TaskService {
 		const isTaskExist = await this.getTaskModel().findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
+		const isProjectOwner = await this.projectRoleModel.findByProjectIdAndUserId(
+			isTaskExist.projectId,
+			userId,)
+		if (isProjectOwner?.role === "ProjectOwner")
+			throw new ValidationException("Owner can't assign task to himself");
+
 		// Check assigner is not the assignee
 		const isAssignerIsAssignee = isTaskExist.createdById === userId;
 		if (isAssignerIsAssignee)
