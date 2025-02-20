@@ -58,12 +58,12 @@ export class PinProjectModel extends BaseModel<PinProject> {
 	async deleteByUserIdAndProjectId(
 		userId: string,
 		projectId: string,
-	): Promise<PinProject> {
+	): Promise<void> {
 		const pin = await this.getModel().pinProject.findFirst({ where: { userId, projectId } });
 		if (!pin) {
-			throw new Error("Pin not found");
+			return
 		}
-		return await this.getModel().pinProject.delete({ where: { id: pin.id } });
+		await this.getModel().pinProject.delete({ where: { id: pin.id } });
 	}
 
 	async findByProjectId(id: string): Promise<PinProject[] | null> {
