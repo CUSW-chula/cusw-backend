@@ -56,8 +56,8 @@ export type Project = {
 	budget: number;
 	advance: number;
 	expense: number;
-	startDate: Date;
-	endDate: Date;
+	startDate: Date | null;
+	endDate: Date | null;
 	owner: User[];
 	members: User[];
 	tasks: Task[];
