@@ -300,7 +300,11 @@ export class ProjectService extends BaseService<Project> {
 		if (!project) {
 			throw new NotFoundException(`Project with ID ${projectId} not found`);
 		}
-
+		// Checek you are owner
+		const owner = await this.projectModel.findRole(userId, projectId);
+		if (owner !== "ProjectOwner") {
+			throw new PermissionException("You are not the owner of this project");
+		}
 		try {
 			// Find all tasks associated with the project
 			const tasks = await this.taskModel.findByProjectId(projectId);
