@@ -445,9 +445,9 @@ export class ProjectService extends BaseService<Project> {
 		);
 		if (!isMember) throw new ValidationException("User not a member");
 
-		await this.projectRoleModel.deleteByProjectIDandUserId(projectId, userId);
-		await this.taskAssignmentModel.deleteByUserId(userId);
+		await this.projectRoleModel.deleteByProjectIDandUserId(userId, projectId);
 		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateCache(`tasks:${projectId}`);
 		return this.getProjectById(userId, projectId);
 	}
 }

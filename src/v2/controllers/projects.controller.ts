@@ -355,7 +355,7 @@ export const ProjectController = new Elysia({
 
 			if (!project.owner.some((user) => user?.id === session.value)) {
 				throw new PermissionException(
-					"Forbidden: Only the project owner can assign members.",
+					"Forbidden: Only the project owner can unassign members.",
 				);
 			}
 

@@ -65,11 +65,14 @@ export class ProjectRoleModel extends BaseModel<ProjectRole> {
 	async deleteByProjectIDandUserId(
 		userId: string,
 		projectId: string,
-	): Promise<number> {
-		const deletedProjectRole = await this.getModel().projectRole.deleteMany({
+	): Promise<ProjectRole> {
+		const projectRole = await this.getModel().projectRole.findFirst({
 			where: { userId: userId, projectId: projectId },
 		});
-		return deletedProjectRole.count;
+		const deletedProjectRole = await this.getModel().projectRole.delete({
+			where: { id: projectRole?.id },
+		});
+		return deletedProjectRole;
 	}
 
 	async deleteByProjectId(projectId: string): Promise<number> {
