@@ -12,11 +12,8 @@ export class MoneyClassService extends TaskService {
 		super(prisma, redis);
 	}
 
-	async clearCache(taskID: string, projectID: string) {
-		await this.invalidateCache(`tasks:${taskID}`);
-		await this.invalidateCache(`tasks:project:${projectID}`);
-		await this.invalidateCache(`projects:${projectID}`);
-		await this.invalidateCache("projects:all");
+	async clearCache() {
+		await this.invalidateAllCache("tasks", "projects");
 	}
 
 	async getMoney(taskId: string): Promise<number[]> {
@@ -119,7 +116,7 @@ export class MoneyClassService extends TaskService {
 			};
 			this.updateProjectModel(task.projectId, updatedProject);
 
-			this.clearCache(task.id, task.projectId);
+			this.clearCache();
 
 			await this.getTaskById(taskID);
 			return await this.getTaskById(updateMoney.id);
@@ -144,7 +141,7 @@ export class MoneyClassService extends TaskService {
 			expense: existingProject.expense + expense,
 		};
 		// Invalidate caches
-		this.clearCache(task.id, task.projectId);
+		this.clearCache();
 
 		// Update Project Money
 		this.updateProjectModel(task.projectId, updatedProject);
@@ -237,7 +234,7 @@ export class MoneyClassService extends TaskService {
 		};
 
 		// Invalidate caches
-		await this.clearCache(task.id, task.projectId);
+		await this.clearCache();
 
 		// Update Project Money
 		this.updateProjectModel(task.projectId, updatedProject);

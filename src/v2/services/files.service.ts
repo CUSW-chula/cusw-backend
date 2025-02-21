@@ -18,7 +18,7 @@ export class FilesService extends BaseService<File> {
 	}
 
 	async getAllFile(): Promise<File[]> {
-		const cacheKey = "files:all";
+		const cacheKey = this.getFileCacheKey("all");
 		const cacheFiles = await this.getFromCache(cacheKey);
 
 		if (cacheFiles) return cacheFiles as File[];
@@ -29,7 +29,7 @@ export class FilesService extends BaseService<File> {
 	}
 
 	async getFileByTaskId(taskId: string): Promise<File[] | null> {
-		const cacheKey = `files:${taskId}`;
+		const cacheKey = this.getFileCacheKey(taskId);
 		const cacheFile = await this.getFromCache(cacheKey);
 
 		if (cacheFile) return cacheFile as File[];
@@ -47,7 +47,7 @@ export class FilesService extends BaseService<File> {
 		projectId: string,
 		authorId: string,
 	): Promise<File | null> {
-		const cacheKey = `files:${taskId}`;
+		const cacheKey = this.getFileCacheKey(taskId);
 		const bucketName = "cusw-workspace";
 		const fileKey = `${projectId}-${taskId}-${file.name}`;
 		const arrBuf = await file.arrayBuffer();
@@ -99,7 +99,7 @@ export class FilesService extends BaseService<File> {
 	}
 
 	async removeFileByFileId(fileId: string): Promise<File> {
-		const cacheKey = "files:all";
+		const cacheKey = this.getFileCacheKey("all");
 		const file = await this.fileModel.findById(fileId);
 		if (!file) throw new Error("File not found");
 

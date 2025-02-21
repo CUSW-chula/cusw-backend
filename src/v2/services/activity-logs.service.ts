@@ -26,10 +26,6 @@ export class ActivityService extends BaseService<Activity> {
 	}
 
 	async getActivityById(id: string): Promise<Activity[]> {
-		const cacheKey = `activity:${id}`;
-		const cacheActivity = await this.getFromCache(cacheKey);
-		if (cacheActivity) return cacheActivity as Activity[];
-
 		const activity = await this.activityModel.findByTaskId(id);
 		if (!activity) throw new NotFoundException("Activity not found");
 		const activityWithDetails: Activity[] = await Promise.all(
@@ -43,7 +39,6 @@ export class ActivityService extends BaseService<Activity> {
 				};
 			}),
 		);
-		await this.setToCache(cacheKey, activityWithDetails);
 		return activityWithDetails;
 	}
 

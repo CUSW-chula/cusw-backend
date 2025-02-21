@@ -122,10 +122,7 @@ export class TagService extends BaseService<Tag> {
 		if (!assignTagToTask)
 			throw new NotFoundException("Failed to assign tag to task");
 		const tasks = await this.taskModel.findById(taskId);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
-		await this.invalidateCache(`projects:all`);
-		await this.invalidateCache(`projects:${tasks?.projectId}}`);
+		await this.invalidateAllCache("tasks", "projects");
 		return assignTagToTask;
 	}
 
@@ -145,8 +142,7 @@ export class TagService extends BaseService<Tag> {
 
 		// Unassign the tag from the task
 		const unAssigningTagToTask = await this.taskTagModel.delete(taskTag.id);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateAllCache("tasks");
 		return unAssigningTagToTask;
 	}
 }

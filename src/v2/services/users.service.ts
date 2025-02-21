@@ -24,7 +24,7 @@ export class UserService extends BaseService<User> {
 
 	// Fetch all users with caching
 	async getAllUsers(): Promise<User[]> {
-		const cacheKey = "users:all";
+		const cacheKey = this.getTaskCacheKey("all");
 		const cachedUsers = await this.getFromCache(cacheKey);
 		if (cachedUsers) return cachedUsers as User[];
 
@@ -36,9 +36,6 @@ export class UserService extends BaseService<User> {
 
 	// Fetch user by email
 	async getUserByEmail(email: string): Promise<User | null> {
-		const cacheKey = `users:email:${email}`;
-		const cachedUser = await this.getFromCache(cacheKey);
-		if (cachedUser) return cachedUser as User;
 		const user = await this.userModel.findByEmail(email);
 		if (!user) throw new NotFoundException("User not found");
 		return user;
@@ -46,7 +43,7 @@ export class UserService extends BaseService<User> {
 
 	// Fetch user by ID with caching
 	async getUserById(id: string): Promise<User | null> {
-		const cacheKey = `users:${id}`;
+		const cacheKey = this.getTaskCacheKey(id);
 		const cachedUser = await this.getFromCache(cacheKey);
 		if (cachedUser) return cachedUser as User;
 
@@ -67,8 +64,7 @@ export class UserService extends BaseService<User> {
 
 		const newUser = await this.userModel.create(userData);
 		if (!newUser) throw new ServerErrorException("Failed to create user");
-		await this.invalidateCache("users:all");
-		await this.invalidateCache(`users:email:${userData.email}`);
+		await this.invalidateAllCache("users");
 		return newUser;
 	}
 
@@ -83,8 +79,7 @@ export class UserService extends BaseService<User> {
 
 		const updatedUser = await this.userModel.update(id, userData);
 		if (!updatedUser) throw new ServerErrorException("Failed to update user");
-		await this.invalidateCache(`users:${id}`);
-		await this.invalidateCache("users:all");
+		await this.invalidateAllCache("users");
 		return updatedUser;
 	}
 
@@ -92,8 +87,7 @@ export class UserService extends BaseService<User> {
 	async deleteUserById(id: string): Promise<User> {
 		const deletedUser = await this.userModel.delete(id);
 		if (!deletedUser) throw new ServerErrorException("Failed to delete user");
-		await this.invalidateCache(`users:${id}`);
-		await this.invalidateCache("users:all");
+		await this.invalidateAllCache("users");
 		return deletedUser;
 	}
 }
