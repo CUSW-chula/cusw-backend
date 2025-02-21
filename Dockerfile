@@ -17,14 +17,6 @@ RUN bun install
 # Generate Prisma client
 RUN bunx prisma generate
 
-RUN bun build \
---compile \
---minify-whitespace \
---minify-syntax \
---target bun \
---outfile server \
-./src/index.ts
-
 # Expose port
 EXPOSE 4000
 
