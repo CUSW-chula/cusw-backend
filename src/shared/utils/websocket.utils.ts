@@ -4,7 +4,7 @@ export class WebSocket {
 	static wss: WebSocketServer = new WebSocketServer({
 		port: 3001,
 		path: "/socket",
-    host: "0.0.0.0"
+		host: "0.0.0.0",
 	});
 
 	private static convertToJson = (data: string) => {

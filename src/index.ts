@@ -30,7 +30,7 @@ const minioClient = new Minio.Client({
 
 // Initialize Elysia app
 const app = new Elysia()
-	.use(swagger({ version: "1.0.0" }))
+	.use(swagger({ version: "2.0.0" }))
 	.use(
 		cors({
 			origin: [
