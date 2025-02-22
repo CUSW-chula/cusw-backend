@@ -398,6 +398,11 @@ export class ProjectService extends BaseService<Project> {
 		);
 		if (isMember) throw new ValidationException("User already a member");
 
+		const isProjectOwner = projectRole.find(
+			(role) => role.userId === userId && role.role === "ProjectOwner",
+		);
+		if (isProjectOwner) throw new ValidationException("Owner can't be a member");
+
 		await this.projectRoleModel.create({
 			projectId,
 			role: "Member",
