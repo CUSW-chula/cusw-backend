@@ -112,6 +112,6 @@ app.guard(
 app.listen(4000);
 
 console.info(
-	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+	`🦊 Backend v2 is running at ${app.server?.hostname}:${app.server?.port}`,
 );
 console.info("🦊 API is running at http://localhost:4000/swagger");
