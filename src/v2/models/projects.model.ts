@@ -1,5 +1,5 @@
 import { $Enums, Project, ProjectTag } from "@prisma/client";
-import type { ProjectRole } from "@prisma/client";
+import type { Prisma, ProjectRole } from "@prisma/client";
 import { BaseModel } from "../../core/model.core";
 
 export class ProjectModel extends BaseModel<Project> {
@@ -61,5 +61,13 @@ export class ProjectModel extends BaseModel<Project> {
 			where: { id },
 		});
 		return deletedUser;
+	}
+
+	async deleteProjectData(projectId: string, tx: Prisma.TransactionClient) {
+		await tx.task.deleteMany({ where: { projectId } });
+		await tx.projectRole.deleteMany({ where: { projectId } });
+		await tx.projectTag.deleteMany({ where: { projectId } });
+		await tx.pinProject.deleteMany({ where: { projectId } });
+		await tx.project.delete({ where: { id: projectId } });
 	}
 }
