@@ -64,10 +64,22 @@ export class ProjectModel extends BaseModel<Project> {
 	}
 
 	async deleteProjectData(projectId: string, tx: Prisma.TransactionClient) {
+		// Delete all dependent relations first
+		await tx.taskAssignment.deleteMany({ where: { task: { projectId } } });
+		await tx.comment.deleteMany({ where: { task: { projectId } } });
+		await tx.activity.deleteMany({ where: { task: { projectId } } });
+		await tx.emojiTaskUser.deleteMany({ where: { task: { projectId } } });
+
+		// Delete child entities
+		await tx.taskTag.deleteMany({ where: { task: { projectId } } });
+		await tx.file.deleteMany({ where: { projectId } });
 		await tx.task.deleteMany({ where: { projectId } });
+
 		await tx.projectRole.deleteMany({ where: { projectId } });
 		await tx.projectTag.deleteMany({ where: { projectId } });
 		await tx.pinProject.deleteMany({ where: { projectId } });
+
+		// Delete the project
 		await tx.project.delete({ where: { id: projectId } });
 	}
 }
