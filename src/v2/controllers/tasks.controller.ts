@@ -319,7 +319,7 @@ export const TaskController = new Elysia({
 				body.taskId,
 				body.newTaskStatus,
 			);
-			WebSocket.broadcast("status-changed", changedStatusTask);
+			WebSocket.broadcast(`status-changed:${body.taskId}`, changedStatusTask);
 
 			const assignActivity = await activityService.postActivity(
 				body.taskId,
