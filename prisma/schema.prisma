@@ -12,7 +12,8 @@ model User {
   id            String           @id @default(cuid()) 
   name          String 
   email         String           @unique 
-  projectRoles  ProjectRole[]    
+  projectRoles  ProjectRole[]   
+  admin       Boolean          @default(false) 
   assignedTasks TaskAssignment[] 
   createdTasks  Task[]           @relation("CreatedTasks") 
   uploadedFiles File[]           @relation("UploadedFiles") 
@@ -211,8 +212,6 @@ model PinProject {
 }
 
 enum Role { 
-  Admin 
-  Director 
   ProjectOwner 
   Member 
 }

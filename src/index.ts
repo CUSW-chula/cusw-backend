@@ -45,6 +45,7 @@ const app = new Elysia()
 		jwt({
 			name: "jwt",
 			secret: process.env.JWT_SECRET ?? "default token",
+			exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
 		}),
 	)
 	.decorate("db", prisma)
