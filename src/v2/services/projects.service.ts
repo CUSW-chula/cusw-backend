@@ -221,10 +221,6 @@ export class ProjectService extends BaseService<Project> {
 		const isUserExist = await this.userModel.findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
 
-		const role = await this.projectModel.findRole(userId, projectId);
-		if (role !== "ProjectOwner")
-			throw new PermissionException("You are not the owner of this project");
-
 		// Prepare the updated project object
 		const updatedProject = {
 			...existingProject,
