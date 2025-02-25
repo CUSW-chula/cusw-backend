@@ -113,6 +113,7 @@ model TaskAssignment {
 model Tag { 
   id     String  @id @default(cuid()) 
   name   String  @unique 
+  isProject Boolean @default(false)
   tasks  TaskTag[]
   projects ProjectTag[]
 
