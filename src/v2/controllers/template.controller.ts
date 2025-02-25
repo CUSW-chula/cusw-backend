@@ -23,17 +23,19 @@ export const TemplateController = new Elysia({
 		},
 	)
 	.post(
-		"/",
+		"/:projectId",
 		async ({
 			body: { file },
 			db,
 			redis,
+			params: { projectId },
 			minio,
 			cookie: { session },
 		}: Context & {
 			body: {
 				file: Blob;
 			};
+			params: { projectId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const templateService = new TemplateService(db, redis, minio);

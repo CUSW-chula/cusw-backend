@@ -266,12 +266,16 @@ export const ProjectController = new Elysia({
 	)
 
 	.patch(
-		"/owner",
+		"/owner/:projectId",
 		async ({
-			body: { userId, projectId },
+			params: { projectId },
+			body: { userId },
 			db,
 			redis,
-		}: Context & { body: { userId: string; projectId: string } }) => {
+		}: Context & {
+			body: { userId: string };
+			params: { projectId: string };
+		}) => {
 			const projectService = new ProjectService(db, redis);
 			const project = await projectService.updateProjectOwner(
 				userId,
@@ -287,7 +291,6 @@ export const ProjectController = new Elysia({
 			},
 			body: t.Object({
 				userId: t.String(),
-				projectId: t.String(),
 			}),
 		},
 	)

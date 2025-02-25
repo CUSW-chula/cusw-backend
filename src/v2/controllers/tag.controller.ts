@@ -101,7 +101,7 @@ export const TagController = new Elysia({
 		}: Context & {
 			body: { tagId: string };
 			cookie: { session: Cookie<string> };
-			param : { taskId: string };
+			param: { taskId: string };
 		}) => {
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);

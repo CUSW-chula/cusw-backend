@@ -35,7 +35,11 @@ export const CommentController = new Elysia({
 			db,
 			redis,
 			cookie: { session },
-		}: Context & { body: Partial<Comment>; cookie: { session: Cookie<string> }; params: { taskId: string } }) => {
+		}: Context & {
+			body: Partial<Comment>;
+			cookie: { session: Cookie<string> };
+			params: { taskId: string };
+		}) => {
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 
