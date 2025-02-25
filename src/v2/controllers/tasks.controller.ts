@@ -156,9 +156,10 @@ export const TaskController = new Elysia({
 		},
 	)
 	.post(
-		"/",
+		"/:projectId",
 		async ({
 			body,
+			params: { projectId },
 			db,
 			redis,
 			cookie: { session },
@@ -171,10 +172,10 @@ export const TaskController = new Elysia({
 				expense: number;
 				status: $Enums.TaskStatus;
 				parentTaskId: string;
-				projectId: string;
 				startDate: Date | null;
 				endDate: Date | null;
 			};
+			params: { projectId: string };	
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
@@ -188,7 +189,7 @@ export const TaskController = new Elysia({
 				expense: body.expense,
 				status: body.status,
 				parentTaskId: body.parentTaskId,
-				projectId: body.projectId,
+				projectId: projectId,
 				startDate: body.startDate,
 				endDate: body.endDate,
 				createdById: userId,
@@ -212,7 +213,6 @@ export const TaskController = new Elysia({
 				expense: t.Number(),
 				status: t.String(),
 				parentTaskId: t.String(),
-				projectId: t.String(),
 				startDate: t.Union([t.Date(), t.Null()]),
 				endDate: t.Union([t.Date(), t.Null()]),
 			}),
@@ -222,38 +222,39 @@ export const TaskController = new Elysia({
 		},
 	)
 	.post(
-		"/assign",
+		"/assign/:taskId",
 		async ({
+			param : { taskId },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { taskId: string; userId: string };
+			body: { userId: string };
+			param: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const assignTask = await userTaskClassService.assigningTaskToUser(
-				body.taskId,
+				taskId,
 				body.userId,
 			);
 			const usersAssign = assignTask.user;
-			WebSocket.broadcast(`assigned:${body.taskId}`, usersAssign);
-			WebSocket.broadcast(`status-changed:${body.taskId}`, assignTask.task);
+			WebSocket.broadcast(`assigned:${taskId}`, usersAssign);
+			WebSocket.broadcast(`status-changed:${taskId}`, assignTask.task);
 			const assignActivity = await activityService.postActivity(
-				body.taskId,
+				taskId,
 				$Enums.ActivityAction.ASSIGNED,
 				"this task to " + usersAssign?.name,
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskId}`, assignActivity);
+			WebSocket.broadcast(`activity:${taskId}`, assignActivity);
 			return assignTask;
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
 				userId: t.String(),
 			}),
 			detail: {
@@ -262,38 +263,39 @@ export const TaskController = new Elysia({
 		},
 	)
 	.delete(
-		"/unassigned",
+		"/unassigned/:taskId",
 		async ({
 			body,
+			param: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { taskId: string; userId: string };
+			body: { userId: string };
+			param: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const unAssignTask = await userTaskClassService.unAssigningTaskToUser(
-				body.taskId,
+				taskId,
 				body.userId,
 			);
 			const unAssignUser = unAssignTask.user;
-			WebSocket.broadcast(`unassigned:${body.taskId}`, unAssignUser);
-			WebSocket.broadcast(`status-changed:${body.taskId}`, unAssignTask.task);
+			WebSocket.broadcast(`unassigned:${taskId}`, unAssignUser);
+			WebSocket.broadcast(`status-changed:${taskId}`, unAssignTask.task);
 			const unassignActivity = await activityService.postActivity(
-				body.taskId,
+				taskId,
 				$Enums.ActivityAction.UNASSIGNED,
 				"this task from " + unAssignUser?.name,
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskId}`, unassignActivity);
+			WebSocket.broadcast(`activity:${taskId}`, unassignActivity);
 			return unAssignTask;
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
 				userId: t.String(),
 			}),
 			detail: {
@@ -302,32 +304,34 @@ export const TaskController = new Elysia({
 		},
 	)
 	.patch(
-		"/status",
+		"/status/:taskId",
 		async ({
+			param: { taskId },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { taskId: string; newTaskStatus: TaskStatus };
+			body: { newTaskStatus: TaskStatus };
+			param: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const changedStatusTask = await taskService.changeStatus(
-				body.taskId,
+				taskId,
 				body.newTaskStatus,
 			);
-			WebSocket.broadcast(`status-changed:${body.taskId}`, changedStatusTask);
+			WebSocket.broadcast(`status-changed:${taskId}`, changedStatusTask);
 
 			const assignActivity = await activityService.postActivity(
-				body.taskId,
+				taskId,
 				$Enums.ActivityAction.ADDED,
 				"this task to " + changedStatusTask.status.toLowerCase(),
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskId}`, assignActivity);
+			WebSocket.broadcast(`activity:${taskId}`, assignActivity);
 			return Response.json(
 				`task status changed to ${changedStatusTask.status}`,
 				{ status: 200 },
@@ -335,7 +339,6 @@ export const TaskController = new Elysia({
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
 				newTaskStatus: t.String(),
 			}),
 			detail: {
@@ -344,14 +347,16 @@ export const TaskController = new Elysia({
 		},
 	)
 	.post(
-		"/emoji",
+		"/emoji/:taskId",
 		async ({
 			body,
 			db,
 			redis,
+			param : { taskId },
 			cookie: { session },
 		}: Context & {
-			body: { taskId: string; emoji: string };
+			body: { emoji: string };
+			param: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const emojiClassService = new EmojiClassService(db, redis);
@@ -359,14 +364,13 @@ export const TaskController = new Elysia({
 			const newEmoji = await emojiClassService.addEmojiOnTask(
 				body.emoji,
 				userId,
-				body.taskId,
+				taskId,
 			);
 			WebSocket.broadcast("addEmoji", newEmoji);
 			return newEmoji;
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
 				emoji: t.String(),
 			}),
 			detail: {
@@ -400,22 +404,24 @@ export const TaskController = new Elysia({
 		},
 	)
 	.patch(
-		"/emoji",
+		"/emoji/:taskId",
 		async ({
 			body,
+			param : { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: EmojiTaskUser;
+			body: Partial<EmojiTaskUser>;
+			param: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const emojiClassService = new EmojiClassService(db, redis);
 			const userId = session.value;
 			const emoji = await emojiClassService.updateEmojiByTaskId(
-				body.emoji,
+				body.emoji ?? "",
 				userId,
-				body.taskId,
+				taskId
 			);
 			WebSocket.broadcast("updateEmoji", emoji);
 			return Response.json("Success" + emoji, { status: 200 });
@@ -423,7 +429,6 @@ export const TaskController = new Elysia({
 		{
 			body: t.Object({
 				emoji: t.String(),
-				taskId: t.String(),
 			}),
 			detail: {
 				tags: ["Emoji", "Version 2"],
@@ -468,26 +473,27 @@ export const TaskController = new Elysia({
 		},
 	)
 	.post(
-		"/money",
+		"/money/:taskId",
 		async ({
 			body,
+			param: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: {
-				taskID: string;
 				budget: number;
 				advance: number;
 				expense: number;
 			};
+			param: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const addMoney = await moneyClassService.addMoney(
-				body.taskID,
+				taskId,
 				body.budget,
 				body.advance,
 				body.expense,
@@ -499,7 +505,7 @@ export const TaskController = new Elysia({
 			if (body.expense) moneyDetails.push(`expense ${body.expense}`);
 			const formatMoney = (amount: number) => amount.toLocaleString("en-US");
 			const addMoneyActivity = await activityService.postActivity(
-				body.taskID,
+				taskId,
 				$Enums.ActivityAction.ADDED,
 				"this task with " +
 					moneyDetails
@@ -510,12 +516,11 @@ export const TaskController = new Elysia({
 					" Baht",
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskID}`, addMoneyActivity);
+			WebSocket.broadcast(`activity:${taskId}`, addMoneyActivity);
 			return Response.json("Success", { status: 200 });
 		},
 		{
 			body: t.Object({
-				taskID: t.String(),
 				budget: t.Number(),
 				advance: t.Number(),
 				expense: t.Number(),
@@ -528,39 +533,37 @@ export const TaskController = new Elysia({
 	)
 
 	.delete(
-		"/money",
+		"/money/:taskId",
 		async ({
-			body,
+			param: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { taskID: string };
 			cookie: { session: Cookie<string> };
+			param : { taskId: string };
 		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const deleteMoney = await moneyClassService.deleteMoney(
-				body.taskID,
+				taskId,
 				0,
 				0,
 				0,
 			);
 			WebSocket.broadcast("deleteMoney", deleteMoney);
 			const deleteMoneyActivity = await activityService.postActivity(
-				body.taskID,
+				taskId,
 				$Enums.ActivityAction.DELETED,
 				"this task money",
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskID}`, deleteMoneyActivity);
+			WebSocket.broadcast(`activity:${taskId}`, deleteMoneyActivity);
 			return Response.json("Success", { status: 200 });
 		},
 		{
-			body: t.Object({
-				taskID: t.String(),
-			}),
+
 			detail: {
 				tags: ["Money", "Version 2"],
 				summary: "Delete money from task",
@@ -568,21 +571,22 @@ export const TaskController = new Elysia({
 		},
 	)
 	.patch(
-		"/date",
+		"/date/:taskId",
 		async ({
 			body,
+			param: { taskId },
 			db,
 			redis,
 		}: Context & {
 			body: {
-				taskID: string;
 				startDate: Date | null;
 				endDate: Date | null;
 			};
+			param: { taskId: string };
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const updateDate = await taskService.updateDate(
-				body.taskID,
+				taskId,
 				body.startDate,
 				body.endDate,
 			);
@@ -591,7 +595,6 @@ export const TaskController = new Elysia({
 		},
 		{
 			body: t.Object({
-				taskID: t.String(),
 				startDate: t.Union([t.Date(), t.Null()]),
 				endDate: t.Union([t.Date(), t.Null()]),
 			}),
