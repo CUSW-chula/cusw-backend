@@ -17,6 +17,8 @@ RUN bun install
 # Generate Prisma client
 RUN bunx prisma generate
 
+ENV NODE_ENV=production
+
 # Expose port
 EXPOSE 4000
 
