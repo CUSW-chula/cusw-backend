@@ -1,7 +1,7 @@
 import { type Cookie, Elysia, t } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
-import { WebSocket } from "../../shared/utils/websocket.utils";
+import {WebSocket as WebSocket} from "../../shared/utils/websocket.utils";
 import { UserService } from "../services/users.service";
 import { PermissionException } from "../../core/exception.core";
 
@@ -110,8 +110,8 @@ export const ProjectController = new Elysia({
 			body: t.Object({
 				title: t.Optional(t.String()),
 				description: t.Optional(t.String()),
-				startDate: t.Optional(t.Union([t.Date(), t.Null()])),
-				endDate: t.Optional(t.Union([t.Date(), t.Null()])),
+				startDate: t.Optional(t.Date()),
+				endDate: t.Optional(t.Date()),
 			}),
 			detail: {
 				summary: "Update a project",
@@ -268,10 +268,10 @@ export const ProjectController = new Elysia({
 	.patch(
 		"/owner",
 		async ({
-			query: { userId, projectId },
+			body: { userId, projectId },
 			db,
 			redis,
-		}: Context & { query: { userId: string; projectId: string } }) => {
+		}: Context & { body: { userId: string; projectId: string } }) => {
 			const projectService = new ProjectService(db, redis);
 			const project = await projectService.updateProjectOwner(
 				userId,
@@ -285,6 +285,7 @@ export const ProjectController = new Elysia({
 			detail: {
 				summary: "Change project owner",
 			},
+			body: t.Object()
 		},
 	)
 	.post(
@@ -355,7 +356,7 @@ export const ProjectController = new Elysia({
 
 			if (!project.owner.some((user) => user?.id === session.value)) {
 				throw new PermissionException(
-					"Forbidden: Only the project owner can unassign members.",
+					"Forbidden: Only the project owner can assign members.",
 				);
 			}
 

@@ -102,10 +102,6 @@ export class TagService extends BaseService<Tag> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
-		const isUserCreatedTask = isTaskExist.createdById === userId;
-		if (!isUserCreatedTask)
-			throw new PermissionException("You are not the creator of this task");
-
 		// Check for duplicate tag assignment
 		const tagExist = await this.taskTagModel.findByTaskIdAndTagId(
 			taskId,

@@ -64,8 +64,7 @@ export class ProjectService extends BaseService<Project> {
 
 		if (user?.admin) {
 			projectsFromDB = await this.projectModel.findAll();
-		}
-		else {
+		} else {
 			projectsFromDB = await this.projectModel.findByUserId(userId);
 		}
 
