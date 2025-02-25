@@ -285,7 +285,10 @@ export const ProjectController = new Elysia({
 			detail: {
 				summary: "Change project owner",
 			},
-			body: t.Object()
+			body: t.Object({
+				userId: t.String(),
+				projectId: t.String(),
+			})
 		},
 	)
 	.post(
