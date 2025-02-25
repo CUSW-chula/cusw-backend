@@ -54,31 +54,21 @@ export class ProjectService extends BaseService<Project> {
 	async getAllProjects(userId: string): Promise<Project[]> {
 		const cacheKey = this.getProjectCacheKey(userId);
 		const cacheProject = await this.getFromCache(cacheKey);
+		const user = await this.userModel.findById(userId);
+
+		let projectsFromDB;
+
 		if (cacheProject) {
 			return cacheProject as Project[];
 		}
 
-		const projectsFromDB = await this.projectModel.findAll();
-		const projects: Project[] = (
-			await Promise.all(
-				projectsFromDB.map(async (project) => {
-					const projectDetail = await this.getProjectById(userId, project.id);
-					if (projectDetail !== null) return projectDetail;
-				}),
-			)
-		).filter((project): project is Project => project !== undefined);
-		await this.setToCache(cacheKey, projects);
-		return projects;
-	}
-
-	async getAllProjectsByUserId(userId: string): Promise<Project[]> {
-		const cacheKey = this.getProjectCacheKey(userId);
-		const cacheProject = await this.getFromCache(cacheKey);
-		if (cacheProject) {
-			return cacheProject as Project[];
+		if (user?.admin) {
+			projectsFromDB = await this.projectModel.findAll();
+		}
+		else {
+			projectsFromDB = await this.projectModel.findByUserId(userId);
 		}
 
-		const projectsFromDB = await this.projectModel.findByUserId(userId);
 		const projects: Project[] = (
 			await Promise.all(
 				projectsFromDB.map(async (project) => {
