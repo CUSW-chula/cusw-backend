@@ -13,6 +13,19 @@ export class ProjectModel extends BaseModel<Project> {
 		return project;
 	}
 
+	async findByUserId(userId: string): Promise<Project[]> {
+		const projects = await this.getModel().project.findMany({
+			where: {
+				projectRoles: {
+					some: {
+						userId: userId,
+					},
+				},
+			},
+		});
+		return projects;
+	}
+
 	async findTag(id: string): Promise<ProjectTag[] | null> {
 		const tags = await this.getModel().projectTag.findMany({
 			where: {
