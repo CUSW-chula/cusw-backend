@@ -376,12 +376,17 @@ export const TaskController = new Elysia({
 		},
 	)
 	.get(
-		"/emoji/:taskId/:userId",
+		"/emoji/:taskId",
 		async ({
-			params: { taskId, userId },
+			params: { taskId },
 			db,
+			cookie: { session },
 			redis,
-		}: Context & { params: { taskId: string; userId: string } }) => {
+		}: Context & {
+			params: { taskId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const userId = session.value;
 			const emojiClassService = new EmojiClassService(db, redis);
 			const check: Boolean =
 				await emojiClassService.checkEmojiUserIdAndByTaskId(taskId, userId);
