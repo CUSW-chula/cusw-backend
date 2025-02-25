@@ -114,7 +114,7 @@ export const TaskController = new Elysia({
 				body.title,
 				body.description,
 			);
-			WebSocket.broadcast("taskid edited", updateTaskId);
+			WebSocket.broadcast(`title:${id}`, updateTaskId);
 			return updateTaskId;
 		},
 		{
