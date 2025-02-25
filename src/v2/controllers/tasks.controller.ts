@@ -175,7 +175,7 @@ export const TaskController = new Elysia({
 				startDate: Date | null;
 				endDate: Date | null;
 			};
-			params: { projectId: string };	
+			params: { projectId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
@@ -224,7 +224,7 @@ export const TaskController = new Elysia({
 	.post(
 		"/assign/:taskId",
 		async ({
-			param : { taskId },
+			param: { taskId },
 			body,
 			db,
 			redis,
@@ -352,7 +352,7 @@ export const TaskController = new Elysia({
 			body,
 			db,
 			redis,
-			param : { taskId },
+			param: { taskId },
 			cookie: { session },
 		}: Context & {
 			body: { emoji: string };
@@ -407,7 +407,7 @@ export const TaskController = new Elysia({
 		"/emoji/:taskId",
 		async ({
 			body,
-			param : { taskId },
+			param: { taskId },
 			db,
 			redis,
 			cookie: { session },
@@ -421,7 +421,7 @@ export const TaskController = new Elysia({
 			const emoji = await emojiClassService.updateEmojiByTaskId(
 				body.emoji ?? "",
 				userId,
-				taskId
+				taskId,
 			);
 			WebSocket.broadcast("updateEmoji", emoji);
 			return Response.json("Success" + emoji, { status: 200 });
@@ -541,17 +541,12 @@ export const TaskController = new Elysia({
 			cookie: { session },
 		}: Context & {
 			cookie: { session: Cookie<string> };
-			param : { taskId: string };
+			param: { taskId: string };
 		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
-			const deleteMoney = await moneyClassService.deleteMoney(
-				taskId,
-				0,
-				0,
-				0,
-			);
+			const deleteMoney = await moneyClassService.deleteMoney(taskId, 0, 0, 0);
 			WebSocket.broadcast("deleteMoney", deleteMoney);
 			const deleteMoneyActivity = await activityService.postActivity(
 				taskId,
@@ -563,7 +558,6 @@ export const TaskController = new Elysia({
 			return Response.json("Success", { status: 200 });
 		},
 		{
-
 			detail: {
 				tags: ["Money", "Version 2"],
 				summary: "Delete money from task",
