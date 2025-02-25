@@ -17,6 +17,7 @@ export type User = {
 export type Tag = {
 	id: string;
 	name: string;
+	isProject: boolean;
 } | null;
 
 export type Task = {
