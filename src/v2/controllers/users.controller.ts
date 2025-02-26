@@ -34,6 +34,17 @@ export const UserController = new Elysia({
 			return await userService.getUserByEmail(id);
 		},
 	)
+	.get(
+		"/project/:projectId",
+		async ({
+			params: { projectId },
+			db,
+			redis,
+		}: Context & { params: { projectId: string } }) => {
+			const userService = new UserService(db, redis);
+			return await userService.getAllByProjectId(projectId);
+		},
+	)
 	// Create a new user
 	.post(
 		"/",

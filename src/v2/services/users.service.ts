@@ -7,13 +7,16 @@ import {
 	ServerErrorException,
 	ValidationException,
 } from "../../core/exception.core";
+import { ProjectRoleModel } from "../models/project-role.model";
 
 export class UserService extends BaseService<User> {
 	private readonly userModel: UserModel;
+	private readonly projectRoleModel: ProjectRoleModel;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
 		this.userModel = new UserModel(prisma);
+		this.projectRoleModel = new ProjectRoleModel(prisma);
 	}
 
 	// Email validation method
@@ -31,7 +34,20 @@ export class UserService extends BaseService<User> {
 		const users = await this.userModel.findAll();
 		if (!users) throw new NotFoundException("No users found");
 		await this.setToCache(cacheKey, users);
-		return users;
+		return users.filter((user): user is User => user !== null);
+	}
+
+	async getAllByProjectId(projectId: string): Promise<User[]> {
+		const usersFromDB = await this.projectRoleModel.findByProjectId(projectId);
+		if (!usersFromDB) throw new NotFoundException("No users found for the given project ID");
+		const users = await Promise.all(
+			usersFromDB.map(async (user) => {
+				const userDetail = await this.getUserById(user.userId);
+				return userDetail;
+			}),
+		);
+		if (!users) throw new NotFoundException("No users found");
+		return users.filter((user): user is User => user !== null);
 	}
 
 	// Fetch user by email
