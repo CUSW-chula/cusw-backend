@@ -43,7 +43,13 @@ export const CommentController = new Elysia({
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 
-			const comment = await commentService.addComment(body, userId);
+			const comment = await commentService.addComment(
+				{
+					taskId: taskId,
+					...body,
+				},
+				userId,
+			);
 			WebSocket.broadcast(`comment:${taskId}`, comment);
 			return comment;
 		},
