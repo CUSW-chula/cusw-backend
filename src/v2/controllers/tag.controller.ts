@@ -67,14 +67,14 @@ export const TagController = new Elysia({
 		"/assign/:taskId",
 		async ({
 			body,
-			param: { taskId },
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: { tagid: string; tagId: string };
 			cookie: { session: Cookie<string> };
-			param: { taskId: string };
+			params: { taskId: string };
 		}) => {
 			//const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
