@@ -152,6 +152,7 @@ export class TaskService extends BaseService<Task> {
 				endDate: task.endDate,
 				status: task.status,
 				parentTaskId: task.parentTaskId !== "" ? task.parentTaskId : undefined,
+				statusBudgets: task.statusBudgets,
 				budget: task.budget,
 				advance: task.advance,
 				expense: task.expense,

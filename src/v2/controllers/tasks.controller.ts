@@ -171,6 +171,7 @@ export const TaskController = new Elysia({
 				advance: number;
 				expense: number;
 				status: $Enums.TaskStatus;
+				statusBudgets: $Enums.BudgetStatus
 				parentTaskId: string;
 				startDate: Date | null;
 				endDate: Date | null;
@@ -187,6 +188,7 @@ export const TaskController = new Elysia({
 				budget: body.budget,
 				advance: body.advance,
 				expense: body.expense,
+				statusBudgets: body.statusBudgets,
 				status: body.status,
 				parentTaskId: body.parentTaskId,
 				projectId: projectId,
@@ -211,6 +213,7 @@ export const TaskController = new Elysia({
 				budget: t.Number(),
 				advance: t.Number(),
 				expense: t.Number(),
+				statusBudgets: t.String(),
 				status: t.String(),
 				parentTaskId: t.String(),
 				startDate: t.Union([t.Date(), t.Null()]),

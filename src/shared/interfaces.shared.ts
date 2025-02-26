@@ -38,6 +38,7 @@ export type Task = {
 	budget: number;
 	advance: number;
 	status: $Enums.TaskStatus;
+	statusBudgets: $Enums.BudgetStatus;
 	subtasks: Task[];
 	emojis: Emoji[];
 };
