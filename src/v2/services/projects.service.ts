@@ -291,13 +291,6 @@ export class ProjectService extends BaseService<Project> {
 			const project = await tx.project.findUnique({ where: { id: projectId } });
 			if (!project) throw new NotFoundException(`Project not found`);
 
-			// Check if user is the owner
-			const role = await tx.projectRole.findFirst({
-				where: { projectId, userId },
-			});
-			if (!role || role.role !== "ProjectOwner") {
-				throw new PermissionException("You are not the owner");
-			}
 
 			// Call Model to delete
 			await this.projectModel.deleteProjectData(projectId, tx);

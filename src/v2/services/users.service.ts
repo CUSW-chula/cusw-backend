@@ -39,7 +39,8 @@ export class UserService extends BaseService<User> {
 
 	async getAllByProjectId(projectId: string): Promise<User[]> {
 		const usersFromDB = await this.projectRoleModel.findByProjectId(projectId);
-		if (!usersFromDB) throw new NotFoundException("No users found for the given project ID");
+		if (!usersFromDB)
+			throw new NotFoundException("No users found for the given project ID");
 		const users = await Promise.all(
 			usersFromDB.map(async (user) => {
 				const userDetail = await this.getUserById(user.userId);
