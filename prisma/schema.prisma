@@ -13,7 +13,8 @@ model User {
   name          String 
   email         String           @unique 
   projectRoles  ProjectRole[]   
-  admin       Boolean          @default(false) 
+  admin       Boolean          @default(false)
+  activated   Boolean          @default(true) 
   assignedTasks TaskAssignment[] 
   createdTasks  Task[]           @relation("CreatedTasks") 
   uploadedFiles File[]           @relation("UploadedFiles") 

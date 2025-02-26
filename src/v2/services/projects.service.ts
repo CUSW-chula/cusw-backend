@@ -291,7 +291,6 @@ export class ProjectService extends BaseService<Project> {
 			const project = await tx.project.findUnique({ where: { id: projectId } });
 			if (!project) throw new NotFoundException(`Project not found`);
 
-
 			// Call Model to delete
 			await this.projectModel.deleteProjectData(projectId, tx);
 		});

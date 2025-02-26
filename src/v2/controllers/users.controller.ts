@@ -62,4 +62,44 @@ export const UserController = new Elysia({
 				email: t.String(),
 			}),
 		},
+	)
+	.patch(
+		"/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { isAdmin: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.changeAdmin(userid, body.isAdmin);
+		},
+		{
+			body: t.Object({
+				isAdmin: t.Boolean(),
+			}),
+		},
+	)
+	.delete(
+		"/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { isActive: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.activeUser(userid, body.isActive);
+		},
+		{
+			body: t.Object({
+				isActive: t.Boolean(),
+			}),
+		},
 	);
