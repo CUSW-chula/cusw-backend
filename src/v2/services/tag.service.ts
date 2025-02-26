@@ -44,6 +44,15 @@ export class TagService extends BaseService<Tag> {
 		return tags;
 	}
 
+	async createTag(name: string, isProject: boolean): Promise<Tag> {
+		const tag = await this.tagModel.create({
+			name: name ?? "",
+			isProject: isProject,
+		});
+		await this.invalidateAllCache("tag");
+		return tag;
+	}
+
 	// Retrieve all tags assigned to a specific task by task ID
 	async getAsignTagInTaskByTaskId(taskId: string): Promise<Tag[]> {
 		// Check if the task exists

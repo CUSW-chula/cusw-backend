@@ -38,7 +38,19 @@ export const TagController = new Elysia({
 			return tags;
 		},
 	)
-
+	.post(
+		"/",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & { body: { name: string; isProject: boolean } }) => {
+			const tagService = new TagService(db, redis);
+			const tag = await tagService.createTag(body.name, body.isProject);
+			return tag;
+		},
+		{ body: t.Object({ name: t.String(), isProject: t.Boolean() }) },
+	)
 	.get(
 		"/getassigntask/:tagId",
 		async ({

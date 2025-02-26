@@ -10,11 +10,11 @@ export class TagModel extends BaseModel<Tag> {
 		const tags = await this.getModel().tag.findUnique({ where: { id } });
 		return tags;
 	}
-	async create(data: Tag): Promise<Tag> {
+	async create(data: Partial<Tag>): Promise<Tag> {
 		const createdTags = await this.getModel().tag.create({
 			data: {
-				name: data.name,
-				id: data.name,
+				name: data.name ?? "",
+				isProject: data.isProject,
 			},
 		});
 		return createdTags;

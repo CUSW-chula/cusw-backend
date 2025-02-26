@@ -9,12 +9,6 @@ import {
 	ValidationException,
 } from "../../core/exception.core";
 import { TasksModel } from "../models/tasks.model";
-import { ActivityLogsModel } from "../models/activity-logs.model";
-import { CommentModel } from "../models/comment.model";
-import { EmojiModel } from "../models/emoji.model";
-import { FilesModel } from "../models/files.model";
-import { TaskTagModel } from "../models/task-tag.model";
-import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { UserModel } from "../models/users.model";
 import { Project, Task, User } from "../../shared/interfaces.shared";
 import { ProjectTagModel } from "../models/project-tag.model";
