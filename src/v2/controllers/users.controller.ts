@@ -83,8 +83,8 @@ export const UserController = new Elysia({
 			}),
 		},
 	)
-	.delete(
-		"/:userid",
+	.patch(
+		"/activate/:userid",
 		async ({
 			params: { userid },
 			body,
