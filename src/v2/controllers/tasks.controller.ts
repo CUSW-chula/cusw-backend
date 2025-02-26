@@ -224,14 +224,14 @@ export const TaskController = new Elysia({
 	.post(
 		"/assign/:taskId",
 		async ({
-			param: { taskId },
+			params: { taskId },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: { userId: string };
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
