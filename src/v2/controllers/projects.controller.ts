@@ -269,7 +269,7 @@ export const ProjectController = new Elysia({
 		"/owner/:projectId",
 		async ({
 			params: { projectId },
-			body: { userId },
+			body,
 			db,
 			redis,
 		}: Context & {
@@ -278,7 +278,7 @@ export const ProjectController = new Elysia({
 		}) => {
 			const projectService = new ProjectService(db, redis);
 			const project = await projectService.updateProjectOwner(
-				userId,
+				body.userId,
 				projectId,
 			);
 			const owner = project.owner;
