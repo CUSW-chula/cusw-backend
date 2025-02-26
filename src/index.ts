@@ -56,7 +56,7 @@ const app = new Elysia()
 app.get("sign/:email", async ({ jwt, params }) => {
 	const userService = new UserService(prisma, redis);
 	const userId = await userService.getUserByEmail(params.email);
-	if (!userId?.id) {
+	if (!userId?.id || userId.activated === false) {
 		throw new Error("User ID is undefined");
 	}
 	const auth = await jwt.sign({ id: userId.id });

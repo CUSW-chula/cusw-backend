@@ -114,7 +114,7 @@ export const TaskController = new Elysia({
 				body.title,
 				body.description,
 			);
-			WebSocket.broadcast("taskid edited", updateTaskId);
+			WebSocket.broadcast(`title:${id}`, updateTaskId);
 			return updateTaskId;
 		},
 		{
@@ -171,7 +171,7 @@ export const TaskController = new Elysia({
 				advance: number;
 				expense: number;
 				status: $Enums.TaskStatus;
-				statusBudgets: $Enums.BudgetStatus
+				statusBudgets: $Enums.BudgetStatus;
 				parentTaskId: string;
 				startDate: Date | null;
 				endDate: Date | null;
