@@ -64,7 +64,7 @@ export const UserController = new Elysia({
 		},
 	)
 	.patch(
-		"/:userid",
+		"/role/:userid",
 		async ({
 			params: { userid },
 			body,
