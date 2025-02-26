@@ -224,14 +224,14 @@ export const TaskController = new Elysia({
 	.post(
 		"/assign/:taskId",
 		async ({
-			param: { taskId },
+			params: { taskId },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: { userId: string };
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
@@ -266,13 +266,13 @@ export const TaskController = new Elysia({
 		"/unassigned/:taskId",
 		async ({
 			body,
-			param: { taskId },
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: { userId: string };
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const userTaskClassService = new UserTaskClassService(db, redis);
@@ -306,14 +306,14 @@ export const TaskController = new Elysia({
 	.patch(
 		"/status/:taskId",
 		async ({
-			param: { taskId },
+			params: { taskId },
 			body,
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: { newTaskStatus: TaskStatus };
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
@@ -352,11 +352,11 @@ export const TaskController = new Elysia({
 			body,
 			db,
 			redis,
-			param: { taskId },
+			params: { taskId },
 			cookie: { session },
 		}: Context & {
 			body: { emoji: string };
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const emojiClassService = new EmojiClassService(db, redis);
@@ -407,13 +407,13 @@ export const TaskController = new Elysia({
 		"/emoji/:taskId",
 		async ({
 			body,
-			param: { taskId },
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			body: Partial<EmojiTaskUser>;
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const emojiClassService = new EmojiClassService(db, redis);
@@ -476,7 +476,7 @@ export const TaskController = new Elysia({
 		"/money/:taskId",
 		async ({
 			body,
-			param: { taskId },
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
@@ -486,7 +486,7 @@ export const TaskController = new Elysia({
 				advance: number;
 				expense: number;
 			};
-			param: { taskId: string };
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
@@ -535,13 +535,13 @@ export const TaskController = new Elysia({
 	.delete(
 		"/money/:taskId",
 		async ({
-			param: { taskId },
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
 			cookie: { session: Cookie<string> };
-			param: { taskId: string };
+			params: { taskId: string };
 		}) => {
 			const moneyClassService = new MoneyClassService(db, redis);
 			const activityService = new ActivityService(db, redis);
@@ -568,7 +568,7 @@ export const TaskController = new Elysia({
 		"/date/:taskId",
 		async ({
 			body,
-			param: { taskId },
+			params: { taskId },
 			db,
 			redis,
 		}: Context & {
@@ -576,7 +576,7 @@ export const TaskController = new Elysia({
 				startDate: Date | null;
 				endDate: Date | null;
 			};
-			param: { taskId: string };
+			params: { taskId: string };
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const updateDate = await taskService.updateDate(
