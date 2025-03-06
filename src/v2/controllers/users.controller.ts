@@ -56,7 +56,7 @@ export const UserController = new Elysia({
 			const userService = new UserService(db, redis);
 			return await userService.createNewUser({
 				email: body.email,
-				name: body.name
+				name: body.name,
 			});
 		},
 		{
