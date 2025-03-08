@@ -110,6 +110,9 @@ app.guard(
 			}),
 );
 
+console.log("cert path", process.env.CERT_PATH);
+console.log("key path", process.env.KEY_PATH);
+
 const server = Bun.serve({
 	port: 4000,
 	fetch: app.fetch,
