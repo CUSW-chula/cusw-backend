@@ -5,6 +5,7 @@ import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
 import cors from "@elysiajs/cors";
+import { readFileSync } from "fs";
 import jwt from "@elysiajs/jwt";
 import { Exception, UnauthorizedException } from "./core/exception.core";
 
@@ -113,8 +114,8 @@ const server = Bun.serve({
 	port: 4000,
 	fetch: app.fetch,
 	tls: {
-		cert: Bun.file(process.env.CERT_PATH || "cert.pem"),
-		key: Bun.file(process.env.KEY_PATH || "key.pem"),
+		cert: readFileSync(process.env.CERT_PATH || "cert.pem"),
+		key: readFileSync(process.env.KEY_PATH || "key.pem"),
 	},
 } as any);
 
