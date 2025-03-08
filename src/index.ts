@@ -5,7 +5,6 @@ import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
 import cors from "@elysiajs/cors";
-import { readFileSync } from "fs";
 import jwt from "@elysiajs/jwt";
 import { Exception, UnauthorizedException } from "./core/exception.core";
 
@@ -110,20 +109,8 @@ app.guard(
 			}),
 );
 
-const certBase64 = process.env.CERT_PATH ?? "";
-const keyBase64 = process.env.KEY_PATH ?? "";
-
-const cert = Buffer.from(certBase64, 'base64').toString('utf8');
-const key = Buffer.from(keyBase64, 'base64').toString('utf8');
-
-const server = Bun.serve({
-	port: 4000,
-	fetch: app.fetch,
-	tls: {
-		cert: cert,
-		key: key,
-	},
-} as any);
+// Start the server
+app.listen(4000);
 
 console.info(
 	`🦊 Backend v3 is running at ${app.server?.hostname}:${app.server?.port}`,
