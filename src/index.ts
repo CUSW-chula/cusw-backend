@@ -114,8 +114,8 @@ const server = Bun.serve({
 	port: 4000,
 	fetch: app.fetch,
 	tls: {
-		cert: readFileSync(process.env.CERT_PATH || "cert.pem"),
-		key: readFileSync(process.env.KEY_PATH || "key.pem"),
+		cert: process.env.CERT_PATH,
+		key: process.env.KEY_PATH,
 	},
 } as any);
 
