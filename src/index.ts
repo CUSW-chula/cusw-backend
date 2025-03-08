@@ -110,15 +110,18 @@ app.guard(
 			}),
 );
 
-console.log("cert path", process.env.CERT_PATH);
-console.log("key path", process.env.KEY_PATH);
+const certBase64 = process.env.CERT_PATH ?? "";
+const keyBase64 = process.env.KEY_PATH ?? "";
+
+const cert = Buffer.from(certBase64, 'base64').toString('utf8');
+const key = Buffer.from(keyBase64, 'base64').toString('utf8');
 
 const server = Bun.serve({
 	port: 4000,
 	fetch: app.fetch,
 	tls: {
-		cert: process.env.CERT_PATH,
-		key: process.env.KEY_PATH,
+		cert: cert,
+		key: key,
 	},
 } as any);
 
