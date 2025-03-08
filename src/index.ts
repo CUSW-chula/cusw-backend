@@ -109,8 +109,14 @@ app.guard(
 			}),
 );
 
-// Start the server
-app.listen(4000);
+const server = Bun.serve({
+	port: 4000,
+	fetch: app.fetch,
+	tls: {
+		cert: Bun.file(process.env.CERT_PATH || "cert.pem"),
+		key: Bun.file(process.env.KEY_PATH || "key.pem"),
+	},
+} as any);
 
 console.info(
 	`🦊 Backend v3 is running at ${app.server?.hostname}:${app.server?.port}`,
