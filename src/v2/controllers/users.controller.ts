@@ -87,6 +87,26 @@ export const UserController = new Elysia({
 		},
 	)
 	.patch(
+		"/head/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { isHead: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.changeHead(userid, body.isHead);
+		},
+		{
+			body: t.Object({
+				isHead: t.Boolean(),
+			}),
+		},
+	)
+	.patch(
 		"/activate/:userid",
 		async ({
 			params: { userid },
