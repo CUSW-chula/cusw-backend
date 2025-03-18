@@ -74,6 +74,13 @@ export class UserService extends BaseService<User> {
 		return updatedUser;
 	}
 
+	async changeHead(userId: string, isHead: boolean): Promise<User> {
+		const updatedUser = await this.userModel.update(userId, { head: isHead });
+		if (!updatedUser) throw new NotFoundException("User not found");
+		await this.invalidateAllCache("users");
+		return updatedUser;
+	}
+
 	// Fetch user by ID with caching
 	async getUserById(id: string): Promise<User | null> {
 		const cacheKey = this.getTaskCacheKey(id);
