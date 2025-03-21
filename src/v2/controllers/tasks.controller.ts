@@ -43,6 +43,24 @@ export const TaskController = new Elysia({
 		},
 	)
 	.get(
+		"/user/:userid",
+		async ({
+			params: { userid },
+			db,
+			redis,
+		}: Context & { params: { userid: string } }) => {
+			const taskService = new TaskService(db, redis);
+			const tasks = await taskService.getTaskByUserId(userid);
+			return tasks;
+		},
+		{
+			detail: {
+				summary: "Get task by User id with detail (creator and members)",
+			},
+		},
+	)
+
+	.get(
 		"/project/:projectid",
 		async ({
 			params: { projectid },

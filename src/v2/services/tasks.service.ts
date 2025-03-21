@@ -181,6 +181,19 @@ export class TaskService extends BaseService<Task> {
 		throw new ValidationException("Title cann't be null");
 	}
 
+	async getTaskByUserId(userId: string): Promise<Task[]> {
+		const tasks = await this.taskAssignmentModel.findByUserId(userId);
+		if (!tasks) [];
+
+		const tasksWithDetail = await Promise.all(
+			tasks.map(async (task) => {
+				return await this.getTaskById(task.taskId);
+			}),
+		);
+		// console.info("tasksWithDetail",tasksWithDetail)
+		return tasksWithDetail;
+	}
+
 	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
 		const tasks = await this.taskModel.findByProjectId(projectIdId);
 		if (!tasks) [];
