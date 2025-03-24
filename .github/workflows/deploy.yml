@@ -52,7 +52,6 @@ jobs:
       - name: Build Docker image
         run: |
           docker build . \
-            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL }} \
             -t bunnybunbun37204/cusw-backend:${{ env.TAG }}
 
       # Step 7: Push Docker image to Docker Hub

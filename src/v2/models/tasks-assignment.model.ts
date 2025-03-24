@@ -23,6 +23,15 @@ export class TasksAssignmentModel extends BaseModel<TaskAssignment> {
 		return taskAssignment;
 	}
 
+	async findByUserId(userId: string): Promise<TaskAssignment[]> {
+		const taskAssignment = await this.getModel().taskAssignment.findMany({
+			where: {
+				userId: userId,
+			},
+		});
+		return taskAssignment;
+	}
+
 	async findByTaskIdAndUserId(
 		taskId: string,
 		userId: string,
@@ -63,6 +72,14 @@ export class TasksAssignmentModel extends BaseModel<TaskAssignment> {
 			where: { id },
 		});
 		return deletedTaskAssignment;
+	}
+
+	async deleteByUserId(userId: string): Promise<number> {
+		const deletedTaskAssignment =
+			await this.getModel().taskAssignment.deleteMany({
+				where: { userId: userId },
+			});
+		return deletedTaskAssignment.count;
 	}
 
 	async deleteByTaskId(taskId: string): Promise<number> {

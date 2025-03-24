@@ -1,5 +1,5 @@
 import { $Enums, Project, ProjectTag } from "@prisma/client";
-import type { ProjectRole } from "@prisma/client";
+import type { Prisma, ProjectRole } from "@prisma/client";
 import { BaseModel } from "../../core/model.core";
 
 export class ProjectModel extends BaseModel<Project> {
@@ -11,6 +11,19 @@ export class ProjectModel extends BaseModel<Project> {
 	async findById(id: string): Promise<Project | null> {
 		const project = await this.getModel().project.findUnique({ where: { id } });
 		return project;
+	}
+
+	async findByUserId(userId: string): Promise<Project[]> {
+		const projects = await this.getModel().project.findMany({
+			where: {
+				projectRoles: {
+					some: {
+						userId: userId,
+					},
+				},
+			},
+		});
+		return projects;
 	}
 
 	async findTag(id: string): Promise<ProjectTag[] | null> {
@@ -61,5 +74,25 @@ export class ProjectModel extends BaseModel<Project> {
 			where: { id },
 		});
 		return deletedUser;
+	}
+
+	async deleteProjectData(projectId: string, tx: Prisma.TransactionClient) {
+		// Delete all dependent relations first
+		await tx.taskAssignment.deleteMany({ where: { task: { projectId } } });
+		await tx.comment.deleteMany({ where: { task: { projectId } } });
+		await tx.activity.deleteMany({ where: { task: { projectId } } });
+		await tx.emojiTaskUser.deleteMany({ where: { task: { projectId } } });
+
+		// Delete child entities
+		await tx.taskTag.deleteMany({ where: { task: { projectId } } });
+		await tx.file.deleteMany({ where: { projectId } });
+		await tx.task.deleteMany({ where: { projectId } });
+
+		await tx.projectRole.deleteMany({ where: { projectId } });
+		await tx.projectTag.deleteMany({ where: { projectId } });
+		await tx.pinProject.deleteMany({ where: { projectId } });
+
+		// Delete the project
+		await tx.project.delete({ where: { id: projectId } });
 	}
 }

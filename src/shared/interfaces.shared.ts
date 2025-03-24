@@ -12,11 +12,14 @@ export type User = {
 	id: string;
 	email: string;
 	name: string;
+	admin: boolean;
+	activated: boolean;
 } | null;
 
 export type Tag = {
 	id: string;
 	name: string;
+	isProject: boolean;
 } | null;
 
 export type Task = {

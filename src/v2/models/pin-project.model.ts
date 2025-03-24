@@ -20,7 +20,7 @@ export class PinProjectModel extends BaseModel<PinProject> {
 		return !!pin;
 	}
 
-	async findByUserIdAndProjectIdO(
+	async findByUserIdAndProjectIdObject(
 		userId: string,
 		projectId: string,
 	): Promise<PinProject | null> {
@@ -54,6 +54,18 @@ export class PinProjectModel extends BaseModel<PinProject> {
 
 	async delete(id: string): Promise<PinProject> {
 		return await this.getModel().pinProject.delete({ where: { id } });
+	}
+	async deleteByUserIdAndProjectId(
+		userId: string,
+		projectId: string,
+	): Promise<void> {
+		const pin = await this.getModel().pinProject.findFirst({
+			where: { userId, projectId },
+		});
+		if (!pin) {
+			return;
+		}
+		await this.getModel().pinProject.delete({ where: { id: pin.id } });
 	}
 
 	async findByProjectId(id: string): Promise<PinProject[] | null> {

@@ -31,10 +31,11 @@ export const FileController = new Elysia({
 		},
 	)
 	.post(
-		"/",
+		"/:taskId",
 		async ({
-			body: { taskId, file, projectId },
+			body: { file, projectId },
 			db,
+			params: { taskId },
 			redis,
 			minio,
 			cookie: { session },
@@ -44,6 +45,7 @@ export const FileController = new Elysia({
 				file: Blob;
 				projectId: string;
 			};
+			params: { taskId: string };
 			cookie: { session: Cookie<string> };
 		}) => {
 			const fileService = new FilesService(db, redis, minio);
@@ -79,7 +81,6 @@ export const FileController = new Elysia({
 		},
 		{
 			body: t.Object({
-				taskId: t.Optional(t.String()),
 				file: t.File(),
 				projectId: t.Optional(t.String()),
 			}),

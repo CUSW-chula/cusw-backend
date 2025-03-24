@@ -15,10 +15,14 @@ import { UserService } from "./v2/services/users.service";
 
 // Initialize services
 const prisma = new PrismaClient();
-const redis = new Redis({ host: "localhost", port: 6379 });
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+
+const minioEndpoint = new URL(
+	process.env.MINIO_ENDPOINT || "http://localhost:9000",
+);
 const minioClient = new Minio.Client({
-	endPoint: "localhost",
-	port: 9000,
+	endPoint: minioEndpoint.hostname,
+	port: parseInt(minioEndpoint.port),
 	useSSL: false,
 	accessKey: process.env.MINIO_ACCESS_KEY ?? "",
 	secretKey: process.env.MINIO_SECRET_KEY ?? "",
@@ -26,7 +30,7 @@ const minioClient = new Minio.Client({
 
 // Initialize Elysia app
 const app = new Elysia()
-	.use(swagger({ version: "1.0.0" }))
+	.use(swagger({ version: "2.0.0" }))
 	.use(
 		cors({
 			origin: [
@@ -41,6 +45,7 @@ const app = new Elysia()
 		jwt({
 			name: "jwt",
 			secret: process.env.JWT_SECRET ?? "default token",
+			exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
 		}),
 	)
 	.decorate("db", prisma)
@@ -51,7 +56,7 @@ const app = new Elysia()
 app.get("sign/:email", async ({ jwt, params }) => {
 	const userService = new UserService(prisma, redis);
 	const userId = await userService.getUserByEmail(params.email);
-	if (!userId?.id) {
+	if (!userId?.id || userId.activated === false) {
 		throw new Error("User ID is undefined");
 	}
 	const auth = await jwt.sign({ id: userId.id });
@@ -108,6 +113,6 @@ app.guard(
 app.listen(4000);
 
 console.info(
-	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+	`🦊 Backend v3 is running at ${app.server?.hostname}:${app.server?.port}`,
 );
 console.info("🦊 API is running at http://localhost:4000/swagger");

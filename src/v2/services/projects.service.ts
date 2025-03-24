@@ -9,38 +9,24 @@ import {
 	ValidationException,
 } from "../../core/exception.core";
 import { TasksModel } from "../models/tasks.model";
-import { ActivityLogsModel } from "../models/activity-logs.model";
-import { CommentModel } from "../models/comment.model";
-import { EmojiModel } from "../models/emoji.model";
-import { FilesModel } from "../models/files.model";
-import { TaskTagModel } from "../models/task-tag.model";
-import { TasksAssignmentModel } from "../models/tasks-assignment.model";
 import { UserModel } from "../models/users.model";
-import { BudgetStatus } from "@prisma/client";
 import { Project, Task, User } from "../../shared/interfaces.shared";
 import { ProjectTagModel } from "../models/project-tag.model";
 import { TagModel } from "../models/tag.model";
 import { TaskService } from "./tasks.service";
 import { ProjectRoleModel } from "../models/project-role.model";
 import { PinProjectModel } from "../models/pin-project.model";
-import { Cookie } from "elysia";
-import { t } from "elysia";
 
 export class ProjectService extends BaseService<Project> {
 	private readonly projectModel: ProjectModel;
 	private readonly taskModel: TasksModel;
-	private readonly taskAssignmentModel: TasksAssignmentModel;
-	private readonly emojiModel: EmojiModel;
-	private readonly taskTagModel: TaskTagModel;
-	private readonly fileModel: FilesModel;
-	private readonly activitiesLogsModel: ActivityLogsModel;
-	private readonly commentModel: CommentModel;
 	private readonly userModel: UserModel;
 	private readonly projectTagModel: ProjectTagModel;
 	private readonly tagModel: TagModel;
 	private readonly projectRoleModel: ProjectRoleModel;
 	private readonly taskService: TaskService;
 	private readonly pinProject: PinProjectModel;
+	private readonly prisma: PrismaClient;
 
 	protected getTaskModel() {
 		return this.taskModel;
@@ -48,14 +34,9 @@ export class ProjectService extends BaseService<Project> {
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60);
+		this.prisma = prisma;
 		this.projectModel = new ProjectModel(prisma);
 		this.taskModel = new TasksModel(prisma);
-		this.taskAssignmentModel = new TasksAssignmentModel(prisma);
-		this.emojiModel = new EmojiModel(prisma);
-		this.taskTagModel = new TaskTagModel(prisma);
-		this.fileModel = new FilesModel(prisma);
-		this.activitiesLogsModel = new ActivityLogsModel(prisma);
-		this.commentModel = new CommentModel(prisma);
 		this.userModel = new UserModel(prisma);
 		this.projectTagModel = new ProjectTagModel(prisma);
 		this.tagModel = new TagModel(prisma);
@@ -65,13 +46,22 @@ export class ProjectService extends BaseService<Project> {
 	}
 
 	async getAllProjects(userId: string): Promise<Project[]> {
-		const cacheKey = "projects:all";
+		const cacheKey = this.getProjectCacheKey(userId);
 		const cacheProject = await this.getFromCache(cacheKey);
+		const user = await this.userModel.findById(userId);
+
+		let projectsFromDB;
+
 		if (cacheProject) {
 			return cacheProject as Project[];
 		}
 
-		const projectsFromDB = await this.projectModel.findAll();
+		if (user?.admin) {
+			projectsFromDB = await this.projectModel.findAll();
+		} else {
+			projectsFromDB = await this.projectModel.findByUserId(userId);
+		}
+
 		const projects: Project[] = (
 			await Promise.all(
 				projectsFromDB.map(async (project) => {
@@ -84,15 +74,15 @@ export class ProjectService extends BaseService<Project> {
 		return projects;
 	}
 
-	async getProjectById(userId: string, id: string): Promise<Project> {
-		const cacheKey = `projects:${id}`;
+	async getProjectById(userId: string, projectId: string): Promise<Project> {
+		const cacheKey = this.getProjectCacheKey(`${projectId}:${userId}`);
 		const cacheProject = await this.getFromCache(cacheKey);
 
 		if (cacheProject) return cacheProject as Project;
 
-		const project = await this.projectModel.findById(id);
+		const project = await this.projectModel.findById(projectId);
 		if (!project) throw new NotFoundException("Project not found");
-		const projectRole = await this.projectRoleModel.findByProjectId(id);
+		const projectRole = await this.projectRoleModel.findByProjectId(projectId);
 		const owner: User[] = projectRole
 			? await Promise.all(
 					projectRole
@@ -113,7 +103,7 @@ export class ProjectService extends BaseService<Project> {
 						}),
 				)
 			: [];
-		const tagsFromDB = await this.projectTagModel.findByProjectId(id);
+		const tagsFromDB = await this.projectTagModel.findByProjectId(projectId);
 		const tags = tagsFromDB
 			? await Promise.all(
 					tagsFromDB.map(async (tag) => {
@@ -122,9 +112,11 @@ export class ProjectService extends BaseService<Project> {
 					}),
 				)
 			: [];
-		const tasks = await this.taskService.getTaskByProjectId(id);
-		const isPinned =
-			(await this.pinProject.findByUserIdAndProjectId(userId, id)) ?? false;
+		const tasks = await this.taskService.getTaskByProjectId(projectId);
+		const isPinned = await this.pinProject.findByUserIdAndProjectId(
+			userId,
+			projectId,
+		);
 
 		const projectWithDetails = {
 			...project,
@@ -134,7 +126,6 @@ export class ProjectService extends BaseService<Project> {
 			tags,
 			isPinned,
 		};
-
 		await this.setToCache(cacheKey, projectWithDetails);
 		return projectWithDetails;
 	}
@@ -168,7 +159,8 @@ export class ProjectService extends BaseService<Project> {
 				throw new ServerErrorException(
 					"Failed to retrieve the created project",
 				);
-			await this.invalidateCache("projects:all");
+
+			await this.invalidateAllCache("projects");
 			return projectWithDetails;
 		}
 		throw new ValidationException("Title cann't be null");
@@ -216,8 +208,7 @@ export class ProjectService extends BaseService<Project> {
 				role: "ProjectOwner",
 			});
 		}
-		await this.invalidateCache("projects:all");
-		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateAllCache("projects");
 		return this.getProjectById(userId, projectId);
 	}
 
@@ -233,10 +224,6 @@ export class ProjectService extends BaseService<Project> {
 		const isUserExist = await this.userModel.findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
 
-		const role = await this.projectModel.findRole(userId, projectId);
-		if (role !== "ProjectOwner")
-			throw new PermissionException("You are not the owner of this project");
-
 		// Prepare the updated project object
 		const updatedProject = {
 			...existingProject,
@@ -244,13 +231,11 @@ export class ProjectService extends BaseService<Project> {
 		};
 
 		// Invalidate caches
-		await this.invalidateCache("projects:all");
-		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateAllCache("projects");
 
 		// Update and return the project
 		await this.projectModel.update(projectId, updatedProject);
 		const project = await this.getProjectById(userId, projectId);
-		await this.setToCache(`projects:${projectId}`, project);
 		return project;
 	}
 
@@ -271,7 +256,7 @@ export class ProjectService extends BaseService<Project> {
 			tagId,
 			projectId,
 		});
-		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateAllCache("projects");
 		return this.getProjectById(userId, projectId);
 	}
 
@@ -290,60 +275,19 @@ export class ProjectService extends BaseService<Project> {
 		const user = await this.userModel.findById(userId);
 		if (!user) throw new NotFoundException("User not found");
 		await this.projectTagModel.delete(projecttags.id);
-		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateAllCache("projects");
 		return this.getProjectById(userId, projectId);
 	}
 
-	async deleteProject(userId: string, projectId: string): Promise<Project> {
-		// Check if the project exists
-		const project = await this.projectModel.findById(projectId);
-		if (!project) {
-			throw new NotFoundException(`Project with ID ${projectId} not found`);
-		}
-		// Checek you are owner
-		const owner = await this.projectModel.findRole(userId, projectId);
-		if (owner !== "ProjectOwner") {
-			throw new PermissionException("You are not the owner of this project");
-		}
-		try {
-			// Find all tasks associated with the project
-			const tasks = await this.taskModel.findByProjectId(projectId);
+	async deleteProject(userId: string, projectId: string): Promise<void> {
+		await this.prisma.$transaction(async (tx) => {
+			// Validate project exists
+			const project = await tx.project.findUnique({ where: { id: projectId } });
+			if (!project) throw new NotFoundException(`Project not found`);
 
-			// Delete all related entities for each task
-			if (tasks && tasks.length > 0) {
-				for (const task of tasks) {
-					const taskId = task.id;
-
-					// Delete all task-related data
-					await this.taskAssignmentModel.deleteByTaskId(taskId);
-					await this.taskTagModel.deleteByTaskId(taskId);
-					await this.emojiModel.deleteByTaskId(taskId);
-					await this.fileModel.deleteByTaskId(taskId);
-					await this.activitiesLogsModel.deleteByTaskId(taskId);
-					await this.commentModel.deleteByTaskId(taskId);
-
-					// Delete the task itself
-					await this.taskModel.delete(taskId);
-
-					// Invalidate cache for the task
-					await this.invalidateCache(`tasks:${taskId}`);
-				}
-			}
-
-			// Invalidate cache related to the project
-			await this.invalidateCache(`projects:${projectId}`);
-			await this.invalidateCache("projects:all");
-
-			// Delete the project itself
-			const project = await this.getProjectById(userId, projectId);
-			await this.projectRoleModel.deleteByProjectId(projectId);
-			await this.projectTagModel.deleteByProjectId(projectId);
-			await this.projectModel.delete(projectId);
-			return project;
-		} catch (_error) {
-			const error = _error as Error;
-			throw new ServerErrorException(`Error deleting project ${error.message}`);
-		}
+			// Call Model to delete
+			await this.projectModel.deleteProjectData(projectId, tx);
+		});
 	}
 
 	async assigningPinToProject(
@@ -370,8 +314,7 @@ export class ProjectService extends BaseService<Project> {
 			projectId,
 		});
 
-		await this.invalidateCache("projects:all");
-		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateAllCache("projects");
 		return this.getProjectById(userId, projectId); // คืนค่าหลังจาก Pin
 	}
 
@@ -386,14 +329,7 @@ export class ProjectService extends BaseService<Project> {
 		const isProjectExist = await this.projectModel.findById(projectId);
 		if (!isProjectExist) throw new NotFoundException("Project not found");
 
-		// ค้นหา Pin
-		const pinProject = await this.pinProject.findByUserIdAndProjectId(
-			userId,
-			projectId,
-		);
-		if (!pinProject) throw new NotFoundException("PinProject not found");
-
-		const pinProjectO = await this.pinProject.findByUserIdAndProjectIdO(
+		const pinProjectO = await this.pinProject.findByUserIdAndProjectIdObject(
 			userId,
 			projectId,
 		);
@@ -401,8 +337,7 @@ export class ProjectService extends BaseService<Project> {
 
 		// ลบ Pin
 		await this.pinProject.delete(pinProjectO.id);
-		await this.invalidateCache("projects:all");
-		await this.invalidateCache(`projects:${projectId}`);
+		await this.invalidateAllCache("projects");
 		return this.getProjectById(userId, projectId);
 	}
 
@@ -420,5 +355,59 @@ export class ProjectService extends BaseService<Project> {
 			.map((pin: PinProject) => pin.projectId);
 
 		return allProjectId;
+	}
+
+	async assignMemberToProject(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		const projectRole = await this.projectRoleModel.findByProjectId(projectId);
+		if (!projectRole) throw new NotFoundException("Project role not found");
+		const isMember = projectRole.find(
+			(role) => role.userId === userId && role.role === "Member",
+		);
+		if (isMember) throw new ValidationException("User already a member");
+
+		const isProjectOwner = projectRole.find(
+			(role) => role.userId === userId && role.role === "ProjectOwner",
+		);
+		if (isProjectOwner)
+			throw new ValidationException("Owner can't be a member");
+
+		await this.projectRoleModel.create({
+			projectId,
+			role: "Member",
+			userId,
+		});
+		await this.invalidateAllCache("projects");
+		return this.getProjectById(userId, projectId);
+	}
+
+	async removeMemberFromProject(
+		userId: string,
+		projectId: string,
+	): Promise<Project> {
+		const isUserExist = await this.userModel.findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		const isProjectExist = await this.projectModel.findById(projectId);
+		if (!isProjectExist) throw new NotFoundException("Project not found");
+
+		const projectRole = await this.projectRoleModel.findByProjectId(projectId);
+		if (!projectRole) throw new NotFoundException("Project role not found");
+		const isMember = projectRole.find(
+			(role) => role.userId === userId && role.role === "Member",
+		);
+		if (!isMember) throw new ValidationException("User not a member");
+
+		await this.projectRoleModel.deleteByProjectIDandUserId(userId, projectId);
+		await this.invalidateAllCache("projects", "tasks");
+		return this.getProjectById(userId, projectId);
 	}
 }

@@ -1,8 +1,9 @@
 import { type Cookie, Elysia, t } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
-import { WebSocket } from "../../shared/utils/websocket.utils";
+import { WebSocket as WebSocket } from "../../shared/utils/websocket.utils";
 import { UserService } from "../services/users.service";
+import { PermissionException } from "../../core/exception.core";
 
 export const ProjectController = new Elysia({
 	prefix: "/projects",
@@ -109,8 +110,8 @@ export const ProjectController = new Elysia({
 			body: t.Object({
 				title: t.Optional(t.String()),
 				description: t.Optional(t.String()),
-				startDate: t.Optional(t.Date()),
-				endDate: t.Optional(t.Date()),
+				startDate: t.Optional(t.Union([t.Date(), t.Null()])),
+				endDate: t.Optional(t.Union([t.Date(), t.Null()])),
 			}),
 			detail: {
 				summary: "Update a project",
@@ -263,34 +264,21 @@ export const ProjectController = new Elysia({
 			detail: { summary: "Remove a pin from a project" },
 		},
 	)
-	.get(
-		"/pin/:userId",
-		async ({
-			params: { userId },
-			db,
-			redis,
-		}: Context & { params: { userId: string } }) => {
-			const projectService = new ProjectService(db, redis);
-			const pinnedProjects =
-				await projectService.getAllPinInProjectByUserId(userId);
-			return pinnedProjects;
-		},
-		{
-			detail: {
-				summary: "Get all pinned projects by user id",
-			},
-		},
-	)
+
 	.patch(
-		"/owner",
+		"/owner/:projectId",
 		async ({
-			query: { userId, projectId },
+			params: { projectId },
+			body,
 			db,
 			redis,
-		}: Context & { query: { userId: string; projectId: string } }) => {
+		}: Context & {
+			body: { userId: string };
+			params: { projectId: string };
+		}) => {
 			const projectService = new ProjectService(db, redis);
 			const project = await projectService.updateProjectOwner(
-				userId,
+				body.userId,
 				projectId,
 			);
 			const owner = project.owner;
@@ -301,5 +289,104 @@ export const ProjectController = new Elysia({
 			detail: {
 				summary: "Change project owner",
 			},
+			body: t.Object({
+				userId: t.String(),
+			}),
+		},
+	)
+	.post(
+		"/assign/:projectId",
+		async ({
+			params: { projectId },
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { projectId: string };
+			body: {
+				userId: string;
+			};
+			cookie: { session: Cookie<string> };
+		}) => {
+			if (!session?.value) throw new PermissionException("Unauthorized");
+
+			const projectService = new ProjectService(db, redis);
+
+			const updatedProject = await projectService.assignMemberToProject(
+				body.userId,
+				projectId,
+			);
+			WebSocket.broadcast(`assigned:${projectId}`, updatedProject);
+			return updatedProject;
+		},
+		{
+			body: t.Object({
+				userId: t.String(),
+			}),
+			detail: {
+				summary: "Add member to project",
+			},
+		},
+	)
+	.delete(
+		"/assign/:projectId",
+		async ({
+			params: { projectId },
+			body,
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { projectId: string };
+			body: { userId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			if (!session?.value) throw new PermissionException("Unauthorized");
+
+			const projectService = new ProjectService(db, redis);
+			const project = await projectService.getProjectById(
+				session.value,
+				projectId,
+			);
+
+			if (!project.owner.some((user) => user?.id === session.value)) {
+				throw new PermissionException(
+					"Forbidden: Only the project owner can assign members.",
+				);
+			}
+
+			const updatedProject = await projectService.removeMemberFromProject(
+				body.userId,
+				projectId,
+			);
+			WebSocket.broadcast(`unassigned:${projectId}`, updatedProject);
+			return updatedProject;
+		},
+		{
+			body: t.Object({
+				userId: t.String(),
+			}),
+			detail: {
+				summary: "Delete member to project",
+			},
 		},
 	);
+// .get(
+// 	"/pin/:userId",
+// 	async ({
+// 		params: { userId },
+// 		db,
+// 		redis,
+// 	}: Context & { params: { userId: string } }) => {
+// 		const projectService = new ProjectService(db, redis);
+// 		const pinnedProjects =
+// 			await projectService.getAllPinInProjectByUserId(userId);
+// 		return pinnedProjects;
+// 	},
+// 	{
+// 		detail: {
+// 			summary: "Get all pinned projects by user id",
+// 		},
+// 	},
+// );

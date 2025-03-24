@@ -42,7 +42,7 @@ export class UserTaskClassService extends TaskService {
 		taskId: string,
 		userId: string,
 	): Promise<TaskAssignment> {
-		const cacheKey = `status:${taskId}`;
+		const cacheKey = this.getTaskCacheKey(taskId);
 		// First step check if user exists
 		const isUserExist = await this.getUserModel().findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
@@ -51,10 +51,25 @@ export class UserTaskClassService extends TaskService {
 		const isTaskExist = await this.getTaskModel().findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
+		const isProjectOwner = await this.projectRoleModel.findByProjectIdAndUserId(
+			isTaskExist.projectId,
+			userId,
+		);
+		if (isProjectOwner?.role === "ProjectOwner")
+			throw new ValidationException("Owner can't assign task to himself");
+
 		// Check assigner is not the assignee
 		const isAssignerIsAssignee = isTaskExist.createdById === userId;
 		if (isAssignerIsAssignee)
 			throw new ValidationException("Assigner can't assign task to himself");
+
+		const isUserinProject =
+			await this.projectRoleModel.findByProjectIdAndUserId(
+				isTaskExist.projectId,
+				userId,
+			);
+		if (!isUserinProject)
+			throw new ValidationException("User is not in the project");
 
 		const isTaskHasBeenAssigned =
 			await this.getTaskAssignmentModel().findByTaskId(taskId);
@@ -71,14 +86,7 @@ export class UserTaskClassService extends TaskService {
 			taskId: taskId,
 			userId: userId,
 		});
-		await this.projectRoleModel.create({
-			projectId: isTaskExist.projectId,
-			userId: userId,
-			role: "Member",
-		});
-		await this.invalidateCache(cacheKey);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateAllCache("tasks", "projects");
 		const task = await this.getTaskById(taskId);
 		const tasksAssigment = { user: isUserExist, task: task };
 		return tasksAssigment;
@@ -88,7 +96,7 @@ export class UserTaskClassService extends TaskService {
 		taskId: string,
 		userId: string,
 	): Promise<TaskAssignment> {
-		const cacheKey = `status:${taskId}`;
+		const cacheKey = this.getTaskCacheKey(taskId);
 		// First step check if user exists
 		const isUserExist = await this.getUserModel().findById(userId);
 		if (!isUserExist) throw new NotFoundException("User not found");
@@ -114,14 +122,8 @@ export class UserTaskClassService extends TaskService {
 			await this.getTaskModel().update(taskId, {
 				status: "Unassigned",
 			});
-		await this.projectRoleModel.deleteByProjectIDandUserId(
-			userId,
-			isTaskExist.projectId,
-		);
 
-		await this.invalidateCache(cacheKey);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateAllCache("tasks", "projects");
 		const task = await this.getTaskById(taskId);
 		const unAssigningTaskToUser = { user: isUserExist, task: task };
 		return unAssigningTaskToUser;

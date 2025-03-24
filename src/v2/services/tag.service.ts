@@ -44,6 +44,15 @@ export class TagService extends BaseService<Tag> {
 		return tags;
 	}
 
+	async createTag(name: string, isProject: boolean): Promise<Tag> {
+		const tag = await this.tagModel.create({
+			name: name ?? "",
+			isProject: isProject,
+		});
+		await this.invalidateAllCache("tag");
+		return tag;
+	}
+
 	// Retrieve all tags assigned to a specific task by task ID
 	async getAsignTagInTaskByTaskId(taskId: string): Promise<Tag[]> {
 		// Check if the task exists
@@ -102,10 +111,6 @@ export class TagService extends BaseService<Tag> {
 		const isTaskExist = await this.taskModel.findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
-		const isUserCreatedTask = isTaskExist.createdById === userId;
-		if (!isUserCreatedTask)
-			throw new PermissionException("You are not the creator of this task");
-
 		// Check for duplicate tag assignment
 		const tagExist = await this.taskTagModel.findByTaskIdAndTagId(
 			taskId,
@@ -122,10 +127,7 @@ export class TagService extends BaseService<Tag> {
 		if (!assignTagToTask)
 			throw new NotFoundException("Failed to assign tag to task");
 		const tasks = await this.taskModel.findById(taskId);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
-		await this.invalidateCache(`projects:all`);
-		await this.invalidateCache(`projects:${tasks?.projectId}}`);
+		await this.invalidateAllCache("tasks", "projects");
 		return assignTagToTask;
 	}
 
@@ -145,8 +147,7 @@ export class TagService extends BaseService<Tag> {
 
 		// Unassign the tag from the task
 		const unAssigningTagToTask = await this.taskTagModel.delete(taskTag.id);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateAllCache("tasks");
 		return unAssigningTagToTask;
 	}
 }

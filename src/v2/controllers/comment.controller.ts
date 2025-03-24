@@ -28,24 +28,34 @@ export const CommentController = new Elysia({
 	)
 	// Create a new user with try-catch for error handling
 	.post(
-		"/",
+		"/:taskId",
 		async ({
 			body,
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
-		}: Context & { body: Comment; cookie: { session: Cookie<string> } }) => {
+		}: Context & {
+			body: Partial<Comment>;
+			cookie: { session: Cookie<string> };
+			params: { taskId: string };
+		}) => {
 			const commentService = new CommentService(db, redis);
 			const userId = session.value;
 
-			const comment = await commentService.addComment(body, userId);
-			WebSocket.broadcast(`comment:${body.taskId}`, comment);
+			const comment = await commentService.addComment(
+				{
+					taskId: taskId,
+					...body,
+				},
+				userId,
+			);
+			WebSocket.broadcast(`comment:${taskId}`, comment);
 			return comment;
 		},
 		{
 			body: t.Object({
 				content: t.String(),
-				taskId: t.String(),
 			}),
 			detail: {
 				summary: "Add a new comment",

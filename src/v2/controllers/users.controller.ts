@@ -34,6 +34,17 @@ export const UserController = new Elysia({
 			return await userService.getUserByEmail(id);
 		},
 	)
+	.get(
+		"/project/:projectId",
+		async ({
+			params: { projectId },
+			db,
+			redis,
+		}: Context & { params: { projectId: string } }) => {
+			const userService = new UserService(db, redis);
+			return await userService.getAllByProjectId(projectId);
+		},
+	)
 	// Create a new user
 	.post(
 		"/",
@@ -43,12 +54,75 @@ export const UserController = new Elysia({
 			redis,
 		}: Context & { body: { name: string; email: string } }) => {
 			const userService = new UserService(db, redis);
-			return await userService.createNewUser(body);
+			return await userService.createNewUser({
+				email: body.email,
+				name: body.name,
+			});
 		},
 		{
 			body: t.Object({
 				name: t.String(),
 				email: t.String(),
+			}),
+		},
+	)
+	.patch(
+		"/role/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { isAdmin: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.changeAdmin(userid, body.isAdmin);
+		},
+		{
+			body: t.Object({
+				isAdmin: t.Boolean(),
+			}),
+		},
+	)
+	.patch(
+		"/head/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { isHead: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.changeHead(userid, body.isHead);
+		},
+		{
+			body: t.Object({
+				isHead: t.Boolean(),
+			}),
+		},
+	)
+	.patch(
+		"/activate/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { isActive: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.activeUser(userid, body.isActive);
+		},
+		{
+			body: t.Object({
+				isActive: t.Boolean(),
 			}),
 		},
 	);

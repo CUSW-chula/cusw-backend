@@ -22,7 +22,7 @@ export class TemplateService extends BaseService<Template> {
 	}
 
 	async getAllFile(): Promise<Template[]> {
-		const cacheKey = "template:all";
+		const cacheKey = this.getTemplateCacheKey("all");
 		const cacheFiles = await this.getFromCache(cacheKey);
 
 		if (cacheFiles) return cacheFiles as Template[];
@@ -77,8 +77,7 @@ export class TemplateService extends BaseService<Template> {
 
 			if (!savedFile) throw new ServerErrorException("Failed to save file");
 
-			const cacheKey = "template:all";
-			await this.invalidateCache(cacheKey);
+			await this.invalidateAllCache("template");
 
 			return savedFile;
 		}
@@ -94,8 +93,8 @@ export class TemplateService extends BaseService<Template> {
 
 		const removeFile = await this.templateModel.delete(file.id);
 		if (!removeFile) throw new ServerErrorException("Failed to remove file");
-		const cacheKey = "files:all";
-		await this.invalidateCache(cacheKey);
+
+		await this.invalidateAllCache("template");
 		return removeFile;
 	}
 }

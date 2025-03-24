@@ -14,7 +14,6 @@ import {
 	NotFoundException,
 	ValidationException,
 	ServerErrorException,
-	PermissionException,
 } from "../../core/exception.core";
 import { Project, Emoji, Task } from "../../shared/interfaces.shared";
 import { TagModel } from "../models/tag.model";
@@ -77,8 +76,8 @@ export class TaskService extends BaseService<Task> {
 			id: string;
 			title: string;
 			description: string;
-			startDate: Date;
-			endDate: Date;
+			startDate: Date | null;
+			endDate: Date | null;
 		},
 	) {
 		this.projectModel.update(projectId, updatedProject);
@@ -86,7 +85,7 @@ export class TaskService extends BaseService<Task> {
 	}
 
 	async getAllTask(): Promise<Task[]> {
-		const cacheKey = "tasks:all";
+		const cacheKey = this.getTaskCacheKey("all");
 		const cacheTasks = await this.getFromCache(cacheKey);
 		if (cacheTasks) return cacheTasks as Task[];
 
@@ -123,10 +122,7 @@ export class TaskService extends BaseService<Task> {
 		};
 
 		// Invalidate caches
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`projects:${updatedTask.projectId}`);
-		await this.invalidateCache(`tasks:project:${existingTask.projectId}`);
-		await this.invalidateCache(`tasks:parent:${existingTask.parentTaskId}`);
+		await this.invalidateAllCache("projects", "tasks");
 
 		// Update and return the task
 		try {
@@ -161,10 +157,7 @@ export class TaskService extends BaseService<Task> {
 				expense: task.expense,
 				projectId: task.projectId,
 			};
-			await this.invalidateCache("tasks:all");
-			await this.invalidateCache(`tasks:project:${task.projectId}`);
-			await this.invalidateCache(`projects:${task.projectId}`);
-			await this.invalidateCache(`tasks:parent:${task.parentTaskId}`);
+			await this.invalidateAllCache("projects", "tasks");
 			const createdTask = await this.taskModel.create(newTask);
 
 			// Update project money
@@ -179,9 +172,7 @@ export class TaskService extends BaseService<Task> {
 				expense: existingProject.expense + (task.expense ?? 0),
 			};
 			// Invalidate caches
-			await this.invalidateCache("projects:all");
-			await this.invalidateCache(`tasks:${task.id}`);
-			await this.invalidateCache(`projects:${task.projectId}`);
+			await this.invalidateAllCache("projects", "tasks");
 
 			await this.projectModel.update(task.projectId, updatedProject);
 
@@ -190,10 +181,20 @@ export class TaskService extends BaseService<Task> {
 		throw new ValidationException("Title cann't be null");
 	}
 
+	async getTaskByUserId(userId: string): Promise<Task[]> {
+		const tasks = await this.taskAssignmentModel.findByUserId(userId);
+		if (!tasks) [];
+
+		const tasksWithDetail = await Promise.all(
+			tasks.map(async (task) => {
+				return await this.getTaskById(task.taskId);
+			}),
+		);
+		// console.info("tasksWithDetail",tasksWithDetail)
+		return tasksWithDetail;
+	}
+
 	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
-		const cacheKey = `tasks:project:${projectIdId}`;
-		const cacheTask = await this.getFromCache(cacheKey);
-		if (cacheTask) return cacheTask as Task[];
 		const tasks = await this.taskModel.findByProjectId(projectIdId);
 		if (!tasks) [];
 		const tasksWithDetail = await Promise.all(
@@ -201,15 +202,10 @@ export class TaskService extends BaseService<Task> {
 				return await this.getTaskById(task.id);
 			}),
 		);
-		await this.setToCache(cacheKey, tasksWithDetail);
 		return tasksWithDetail;
 	}
 
 	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
-		const cacheKey = `tasks:parent:${parentTaskId}`;
-		const cacheTask = await this.getFromCache(cacheKey);
-		if (cacheTask) return cacheTask as Task[];
-
 		const tasks = await this.taskModel.findByParentTaskId(parentTaskId);
 		if (!tasks) throw new NotFoundException("Task not found");
 		const tasksWithDetail = await Promise.all(
@@ -217,12 +213,11 @@ export class TaskService extends BaseService<Task> {
 				return await this.getTaskById(task.id);
 			}),
 		);
-		await this.setToCache(cacheKey, tasksWithDetail);
 		return tasksWithDetail;
 	}
 
 	async getTaskById(taskId: string): Promise<Task> {
-		const cacheKey = `tasks:${taskId}`;
+		const cacheKey = this.getTagCacheKey(taskId);
 		const cacheTask = await this.getFromCache(cacheKey);
 		if (cacheTask) cacheTask as Task;
 
@@ -282,7 +277,7 @@ export class TaskService extends BaseService<Task> {
 	}
 
 	async deleteTask(taskId: string): Promise<Task> {
-		const cacheKey = `tasks:${taskId}`;
+		const cacheKey = this.getTaskCacheKey(taskId);
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
 		try {
@@ -305,9 +300,7 @@ export class TaskService extends BaseService<Task> {
 			await this.commentModel.deleteByTaskId(taskId);
 			const task = await this.getTaskById(taskId);
 			await this.taskModel.delete(taskId);
-			await this.invalidateCache(cacheKey);
-			const projectId = task.projectId;
-			await this.invalidateCache(`tasks:project:${projectId}`);
+			await this.invalidateAllCache("projects", "tasks");
 
 			// Step 4: update project money
 			const existingProject = await this.projectModel.findById(task.projectId);
@@ -320,9 +313,8 @@ export class TaskService extends BaseService<Task> {
 				expense: existingProject.expense - (task.expense ?? 0),
 			};
 			// Invalidate caches
-			await this.invalidateCache("projects:all");
-			await this.invalidateCache(`projects:${projectId}`);
 
+			await this.invalidateAllCache("projects", "tasks");
 			// Update Project Money
 			await this.projectModel.update(task.projectId, updatedProject);
 
@@ -347,9 +339,7 @@ export class TaskService extends BaseService<Task> {
 			}
 		}
 
-		await this.invalidateCache(`status:${taskId}`);
-		await this.invalidateCache("tasks:all");
-		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateAllCache("tasks");
 
 		const finalTask = await this.getTaskById(updatedTask.id);
 		return finalTask;
@@ -414,7 +404,7 @@ export class TaskService extends BaseService<Task> {
 			startDate: startDate,
 			endDate: endDate,
 		});
-		await this.invalidateCache(`tasks:${taskId}`);
+		await this.invalidateAllCache("tasks");
 		return this.getTaskById(updatedTask.id);
 	}
 
@@ -430,7 +420,7 @@ export class TaskService extends BaseService<Task> {
 				userId,
 				projectId,
 			);
-			await this.invalidateCache(`tasks:${newTask.id}`);
+			await this.invalidateAllCache("tasks");
 			newTasks.push(newTask);
 			if (task.subtasks) {
 				const subtasks = await this.createTaskWithSubTaskRecursive(
@@ -438,9 +428,8 @@ export class TaskService extends BaseService<Task> {
 					userId,
 					projectId,
 				);
-				await this.invalidateCache(`tasks:${subtasks}`);
+				await this.invalidateAllCache("tasks");
 				for (const subtask of subtasks) {
-					await this.invalidateCache(`tasks:${subtask.id}`);
 					await this.taskModel.update(subtask.id, {
 						parentTaskId: newTask.id,
 					});

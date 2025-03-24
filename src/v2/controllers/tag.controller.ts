@@ -38,7 +38,19 @@ export const TagController = new Elysia({
 			return tags;
 		},
 	)
-
+	.post(
+		"/",
+		async ({
+			body,
+			db,
+			redis,
+		}: Context & { body: { name: string; isProject: boolean } }) => {
+			const tagService = new TagService(db, redis);
+			const tag = await tagService.createTag(body.name, body.isProject);
+			return tag;
+		},
+		{ body: t.Object({ name: t.String(), isProject: t.Boolean() }) },
+	)
 	.get(
 		"/getassigntask/:tagId",
 		async ({
@@ -52,75 +64,77 @@ export const TagController = new Elysia({
 		},
 	)
 	.post(
-		"/assign",
+		"/assign/:taskId",
 		async ({
 			body,
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { tagid: string; taskId: string; tagId: string };
+			body: { tagid: string; tagId: string };
 			cookie: { session: Cookie<string> };
+			params: { taskId: string };
 		}) => {
 			//const taskService = new TaskService(db, redis);
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const assignTag = await tagService.assigningTagToTask(
-				body.taskId,
+				taskId,
 				body.tagId,
 				userId,
 			);
 			const assignTags = await tagService.getTagById(assignTag.tagId);
-			WebSocket.broadcast("assigned-tags", assignTags);
+			WebSocket.broadcast(`assigned-tags:${taskId}`, assignTags);
 			const tagAddActivity = await activityService.postActivity(
-				body.taskId,
+				taskId,
 				$Enums.ActivityAction.ADDED,
 				`a tag name "${assignTags.name}"`,
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskId}`, tagAddActivity);
+			WebSocket.broadcast(`activity:${taskId}`, tagAddActivity);
 			return assignTags;
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
 				tagId: t.String(),
 			}),
 		},
 	)
 	.delete(
-		"/unassigned",
+		"/unassigned/:taskId",
 		async ({
 			body,
+			params: { taskId },
 			db,
 			redis,
 			cookie: { session },
 		}: Context & {
-			body: { taskId: string; tagId: string };
+			body: { tagId: string };
 			cookie: { session: Cookie<string> };
+			params: { taskId: string };
 		}) => {
 			const tagService = new TagService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const unAssignTaskTag = await tagService.unAssigningTagToTask(
-				body.taskId,
+				taskId,
 				body.tagId,
 			);
 			const unAssignTag = await tagService.getTagById(unAssignTaskTag.tagId);
-			WebSocket.broadcast("unassigned-tag", unAssignTag);
+			WebSocket.broadcast(`unassigned-tag:${taskId}`, unAssignTag);
 			const tagUnassignActivity = await activityService.postActivity(
-				body.taskId,
+				taskId,
 				$Enums.ActivityAction.REMOVED,
 				`a tag name "${unAssignTag.name}"`,
 				userId,
 			);
-			WebSocket.broadcast(`activity:${body.taskId}`, tagUnassignActivity);
+			WebSocket.broadcast(`activity:${taskId}`, tagUnassignActivity);
 			return unAssignTag;
 		},
 		{
 			body: t.Object({
-				taskId: t.String(),
 				tagId: t.String(),
 			}),
 		},
