@@ -222,6 +222,30 @@ export const TaskController = new Elysia({
 		},
 	)
 	.post(
+		"/duplicateTask/:projectId",
+		async ({
+			body,
+			params: { projectId },
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			body: Task[];
+			params: { projectId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			const taskService = new TaskService(db, redis);
+			const userId = session.value;
+			const task = await taskService.createTaskWithSubTaskRecursive(
+				body,
+				userId,
+				projectId,
+			);
+			return Response.json(task, { status: 200 });
+		},
+	)
+
+	.post(
 		"/assign",
 		async ({
 			body,
