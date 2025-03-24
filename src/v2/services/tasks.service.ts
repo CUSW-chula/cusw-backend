@@ -435,6 +435,13 @@ export class TaskService extends BaseService<Task> {
 					});
 				}
 			}
+			//in case duplicate task
+			if (templateTask.length === 1 && templateTask[0].parentTaskId) {
+				const parentTask = newTasks[0];
+				await this.taskModel.update(parentTask.id, {
+					parentTaskId: templateTask[0].parentTaskId,
+				});
+			}
 		}
 		return newTasks;
 	}
