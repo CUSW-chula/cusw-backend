@@ -87,17 +87,22 @@ export const FileController = new Elysia({
 		},
 	)
 	.delete(
-		"/",
+		"/:taskId",
 		async ({
 			body: { fileId },
 			db,
+			params: { taskId },
 			redis,
 			minio,
 		}: Context & {
 			body: {
 				fileId: string;
 			};
+			params: { taskId: string };
 		}) => {
+			if (!taskId) {
+				throw new Error("Task ID is null");
+			}
 			const fileService = new FilesService(db, redis, minio);
 			const activityService = new ActivityService(db, redis);
 			const removeFile = await fileService.removeFileByFileId(fileId);
