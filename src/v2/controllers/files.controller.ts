@@ -70,7 +70,12 @@ export const FileController = new Elysia({
 				MAX_FILENAME_LENGTH,
 			);
 
-			WebSocket.broadcast("add-file", savedFile);
+			const response = {
+				...savedFile,
+				uploadedBy: uploader?.name,
+			};
+
+			WebSocket.broadcast("add-file", response);
 
 			const uploadActivity = await activityService.postActivity(
 				taskId,
@@ -79,10 +84,7 @@ export const FileController = new Elysia({
 				userId,
 			);
 			WebSocket.broadcast(`activity:${taskId}`, uploadActivity);
-			const response = {
-				...savedFile,
-				uploadedBy: uploader,
-			}
+
 			return response;
 		},
 		{
