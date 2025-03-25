@@ -99,7 +99,6 @@ export class FilesService extends BaseService<File> {
 	}
 
 	async removeFileByFileId(fileId: string): Promise<File> {
-		const cacheKey = this.getFileCacheKey("all");
 		const file = await this.fileModel.findById(fileId);
 		if (!file) throw new Error("File not found");
 
@@ -108,7 +107,7 @@ export class FilesService extends BaseService<File> {
 
 		const removeFile = await this.fileModel.delete(file.id);
 		if (!removeFile) throw new ServerErrorException("Failed to remove file");
-		await this.invalidateCache(cacheKey);
+		await this.invalidateAllCache("files");
 		return removeFile;
 	}
 }
