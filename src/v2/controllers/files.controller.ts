@@ -4,6 +4,7 @@ import { FilesService } from "../services/files.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { ActivityService } from "../services/activity-logs.service";
 import { $Enums } from "@prisma/client";
+import { UserService } from "../services/users.service";
 
 const MAX_FILENAME_LENGTH = 50; // Define your max length for filenames
 
@@ -49,8 +50,10 @@ export const FileController = new Elysia({
 			cookie: { session: Cookie<string> };
 		}) => {
 			const fileService = new FilesService(db, redis, minio);
+			const userService = new UserService(db, redis);
 			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
+			const uploader = await userService.getUserById(userId);
 			const savedFile = await fileService.uploadFileByTaskId(
 				taskId,
 				file,
@@ -76,8 +79,11 @@ export const FileController = new Elysia({
 				userId,
 			);
 			WebSocket.broadcast(`activity:${taskId}`, uploadActivity);
-
-			return savedFile;
+			const response = {
+				...savedFile,
+				uploadedBy: uploader,
+			}
+			return response;
 		},
 		{
 			body: t.Object({
