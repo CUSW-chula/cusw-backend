@@ -77,7 +77,7 @@ export class TemplateService extends BaseService<Template> {
 
 			if (!savedFile) throw new ServerErrorException("Failed to save file");
 
-			await this.invalidateAllCache("template");
+			await this.invalidateAllCache("templates");
 
 			return savedFile;
 		}
@@ -90,6 +90,7 @@ export class TemplateService extends BaseService<Template> {
 		const newTemplate = await this.templateModel.update(file.id, {
 			fileName: newName,
 		});
+		await this.invalidateAllCache("templates");
 		return newTemplate;
 	}
 
@@ -103,7 +104,7 @@ export class TemplateService extends BaseService<Template> {
 		const removeFile = await this.templateModel.delete(file.id);
 		if (!removeFile) throw new ServerErrorException("Failed to remove file");
 
-		await this.invalidateAllCache("template");
+		await this.invalidateAllCache("templates");
 		return removeFile;
 	}
 }

@@ -49,6 +49,12 @@ export const TemplateController = new Elysia({
 
 			return updatedFile;
 		},
+		{
+			body: t.Object({
+				templateId: t.String(),
+				newFileName: t.String(),
+			}),
+		},
 	)
 	.post(
 		"/:projectId",
