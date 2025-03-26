@@ -84,6 +84,15 @@ export class TemplateService extends BaseService<Template> {
 		throw new BadRequestException("Require file type JSON");
 	}
 
+	async changeTemplateName(fileId: string, newName: string): Promise<Template> {
+		const file = await this.templateModel.findById(fileId);
+		if (!file) throw new NotFoundException("Template not found");
+		const newTemplate = await this.templateModel.update(file.id, {
+			fileName: newName,
+		});
+		return newTemplate;
+	}
+
 	async removeTemplate(fileId: string): Promise<Template> {
 		const file = await this.templateModel.findById(fileId);
 		if (!file) throw new NotFoundException("Template not found");

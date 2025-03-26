@@ -277,7 +277,6 @@ export class TaskService extends BaseService<Task> {
 	}
 
 	async deleteTask(taskId: string): Promise<Task> {
-		const cacheKey = this.getTaskCacheKey(taskId);
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
 		try {

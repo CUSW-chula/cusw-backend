@@ -22,6 +22,34 @@ export const TemplateController = new Elysia({
 			return files;
 		},
 	)
+	.patch(
+		"/",
+		async ({
+			body: { templateId, newFileName },
+			db,
+			redis,
+			minio,
+		}: Context & {
+			body: {
+				templateId: string;
+				newFileName: string;
+			};
+		}) => {
+			const templateService = new TemplateService(db, redis, minio);
+			const updatedFile = await templateService.changeTemplateName(
+				templateId,
+				newFileName,
+			);
+
+			// Shorten fileName if necessary
+			updatedFile.fileName = truncateFileName(
+				updatedFile.fileName,
+				MAX_FILENAME_LENGTH,
+			);
+
+			return updatedFile;
+		},
+	)
 	.post(
 		"/:projectId",
 		async ({
