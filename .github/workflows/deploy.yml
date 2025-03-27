@@ -3,30 +3,31 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - dev
-      - main
+      - dev  # Run this action on push to the dev branch
+      - main # Run this action on push to the main branch
   pull_request:
     branches:
-      - '**'  # Run checks on all branches when a PR is created
+      - '*'  # Run checks on all branches when a pull request is created
 
 jobs:
-  
   build-and-push:
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'  # Only run for dev and main branches
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Check out the code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - uses: st4rchaser/jerm-action@v6.4.0
 
+      # Step 2: Log in to Docker Hub (only for dev and main branches)
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      # Step 3: Set up Docker Buildx (enables multi-platform builds)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      # Step 4: Cache Bun dependencies for faster builds
       - name: Cache Bun dependencies
         uses: actions/cache@v3
         with:
@@ -37,6 +38,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
+      # Step 5: Set the Docker image tag based on the branch
       - name: Set Docker tag
         id: docker_tag
         run: |
@@ -46,17 +48,19 @@ jobs:
             echo "TAG=latest" >> $GITHUB_ENV
           fi
 
+      # Step 6: Build the Docker image with secrets
       - name: Build Docker image
         run: |
-          docker buildx build . \
-            --platform linux/amd64,linux/arm64 \
-            -t bunnybunbun37204/cusw-backend:${{ env.TAG }} \
-            --push
+          docker build . \
+            -t bunnybunbun37204/cusw-backend:${{ env.TAG }}
+
+      # Step 7: Push Docker image to Docker Hub
+      - name: Push Docker image to Docker Hub
+        run: docker push bunnybunbun37204/cusw-backend:${{ env.TAG }}
 
   code-check:
-    if: github.event_name == 'pull_request' && github.base_ref != 'dev' && github.base_ref != 'main'
+    if: github.event_name == 'pull_request' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/main'  # Only for non-dev, non-main branches
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -67,17 +71,19 @@ jobs:
           bun-version: 'latest'
 
       - name: Verify Bun installation
-        run: bun --version
+        run: |
+          bun --version  # Check if Bun is installed correctly
 
-      - name: Install dependencies
-        run: bun install
+      - name: Bun installation
+        run: |
+          bun install  # Check if Bun is installed correctly
 
       - name: Lint code
         run: |
           echo "Running lint checks..."
-          bun run lint
+          bun run lint  # Run lint using Bun
 
       - name: Unit test
         run: |
           echo "Running unit tests..."
-          bun test --coverage
+          bun test --coverage  # Run unit tests using Bun
