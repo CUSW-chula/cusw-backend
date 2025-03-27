@@ -38,6 +38,25 @@ export const TagController = new Elysia({
 			return tags;
 		},
 	)
+	.patch(
+		"/:id",
+		async ({
+			params: { id },
+			body,
+			db,
+			redis,
+		}: Context & { params: { id: string }; body: Tag }) => {
+			const tagService = new TagService(db, redis);
+			const tag = await tagService.updateTag({ ...body, id });
+			return tag;
+		},
+		{
+			body: t.Object({
+				name: t.String(),
+				isProject: t.Boolean(),
+			}),
+		},
+	)
 	.post(
 		"/",
 		async ({
@@ -61,6 +80,18 @@ export const TagController = new Elysia({
 			const tagService = new TagService(db, redis);
 			const tasks: Task[] = await tagService.getAsignTaskInTagByTagId(tagId);
 			return tasks;
+		},
+	)
+	.delete(
+		"/:id",
+		async ({
+			params: { id },
+			db,
+			redis,
+		}: Context & { params: { id: string } }) => {
+			const tagService = new TagService(db, redis);
+			const tag = await tagService.deleteTag(id);
+			return tag;
 		},
 	)
 	.post(

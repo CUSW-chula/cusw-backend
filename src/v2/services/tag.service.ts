@@ -53,6 +53,19 @@ export class TagService extends BaseService<Tag> {
 		return tag;
 	}
 
+	async deleteTag(tagId: string): Promise<Tag> {
+		const tag = await this.tagModel.delete(tagId);
+		await this.invalidateAllCache("tag");
+		return tag;
+	}
+
+	async updateTag(tag: Partial<Tag>): Promise<Tag> {
+		if (!tag.id) throw new NotFoundException("Tag not found");
+		const updateTag = await this.tagModel.update(tag.id, tag);
+		await this.invalidateAllCache("tag");
+		return updateTag;
+	}
+
 	// Retrieve all tags assigned to a specific task by task ID
 	async getAsignTagInTaskByTaskId(taskId: string): Promise<Tag[]> {
 		// Check if the task exists
@@ -126,7 +139,7 @@ export class TagService extends BaseService<Tag> {
 
 		if (!assignTagToTask)
 			throw new NotFoundException("Failed to assign tag to task");
-		const tasks = await this.taskModel.findById(taskId);
+		await this.taskModel.findById(taskId);
 		await this.invalidateAllCache("tasks", "projects");
 		return assignTagToTask;
 	}
