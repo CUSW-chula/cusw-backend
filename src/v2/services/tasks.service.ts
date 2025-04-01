@@ -149,11 +149,14 @@ export class TaskService extends BaseService<Task> {
 		}
 
 		if (task.title !== null) {
-			let parentTaskBudget: $Enums.BudgetStatus = BudgetStatus.Initial;
+			let statusBudget: $Enums.BudgetStatus = BudgetStatus.Initial;
 			if (task.parentTaskId) {
 				const parentTask = await this.taskModel.findById(task.parentTaskId);
-				if (parentTask) {
-					parentTaskBudget = parentTask.statusBudgets;
+				if (
+					parentTask?.statusBudgets === BudgetStatus.Added ||
+					parentTask?.statusBudgets === BudgetStatus.ParentTaskAdded
+				) {
+					statusBudget = BudgetStatus.ParentTaskAdded;
 				}
 			}
 			const newTask = {
@@ -167,7 +170,7 @@ export class TaskService extends BaseService<Task> {
 				budget: task.budget,
 				advance: task.advance,
 				expense: task.expense,
-				statusBudgets: parentTaskBudget,
+				statusBudgets: statusBudget,
 				projectId: task.projectId,
 			};
 			await this.invalidateAllCache("projects", "tasks");
