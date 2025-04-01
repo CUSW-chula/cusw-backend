@@ -1,5 +1,10 @@
 import { TasksModel } from "../models/tasks.model";
-import { TaskStatus, type PrismaClient } from "@prisma/client";
+import {
+	$Enums,
+	BudgetStatus,
+	TaskStatus,
+	type PrismaClient,
+} from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -144,6 +149,13 @@ export class TaskService extends BaseService<Task> {
 		}
 
 		if (task.title !== null) {
+			let parentTaskBudget: $Enums.BudgetStatus = BudgetStatus.Initial;
+			if (task.parentTaskId) {
+				const parentTask = await this.taskModel.findById(task.parentTaskId);
+				if (parentTask) {
+					parentTaskBudget = parentTask.statusBudgets;
+				}
+			}
 			const newTask = {
 				title: task.title,
 				description: task.description,
@@ -155,6 +167,7 @@ export class TaskService extends BaseService<Task> {
 				budget: task.budget,
 				advance: task.advance,
 				expense: task.expense,
+				statusBudgets: parentTaskBudget,
 				projectId: task.projectId,
 			};
 			await this.invalidateAllCache("projects", "tasks");
