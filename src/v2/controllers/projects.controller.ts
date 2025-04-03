@@ -345,16 +345,6 @@ export const ProjectController = new Elysia({
 			if (!session?.value) throw new PermissionException("Unauthorized");
 
 			const projectService = new ProjectService(db, redis);
-			const project = await projectService.getProjectById(
-				session.value,
-				projectId,
-			);
-
-			if (!project.owner.some((user) => user?.id === session.value)) {
-				throw new PermissionException(
-					"Forbidden: Only the project owner can assign members.",
-				);
-			}
 
 			const updatedProject = await projectService.removeMemberFromProject(
 				body.userId,
