@@ -1,6 +1,7 @@
 import { $Enums, Project, ProjectTag } from "@prisma/client";
-import type { Prisma, ProjectRole } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { BaseModel } from "../../core/model.core";
+import { title } from "process";
 
 export class ProjectModel extends BaseModel<Project> {
 	async findAll(): Promise<Project[]> {
@@ -65,7 +66,17 @@ export class ProjectModel extends BaseModel<Project> {
 			where: {
 				id: id,
 			},
-			data: data,
+			data: {
+				updatedAt: new Date(),
+				title: data.title,
+				description: data.description,
+				advance: data.advance,
+				budget: data.budget,
+				createdAt: data.createdAt,
+				endDate: data.endDate,
+				expense: data.expense,
+				
+			},
 		});
 		return updatedUser;
 	}

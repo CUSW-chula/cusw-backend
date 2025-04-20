@@ -55,6 +55,8 @@ model Project {
   tasks          Task[]           @relation("ProjectTasks") 
   files          File[]           @relation("ProjectFiles") 
   pinnedProject   PinProject[] 
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt 
   @@map("projects") 
 }
 
@@ -94,9 +96,9 @@ model Task {
   activities     Activity[] 
   files          File[]         @relation("TaskFiles") 
   tags           TaskTag[]
-
   emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
-
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt 
   @@map("tasks") 
 }
 
