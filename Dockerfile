@@ -1,7 +1,7 @@
 FROM oven/bun:1.2.2
 
 # Install OpenSSL
-RUN apt-get update -y && apt-get install -y openssl
+# RUN apt-get update -y && apt-get install -y openssl
 
 # Set working directory
 WORKDIR /app
