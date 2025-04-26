@@ -1,6 +1,5 @@
 // Import dependencies
 import { Elysia, t } from "elysia";
-import { PrismaClient } from "@prisma/client";
 import swagger from "@elysiajs/swagger";
 import Redis from "ioredis";
 import * as Minio from "minio";
@@ -9,9 +8,10 @@ import jwt from "@elysiajs/jwt";
 import { Exception, UnauthorizedException } from "./core/exception.core";
 
 // Import controllers
-import controllersV1 from "./v1/controllers";
 import controllersV2 from "./v2/controllers";
 import { UserService } from "./v2/services/users.service";
+import { PrismaClient } from "../generated";
+import { UserTaskClassService } from "./v2/services/tasks/user.tasks.service";
 
 // Initialize services
 const prisma = new PrismaClient();
@@ -73,8 +73,9 @@ const app = new Elysia()
 
 // Route for signing a token
 app.get("sign/:email", async ({ jwt, params }) => {
-	const userService = new UserService(prisma, redis);
-	const userId = await userService.getUserByEmail(params.email);
+	const userId = await prisma.user.findFirst({
+		where: { email: params.email },
+	});
 	if (!userId?.id || userId.activated === false) {
 		throw new Error("User ID is undefined");
 	}
@@ -117,10 +118,6 @@ app.guard(
 					set.status = error.statusCode;
 					return Response.json(error.message, { status: error.statusCode });
 				}
-			})
-			.group("/api/v1", (api) => {
-				controllersV1.forEach((controller) => api.use(controller));
-				return api;
 			})
 			.group("/api/v2", (api) => {
 				controllersV2.forEach((controller) => api.use(controller));

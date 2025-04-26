@@ -1,4 +1,4 @@
-import type { File } from "@prisma/client";
+import type { File } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class FilesModel extends BaseModel<File> {

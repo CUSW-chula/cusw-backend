@@ -3,7 +3,7 @@ import { type Context } from "../../shared/interfaces.shared";
 import { FilesService } from "../services/files.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { ActivityService } from "../services/activity-logs.service";
-import { $Enums } from "@prisma/client";
+import { $Enums } from "../../../generated";
 
 const MAX_FILENAME_LENGTH = 50; // Define your max length for filenames
 

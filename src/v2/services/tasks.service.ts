@@ -4,7 +4,7 @@ import {
 	BudgetStatus,
 	TaskStatus,
 	type PrismaClient,
-} from "@prisma/client";
+} from "../../../generated";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";

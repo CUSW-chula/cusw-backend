@@ -1,5 +1,5 @@
 import { UserModel } from "../models/users.model";
-import type { PrismaClient, User } from "@prisma/client";
+import type { PrismaClient, User } from "../../../generated";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import {

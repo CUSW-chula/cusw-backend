@@ -2,7 +2,7 @@ import { type Cookie, Elysia, t } from "elysia";
 import { Task, type Context } from "../../shared/interfaces.shared";
 import { TaskService } from "../services/tasks.service";
 import { WebSocket } from "../../shared/utils/websocket.utils";
-import { TaskStatus, EmojiTaskUser, $Enums } from "@prisma/client";
+import { TaskStatus, EmojiTaskUser, $Enums } from "../../../generated";
 import { ActivityService } from "../services/activity-logs.service";
 import { EmojiClassService } from "../services/tasks/emoji.tasks.service";
 import { MoneyClassService } from "../services/tasks/money.tasks.service";

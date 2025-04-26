@@ -1,7 +1,7 @@
 import { type Cookie, Elysia, t } from "elysia";
 import { Context } from "../../shared/interfaces.shared";
 import { TagService } from "../services/tag.service";
-import { $Enums, Tag, Task } from "@prisma/client";
+import { $Enums, Tag, Task } from "../../../generated";
 import { WebSocket } from "../../shared/utils/websocket.utils";
 import { ActivityService } from "../services/activity-logs.service";
 

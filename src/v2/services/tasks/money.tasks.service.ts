@@ -1,4 +1,4 @@
-import { BudgetStatus, PrismaClient } from "@prisma/client";
+import { BudgetStatus, PrismaClient } from "../../../../generated";
 import { TaskService } from "../tasks.service";
 import Redis from "ioredis";
 import {

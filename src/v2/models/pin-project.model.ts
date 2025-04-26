@@ -1,4 +1,4 @@
-import type { PinProject } from "@prisma/client";
+import type { PinProject } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class PinProjectModel extends BaseModel<PinProject> {

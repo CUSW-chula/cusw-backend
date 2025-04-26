@@ -1,4 +1,4 @@
-import { PrismaClient, Tag, Task, TaskTag } from "@prisma/client";
+import { PrismaClient, Tag, Task, TaskTag } from "../../../generated";
 import { TagModel } from "../models/tag.model";
 import { TaskTagModel } from "../models/task-tag.model";
 import { BaseService } from "../../core/service.core";

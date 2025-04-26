@@ -1,4 +1,4 @@
-import type { PinProject, PrismaClient } from "@prisma/client";
+import type { PinProject, PrismaClient } from "../../../generated";
 import { BaseService } from "../../core/service.core";
 import { ProjectModel } from "../models/projects.model";
 import type Redis from "ioredis";

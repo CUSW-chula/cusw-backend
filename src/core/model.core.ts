@@ -1,5 +1,5 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
-import type { DefaultArgs } from "@prisma/client/runtime/library";
+import { Prisma, PrismaClient } from "../../generated";
+import { DefaultArgs } from "../../generated/runtime/library";
 
 export abstract class BaseModel<T> {
 	private readonly prisma: PrismaClient;

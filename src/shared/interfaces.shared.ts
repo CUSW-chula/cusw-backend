@@ -1,6 +1,6 @@
-import type { $Enums, PrismaClient } from "@prisma/client";
 import type Redis from "ioredis";
 import type * as Minio from "minio";
+import { $Enums, PrismaClient } from "../../generated";
 
 export interface Context {
 	db: PrismaClient;

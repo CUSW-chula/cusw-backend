@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { TaskService } from "../tasks.service";
 import Redis from "ioredis";
 import {
@@ -6,6 +5,7 @@ import {
 	PermissionException,
 } from "../../../core/exception.core";
 import { Emoji } from "../../../shared/interfaces.shared";
+import { PrismaClient } from "../../../../generated";
 
 export class EmojiClassService extends TaskService {
 	constructor(prisma: PrismaClient, redis: Redis) {

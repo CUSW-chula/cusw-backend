@@ -1,5 +1,5 @@
 import { ActivityLogsModel } from "../models/activity-logs.model";
-import type { PrismaClient, $Enums } from "@prisma/client";
+import type { PrismaClient, $Enums } from "../../../../generated";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";

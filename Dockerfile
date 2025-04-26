@@ -9,6 +9,7 @@ COPY package.json .
 COPY bun.lock .
 COPY prisma prisma
 COPY src src
+COPY generated generated
 
 # Install dependencies & generate Prisma Client
 RUN bun install

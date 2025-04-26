@@ -1,4 +1,4 @@
-import type { EmojiTaskUser } from "@prisma/client";
+import type { EmojiTaskUser } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class EmojiModel extends BaseModel<EmojiTaskUser> {

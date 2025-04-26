@@ -1,4 +1,4 @@
-import type { User } from "@prisma/client";
+import type { User } from "../../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class UserModel extends BaseModel<User> {

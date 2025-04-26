@@ -1,4 +1,4 @@
-import type { Comment as PrismaComment } from "@prisma/client";
+import type { Comment as PrismaComment } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class CommentModel extends BaseModel<PrismaComment> {

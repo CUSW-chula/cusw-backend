@@ -1,5 +1,5 @@
-import { $Enums, Project, ProjectTag } from "@prisma/client";
-import type { Prisma, ProjectRole } from "@prisma/client";
+import { $Enums, Project, ProjectTag } from "../../../generated";
+import type { Prisma, ProjectRole } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class ProjectModel extends BaseModel<Project> {

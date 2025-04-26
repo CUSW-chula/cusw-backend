@@ -1,4 +1,3 @@
-import { File, PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import { FilesModel } from "../models/files.model";
 import * as Minio from "minio";
@@ -6,6 +5,7 @@ import Redis from "ioredis";
 import mime from "mime-types"; // Import mime-types library to get the content type by extension
 import { NotFoundError } from "elysia";
 import { ServerErrorException } from "../../core/exception.core";
+import { File, PrismaClient } from "../../../generated";
 
 export class FilesService extends BaseService<File> {
 	private readonly fileModel: FilesModel;
@@ -98,7 +98,7 @@ export class FilesService extends BaseService<File> {
 		return savedFile;
 	}
 
-	async removeFileByFileId(fileId: string): Promise<File> {
+	async removeFileByFileId(fileId: string): Promise<File | null> {
 		const file = await this.fileModel.findById(fileId);
 		if (!file) throw new Error("File not found");
 

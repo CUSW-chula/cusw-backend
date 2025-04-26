@@ -1,4 +1,4 @@
-import { Template, PrismaClient } from "@prisma/client";
+import { Template, PrismaClient } from "../../../generated";
 import { BaseService } from "../../core/service.core";
 import { TemplateModel } from "../models/template.model";
 import * as Minio from "minio";

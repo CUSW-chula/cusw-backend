@@ -2,7 +2,7 @@ import type {
 	$Enums,
 	ActivityAction,
 	Activity as PrismaActivity,
-} from "@prisma/client";
+} from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class ActivityLogsModel extends BaseModel<PrismaActivity> {

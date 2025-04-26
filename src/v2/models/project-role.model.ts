@@ -1,4 +1,4 @@
-import { ProjectRole } from "@prisma/client";
+import { ProjectRole } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class ProjectRoleModel extends BaseModel<ProjectRole> {

@@ -1,5 +1,4 @@
 import { CommentModel } from "../models/comment.model";
-import type { PrismaClient } from "@prisma/client";
 import { BaseService } from "../../core/service.core";
 import type Redis from "ioredis";
 import { UserModel } from "../models/users.model";
@@ -10,6 +9,7 @@ import {
 	ValidationException,
 } from "../../core/exception.core";
 import { Comment } from "../../shared/interfaces.shared";
+import type { PrismaClient } from "../../../generated";
 
 export class CommentService extends BaseService<Comment> {
 	private readonly commentModel: CommentModel;

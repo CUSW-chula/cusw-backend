@@ -1,4 +1,4 @@
-import { TaskStatus, BudgetStatus, type Task } from "@prisma/client";
+import { TaskStatus, BudgetStatus, type Task } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class TasksModel extends BaseModel<Task> {

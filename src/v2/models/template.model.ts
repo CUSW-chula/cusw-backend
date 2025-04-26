@@ -1,4 +1,4 @@
-import type { Template } from "@prisma/client";
+import type { Template } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class TemplateModel extends BaseModel<Template> {

@@ -1,4 +1,4 @@
-import { type TaskAssignment } from "@prisma/client";
+import { type TaskAssignment } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class TasksAssignmentModel extends BaseModel<TaskAssignment> {
