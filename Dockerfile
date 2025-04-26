@@ -1,4 +1,4 @@
-FROM oven/bun:latest
+FROM oven/bun:1.2.5
 
 # Install OpenSSL
 RUN apt-get update -y && apt-get install -y openssl
