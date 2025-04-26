@@ -37,7 +37,6 @@ COPY --from=build /app/server server
 COPY --from=build /app/generated ./generated
 
 # Explicitly point to the query engine binary
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/prisma-client/libquery_engine-debian-openssl-3.0.x.so.node
 ENV NODE_ENV=production
 
 CMD ["./server"]
