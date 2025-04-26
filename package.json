@@ -31,7 +31,7 @@
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@types/mime-types": "^2.1.4",
-    "bun-types": "latest",
+    "bun-types": "1.2.2",
     "cz-conventional-changelog": "^3.3.0",
     "cz-git": "^1.11.1",
     "eslint": "^9.23.0",
