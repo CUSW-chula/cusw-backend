@@ -11,7 +11,6 @@ COPY package.json .
 COPY bun.lock .
 
 # Copy other necessary files
-COPY tsconfig.json .
 COPY prisma prisma
 COPY src src
 
