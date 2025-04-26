@@ -1,4 +1,4 @@
-FROM oven/bun:latest
+FROM oven/bun:latest AS build
 
 # Install OpenSSL
 RUN apt-get update -y && apt-get install -y openssl
@@ -22,8 +22,22 @@ RUN bunx prisma generate
 
 ENV NODE_ENV=production
 
-# Expose port
-EXPOSE 4000
+RUN bun build \
+	--compile \
+	--minify-whitespace \
+	--minify-syntax \
+	--target bun \
+	--outfile server \
+	./src/index.ts
+    
+FROM gcr.io/distroless/base
 
-# Define the command to run your application
-CMD ["bun", "src/index.ts"]
+WORKDIR /app
+    
+COPY --from=build /app/server server
+    
+ENV NODE_ENV=production
+    
+CMD ["./server"]
+    
+EXPOSE 4000
