@@ -1,23 +1,23 @@
 FROM oven/bun:latest AS build
 
-# Install OpenSSL and build dependencies
-RUN apt-get update -y && apt-get install -y openssl
+# Install build dependencies
+RUN apt-get update -y && \
+    apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY package.json .
-COPY bun.lock .
-COPY prisma prisma
-COPY src src
-COPY generated generated
+COPY package.json bun.lock ./
+COPY prisma ./prisma
 
-# Install dependencies & generate Prisma Client
+# Install dependencies and generate Prisma Client
 RUN bun install
 RUN bunx prisma generate
 
-ENV NODE_ENV=production
+COPY src ./src
+COPY generated ./generated
 
-# Build the server binary
+ENV NODE_ENV=production
 RUN bun build \
     --compile \
     --minify-whitespace \
@@ -26,17 +26,24 @@ RUN bun build \
     --outfile server \
     ./src/index.ts
 
-FROM gcr.io/distroless/base
+# ---------------------------
+# Final Image with required libraries
+# ---------------------------
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y openssl libgcc-s1 && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy the built server binary
-COPY --from=build /app/server server
-
-# Copy generated Prisma Client files
+# Copy application files
+COPY --from=build /app/server .
 COPY --from=build /app/generated ./generated
 
-# Explicitly point to the query engine binary
+# Set environment variables
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/prisma-client/libquery_engine-debian-openssl-3.0.x.so.node
 ENV NODE_ENV=production
 
 CMD ["./server"]
