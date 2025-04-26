@@ -1,6 +1,6 @@
 FROM oven/bun:latest AS build
 
-# Install OpenSSL and other build dependencies
+# Install OpenSSL and build dependencies
 RUN apt-get update -y && apt-get install -y openssl
 
 WORKDIR /app
@@ -33,9 +33,11 @@ WORKDIR /app
 # Copy the built server binary
 COPY --from=build /app/server server
 
-# Copy Prisma Client and Engine
-COPY --from=build /app/node_modules/.prisma/client ./node_modules/.prisma/client
+# Copy generated Prisma Client files
+COPY --from=build /app/generated ./generated
 
+# Explicitly point to the query engine binary
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/prisma-client/libquery_engine-debian-openssl-3.0.x.so.node
 ENV NODE_ENV=production
 
 CMD ["./server"]
