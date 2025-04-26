@@ -20,9 +20,9 @@
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/stream": "^1.1.0",
     "@elysiajs/swagger": "^1.2.2",
-    "@prisma/client": "5.20.0",
-    "elysia": "latest",
-    "ioredis": "^5.6.0",
+    "@prisma/client": "6.6.0",
+    "elysia": "^1.2.25",
+    "ioredis": "^5.6.1",
     "minio": "^8.0.5",
     "ws": "^8.18.1"
   },
@@ -31,16 +31,16 @@
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@types/mime-types": "^2.1.4",
-    "bun-types": "1.2.2",
+    "bun-types": "1.2.10",
     "cz-conventional-changelog": "^3.3.0",
     "cz-git": "^1.11.1",
-    "eslint": "^9.23.0",
-    "globals": "^15.15.0",
+    "eslint": "^9.25.1",
+    "globals": "^16.0.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.0",
-    "mime-types": "^2.1.35",
-    "prisma": "^6.5.0",
-    "typescript-eslint": "^8.28.0"
+    "lint-staged": "^15.5.1",
+    "mime-types": "^3.0.1",
+    "prisma": "^6.6.0",
+    "typescript-eslint": "^8.31.0"
   },
   "config": {
     "commitizen": {
