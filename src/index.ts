@@ -2,6 +2,7 @@
 import { Elysia, t } from "elysia";
 import { PrismaClient } from "@prisma/client";
 import swagger from "@elysiajs/swagger";
+import Redis from "ioredis";
 import * as Minio from "minio";
 import cors from "@elysiajs/cors";
 import jwt from "@elysiajs/jwt";
@@ -11,11 +12,28 @@ import { Exception, UnauthorizedException } from "./core/exception.core";
 import controllersV1 from "./v1/controllers";
 import controllersV2 from "./v2/controllers";
 import { UserService } from "./v2/services/users.service";
-import Redis from "ioredis";
 
 // Initialize services
-const prisma = new PrismaClient({});
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const prisma = new PrismaClient();
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+	retryStrategy: (times) => {
+		const delay = Math.min(times * 100, 3000);
+		console.warn(`🔁 Redis reconnecting... attempt #${times}, delay=${delay}ms`);
+
+		return delay;
+	},
+	reconnectOnError: (err) => {
+		const targetError = ["READONLY", "ECONNRESET", "ETIMEDOUT", "ECONNREFUSED"];
+		const shouldReconnect = targetError.some((error) =>
+			err.message.includes(error),
+		);
+		if (shouldReconnect) {
+			console.warn(`🚨 Redis error matched retry condition: ${err.message}`);
+
+		}
+		return shouldReconnect;
+	}
+});
 
 const minioEndpoint = new URL(
 	process.env.MINIO_ENDPOINT || "http://localhost:9000",
