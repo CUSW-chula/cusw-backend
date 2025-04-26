@@ -29,7 +29,7 @@ RUN bun build \
 # ---------------------------
 # Final Image with required libraries
 # ---------------------------
-FROM debian:bookworm-slim
+FROM debian:stable-slim
 
 # Install runtime dependencies
 RUN apt-get update && \
