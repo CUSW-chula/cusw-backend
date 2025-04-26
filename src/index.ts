@@ -15,7 +15,25 @@ import { UserService } from "./v2/services/users.service";
 
 // Initialize services
 const prisma = new PrismaClient();
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+	retryStrategy: (times) => {
+		const delay = Math.min(times * 100, 3000);
+		console.warn(`🔁 Redis reconnecting... attempt #${times}, delay=${delay}ms`);
+
+		return delay;
+	},
+	reconnectOnError: (err) => {
+		const targetError = ["READONLY", "ECONNRESET", "ETIMEDOUT", "ECONNREFUSED"];
+		const shouldReconnect = targetError.some((error) =>
+			err.message.includes(error),
+		);
+		if (shouldReconnect) {
+			console.warn(`🚨 Redis error matched retry condition: ${err.message}`);
+
+		}
+		return shouldReconnect;
+	}
+});
 
 const minioEndpoint = new URL(
 	process.env.MINIO_ENDPOINT || "http://localhost:9000",
