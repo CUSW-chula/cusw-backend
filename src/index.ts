@@ -14,9 +14,7 @@ import { UserService } from "./v2/services/users.service";
 import Redis from "ioredis";
 
 // Initialize services
-const prisma = new PrismaClient({
-	
-});
+const prisma = new PrismaClient({});
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
 const minioEndpoint = new URL(
