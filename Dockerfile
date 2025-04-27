@@ -10,9 +10,9 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY prisma ./prisma
 
-# Install dependencies and generate Prisma Client
+# Install dependencies and generate Prisma Client for linux-musl
 RUN bun install
-RUN bunx prisma generate
+RUN bunx prisma generate --schema=./prisma/schema.prisma
 
 COPY src ./src
 COPY generated ./generated
@@ -27,23 +27,21 @@ RUN bun build \
     ./src/index.ts
 
 # ---------------------------
-# Final Image with required libraries
+# Final Image with musl libc for Prisma binary engine
 # ---------------------------
-FROM debian:stable-slim
+FROM alpine:latest AS final
 
-# Install runtime dependencies
-RUN apt-get update && \
-    apt-get install -y openssl libgcc-s1 && \
-    rm -rf /var/lib/apt/lists/*
+# Install musl compatible runtime dependencies
+RUN apk add --no-cache openssl libstdc++
 
 WORKDIR /app
 
-# Copy application files
+# Copy compiled server and generated Prisma Client (binary)
 COPY --from=build /app/server .
 COPY --from=build /app/generated ./generated
 
-# Set environment variables
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-debian-openssl-3.0.x.so.node
+# Set environment variables for Prisma
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl-openssl-3.0.x
 ENV NODE_ENV=production
 
 CMD ["./server"]
