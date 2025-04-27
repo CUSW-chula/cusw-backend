@@ -5,6 +5,7 @@ FROM oven/bun:alpine AS build
 # Install build dependencies
 RUN apk add --no-cache openssl
 
+
 WORKDIR /app
 
 COPY package.json bun.lock ./
@@ -31,17 +32,14 @@ RUN bun build \
 # ---------------------------
 FROM alpine:latest
 
-# Install runtime dependencies
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libstdc++ libgcc
 
 WORKDIR /app
 
-# Copy application files
 COPY --from=build /app/server .
 COPY --from=build /app/generated ./generated
 
-# Set environment variables for Prisma Engine (musl)
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl.so.node
 ENV NODE_ENV=production
 
 CMD ["./server"]
