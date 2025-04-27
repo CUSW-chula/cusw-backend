@@ -41,7 +41,7 @@ COPY --from=build /app/server .
 COPY --from=build /app/generated ./generated
 
 # Set environment variables for Prisma Engine (musl)
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl.so.node
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl
 ENV NODE_ENV=production
 
 CMD ["./server"]
