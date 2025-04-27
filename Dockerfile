@@ -1,9 +1,9 @@
-FROM oven/bun:latest AS build
+# --- Dockerfile ---
+
+FROM oven/bun:alpine AS build
 
 # Install build dependencies
-RUN apt-get update -y && \
-    apt-get install -y openssl && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -27,14 +27,12 @@ RUN bun build \
     ./src/index.ts
 
 # ---------------------------
-# Final Image with required libraries
+# Final Image for musl (Alpine)
 # ---------------------------
-FROM debian:stable-slim
+FROM alpine:latest
 
 # Install runtime dependencies
-RUN apt-get update && \
-    apt-get install -y openssl libgcc-s1 && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -42,8 +40,8 @@ WORKDIR /app
 COPY --from=build /app/server .
 COPY --from=build /app/generated ./generated
 
-# Set environment variables
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-debian-openssl-3.0.x
+# Set environment variables for Prisma Engine (musl)
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl.so.node
 ENV NODE_ENV=production
 
 CMD ["./server"]
