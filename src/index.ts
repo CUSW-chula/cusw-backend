@@ -9,9 +9,7 @@ import { Exception, UnauthorizedException } from "./core/exception.core";
 
 // Import controllers
 import controllersV2 from "./v2/controllers";
-import { UserService } from "./v2/services/users.service";
 import { PrismaClient } from "../generated";
-import { UserTaskClassService } from "./v2/services/tasks/user.tasks.service";
 
 // Initialize services
 const prisma = new PrismaClient();
@@ -34,6 +32,9 @@ const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
 		}
 		return shouldReconnect;
 	},
+	keepAlive: 30000,
+	connectTimeout: 10000,
+
 });
 
 const minioEndpoint = new URL(
