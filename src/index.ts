@@ -34,7 +34,6 @@ const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
 	},
 	keepAlive: 30000,
 	connectTimeout: 10000,
-
 });
 
 const minioEndpoint = new URL(
