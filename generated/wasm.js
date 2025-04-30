@@ -141,7 +141,8 @@ exports.Prisma.ProjectScalarFieldEnum = {
   advance: 'advance',
   expense: 'expense',
   startDate: 'startDate',
-  endDate: 'endDate'
+  endDate: 'endDate',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.ProjectRoleScalarFieldEnum = {
@@ -164,7 +165,8 @@ exports.Prisma.TaskScalarFieldEnum = {
   expense: 'expense',
   startDate: 'startDate',
   endDate: 'endDate',
-  createdById: 'createdById'
+  createdById: 'createdById',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.TaskAssignmentScalarFieldEnum = {

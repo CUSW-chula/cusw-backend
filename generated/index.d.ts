@@ -4802,6 +4802,7 @@ export namespace Prisma {
     expense: number | null
     startDate: Date | null
     endDate: Date | null
+    updatedAt: Date | null
   }
 
   export type ProjectMaxAggregateOutputType = {
@@ -4813,6 +4814,7 @@ export namespace Prisma {
     expense: number | null
     startDate: Date | null
     endDate: Date | null
+    updatedAt: Date | null
   }
 
   export type ProjectCountAggregateOutputType = {
@@ -4824,6 +4826,7 @@ export namespace Prisma {
     expense: number
     startDate: number
     endDate: number
+    updatedAt: number
     _all: number
   }
 
@@ -4849,6 +4852,7 @@ export namespace Prisma {
     expense?: true
     startDate?: true
     endDate?: true
+    updatedAt?: true
   }
 
   export type ProjectMaxAggregateInputType = {
@@ -4860,6 +4864,7 @@ export namespace Prisma {
     expense?: true
     startDate?: true
     endDate?: true
+    updatedAt?: true
   }
 
   export type ProjectCountAggregateInputType = {
@@ -4871,6 +4876,7 @@ export namespace Prisma {
     expense?: true
     startDate?: true
     endDate?: true
+    updatedAt?: true
     _all?: true
   }
 
@@ -4969,6 +4975,7 @@ export namespace Prisma {
     expense: number
     startDate: Date | null
     endDate: Date | null
+    updatedAt: Date
     _count: ProjectCountAggregateOutputType | null
     _avg: ProjectAvgAggregateOutputType | null
     _sum: ProjectSumAggregateOutputType | null
@@ -4999,6 +5006,7 @@ export namespace Prisma {
     expense?: boolean
     startDate?: boolean
     endDate?: boolean
+    updatedAt?: boolean
     projectRoles?: boolean | Project$projectRolesArgs<ExtArgs>
     tags?: boolean | Project$tagsArgs<ExtArgs>
     tasks?: boolean | Project$tasksArgs<ExtArgs>
@@ -5016,6 +5024,7 @@ export namespace Prisma {
     expense?: boolean
     startDate?: boolean
     endDate?: boolean
+    updatedAt?: boolean
   }, ExtArgs["result"]["project"]>
 
   export type ProjectSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5027,6 +5036,7 @@ export namespace Prisma {
     expense?: boolean
     startDate?: boolean
     endDate?: boolean
+    updatedAt?: boolean
   }, ExtArgs["result"]["project"]>
 
   export type ProjectSelectScalar = {
@@ -5038,9 +5048,10 @@ export namespace Prisma {
     expense?: boolean
     startDate?: boolean
     endDate?: boolean
+    updatedAt?: boolean
   }
 
-  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "budget" | "advance" | "expense" | "startDate" | "endDate", ExtArgs["result"]["project"]>
+  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "budget" | "advance" | "expense" | "startDate" | "endDate" | "updatedAt", ExtArgs["result"]["project"]>
   export type ProjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     projectRoles?: boolean | Project$projectRolesArgs<ExtArgs>
     tags?: boolean | Project$tagsArgs<ExtArgs>
@@ -5070,6 +5081,7 @@ export namespace Prisma {
       expense: number
       startDate: Date | null
       endDate: Date | null
+      updatedAt: Date
     }, ExtArgs["result"]["project"]>
     composites: {}
   }
@@ -5506,6 +5518,7 @@ export namespace Prisma {
     readonly expense: FieldRef<"Project", 'Float'>
     readonly startDate: FieldRef<"Project", 'DateTime'>
     readonly endDate: FieldRef<"Project", 'DateTime'>
+    readonly updatedAt: FieldRef<"Project", 'DateTime'>
   }
     
 
@@ -7123,6 +7136,7 @@ export namespace Prisma {
     startDate: Date | null
     endDate: Date | null
     createdById: string | null
+    updatedAt: Date | null
   }
 
   export type TaskMaxAggregateOutputType = {
@@ -7139,6 +7153,7 @@ export namespace Prisma {
     startDate: Date | null
     endDate: Date | null
     createdById: string | null
+    updatedAt: Date | null
   }
 
   export type TaskCountAggregateOutputType = {
@@ -7155,6 +7170,7 @@ export namespace Prisma {
     startDate: number
     endDate: number
     createdById: number
+    updatedAt: number
     _all: number
   }
 
@@ -7185,6 +7201,7 @@ export namespace Prisma {
     startDate?: true
     endDate?: true
     createdById?: true
+    updatedAt?: true
   }
 
   export type TaskMaxAggregateInputType = {
@@ -7201,6 +7218,7 @@ export namespace Prisma {
     startDate?: true
     endDate?: true
     createdById?: true
+    updatedAt?: true
   }
 
   export type TaskCountAggregateInputType = {
@@ -7217,6 +7235,7 @@ export namespace Prisma {
     startDate?: true
     endDate?: true
     createdById?: true
+    updatedAt?: true
     _all?: true
   }
 
@@ -7320,6 +7339,7 @@ export namespace Prisma {
     startDate: Date | null
     endDate: Date | null
     createdById: string | null
+    updatedAt: Date
     _count: TaskCountAggregateOutputType | null
     _avg: TaskAvgAggregateOutputType | null
     _sum: TaskSumAggregateOutputType | null
@@ -7355,6 +7375,7 @@ export namespace Prisma {
     startDate?: boolean
     endDate?: boolean
     createdById?: boolean
+    updatedAt?: boolean
     project?: boolean | ProjectDefaultArgs<ExtArgs>
     subTasks?: boolean | Task$subTasksArgs<ExtArgs>
     parentTask?: boolean | Task$parentTaskArgs<ExtArgs>
@@ -7382,6 +7403,7 @@ export namespace Prisma {
     startDate?: boolean
     endDate?: boolean
     createdById?: boolean
+    updatedAt?: boolean
     project?: boolean | ProjectDefaultArgs<ExtArgs>
     parentTask?: boolean | Task$parentTaskArgs<ExtArgs>
     createdBy?: boolean | Task$createdByArgs<ExtArgs>
@@ -7401,6 +7423,7 @@ export namespace Prisma {
     startDate?: boolean
     endDate?: boolean
     createdById?: boolean
+    updatedAt?: boolean
     project?: boolean | ProjectDefaultArgs<ExtArgs>
     parentTask?: boolean | Task$parentTaskArgs<ExtArgs>
     createdBy?: boolean | Task$createdByArgs<ExtArgs>
@@ -7420,9 +7443,10 @@ export namespace Prisma {
     startDate?: boolean
     endDate?: boolean
     createdById?: boolean
+    updatedAt?: boolean
   }
 
-  export type TaskOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "status" | "projectId" | "parentTaskId" | "statusBudgets" | "budget" | "advance" | "expense" | "startDate" | "endDate" | "createdById", ExtArgs["result"]["task"]>
+  export type TaskOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "status" | "projectId" | "parentTaskId" | "statusBudgets" | "budget" | "advance" | "expense" | "startDate" | "endDate" | "createdById" | "updatedAt", ExtArgs["result"]["task"]>
   export type TaskInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     project?: boolean | ProjectDefaultArgs<ExtArgs>
     subTasks?: boolean | Task$subTasksArgs<ExtArgs>
@@ -7475,6 +7499,7 @@ export namespace Prisma {
       startDate: Date | null
       endDate: Date | null
       createdById: string | null
+      updatedAt: Date
     }, ExtArgs["result"]["task"]>
     composites: {}
   }
@@ -7921,6 +7946,7 @@ export namespace Prisma {
     readonly startDate: FieldRef<"Task", 'DateTime'>
     readonly endDate: FieldRef<"Task", 'DateTime'>
     readonly createdById: FieldRef<"Task", 'String'>
+    readonly updatedAt: FieldRef<"Task", 'DateTime'>
   }
     
 
@@ -18297,7 +18323,8 @@ export namespace Prisma {
     advance: 'advance',
     expense: 'expense',
     startDate: 'startDate',
-    endDate: 'endDate'
+    endDate: 'endDate',
+    updatedAt: 'updatedAt'
   };
 
   export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
@@ -18326,7 +18353,8 @@ export namespace Prisma {
     expense: 'expense',
     startDate: 'startDate',
     endDate: 'endDate',
-    createdById: 'createdById'
+    createdById: 'createdById',
+    updatedAt: 'updatedAt'
   };
 
   export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
@@ -18728,6 +18756,7 @@ export namespace Prisma {
     expense?: FloatFilter<"Project"> | number
     startDate?: DateTimeNullableFilter<"Project"> | Date | string | null
     endDate?: DateTimeNullableFilter<"Project"> | Date | string | null
+    updatedAt?: DateTimeFilter<"Project"> | Date | string
     projectRoles?: ProjectRoleListRelationFilter
     tags?: ProjectTagListRelationFilter
     tasks?: TaskListRelationFilter
@@ -18744,6 +18773,7 @@ export namespace Prisma {
     expense?: SortOrder
     startDate?: SortOrderInput | SortOrder
     endDate?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
     projectRoles?: ProjectRoleOrderByRelationAggregateInput
     tags?: ProjectTagOrderByRelationAggregateInput
     tasks?: TaskOrderByRelationAggregateInput
@@ -18763,6 +18793,7 @@ export namespace Prisma {
     expense?: FloatFilter<"Project"> | number
     startDate?: DateTimeNullableFilter<"Project"> | Date | string | null
     endDate?: DateTimeNullableFilter<"Project"> | Date | string | null
+    updatedAt?: DateTimeFilter<"Project"> | Date | string
     projectRoles?: ProjectRoleListRelationFilter
     tags?: ProjectTagListRelationFilter
     tasks?: TaskListRelationFilter
@@ -18779,6 +18810,7 @@ export namespace Prisma {
     expense?: SortOrder
     startDate?: SortOrderInput | SortOrder
     endDate?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
     _count?: ProjectCountOrderByAggregateInput
     _avg?: ProjectAvgOrderByAggregateInput
     _max?: ProjectMaxOrderByAggregateInput
@@ -18798,6 +18830,7 @@ export namespace Prisma {
     expense?: FloatWithAggregatesFilter<"Project"> | number
     startDate?: DateTimeNullableWithAggregatesFilter<"Project"> | Date | string | null
     endDate?: DateTimeNullableWithAggregatesFilter<"Project"> | Date | string | null
+    updatedAt?: DateTimeWithAggregatesFilter<"Project"> | Date | string
   }
 
   export type ProjectRoleWhereInput = {
@@ -18871,6 +18904,7 @@ export namespace Prisma {
     startDate?: DateTimeNullableFilter<"Task"> | Date | string | null
     endDate?: DateTimeNullableFilter<"Task"> | Date | string | null
     createdById?: StringNullableFilter<"Task"> | string | null
+    updatedAt?: DateTimeFilter<"Task"> | Date | string
     project?: XOR<ProjectScalarRelationFilter, ProjectWhereInput>
     subTasks?: TaskListRelationFilter
     parentTask?: XOR<TaskNullableScalarRelationFilter, TaskWhereInput> | null
@@ -18897,6 +18931,7 @@ export namespace Prisma {
     startDate?: SortOrderInput | SortOrder
     endDate?: SortOrderInput | SortOrder
     createdById?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
     project?: ProjectOrderByWithRelationInput
     subTasks?: TaskOrderByRelationAggregateInput
     parentTask?: TaskOrderByWithRelationInput
@@ -18926,6 +18961,7 @@ export namespace Prisma {
     startDate?: DateTimeNullableFilter<"Task"> | Date | string | null
     endDate?: DateTimeNullableFilter<"Task"> | Date | string | null
     createdById?: StringNullableFilter<"Task"> | string | null
+    updatedAt?: DateTimeFilter<"Task"> | Date | string
     project?: XOR<ProjectScalarRelationFilter, ProjectWhereInput>
     subTasks?: TaskListRelationFilter
     parentTask?: XOR<TaskNullableScalarRelationFilter, TaskWhereInput> | null
@@ -18952,6 +18988,7 @@ export namespace Prisma {
     startDate?: SortOrderInput | SortOrder
     endDate?: SortOrderInput | SortOrder
     createdById?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
     _count?: TaskCountOrderByAggregateInput
     _avg?: TaskAvgOrderByAggregateInput
     _max?: TaskMaxOrderByAggregateInput
@@ -18976,6 +19013,7 @@ export namespace Prisma {
     startDate?: DateTimeNullableWithAggregatesFilter<"Task"> | Date | string | null
     endDate?: DateTimeNullableWithAggregatesFilter<"Task"> | Date | string | null
     createdById?: StringNullableWithAggregatesFilter<"Task"> | string | null
+    updatedAt?: DateTimeWithAggregatesFilter<"Task"> | Date | string
   }
 
   export type TaskAssignmentWhereInput = {
@@ -19645,6 +19683,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleCreateNestedManyWithoutProjectInput
     tags?: ProjectTagCreateNestedManyWithoutProjectInput
     tasks?: TaskCreateNestedManyWithoutProjectInput
@@ -19661,6 +19700,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleUncheckedCreateNestedManyWithoutProjectInput
     tags?: ProjectTagUncheckedCreateNestedManyWithoutProjectInput
     tasks?: TaskUncheckedCreateNestedManyWithoutProjectInput
@@ -19677,6 +19717,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUpdateManyWithoutProjectNestedInput
     tasks?: TaskUpdateManyWithoutProjectNestedInput
@@ -19693,6 +19734,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUncheckedUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUncheckedUpdateManyWithoutProjectNestedInput
     tasks?: TaskUncheckedUpdateManyWithoutProjectNestedInput
@@ -19709,6 +19751,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
   }
 
   export type ProjectUpdateManyMutationInput = {
@@ -19720,6 +19763,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProjectUncheckedUpdateManyInput = {
@@ -19731,6 +19775,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProjectRoleCreateInput = {
@@ -19791,6 +19836,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -19817,6 +19863,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -19837,6 +19884,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -19863,6 +19911,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -19886,6 +19935,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
   }
 
   export type TaskUpdateManyMutationInput = {
@@ -19899,6 +19949,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TaskUncheckedUpdateManyInput = {
@@ -19915,6 +19966,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TaskAssignmentCreateInput = {
@@ -20608,6 +20660,17 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
   export type ProjectTagListRelationFilter = {
     every?: ProjectTagWhereInput
     some?: ProjectTagWhereInput
@@ -20632,6 +20695,7 @@ export namespace Prisma {
     expense?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type ProjectAvgOrderByAggregateInput = {
@@ -20649,6 +20713,7 @@ export namespace Prisma {
     expense?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type ProjectMinOrderByAggregateInput = {
@@ -20660,6 +20725,7 @@ export namespace Prisma {
     expense?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type ProjectSumOrderByAggregateInput = {
@@ -20696,6 +20762,20 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type EnumRoleFilter<$PrismaModel = never> = {
@@ -20810,6 +20890,7 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     createdById?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type TaskAvgOrderByAggregateInput = {
@@ -20832,6 +20913,7 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     createdById?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type TaskMinOrderByAggregateInput = {
@@ -20848,6 +20930,7 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     createdById?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type TaskSumOrderByAggregateInput = {
@@ -20935,17 +21018,6 @@ export namespace Prisma {
     isProject?: SortOrder
   }
 
-  export type DateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
-  }
-
   export type CommentCountOrderByAggregateInput = {
     id?: SortOrder
     content?: SortOrder
@@ -20974,20 +21046,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     isDelete?: SortOrder
     editTime?: SortOrder
-  }
-
-  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type EnumActivityActionFilter<$PrismaModel = never> = {
@@ -21670,6 +21728,10 @@ export namespace Prisma {
     set?: Date | string | null
   }
 
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
   export type ProjectRoleUpdateManyWithoutProjectNestedInput = {
     create?: XOR<ProjectRoleCreateWithoutProjectInput, ProjectRoleUncheckedCreateWithoutProjectInput> | ProjectRoleCreateWithoutProjectInput[] | ProjectRoleUncheckedCreateWithoutProjectInput[]
     connectOrCreate?: ProjectRoleCreateOrConnectWithoutProjectInput | ProjectRoleCreateOrConnectWithoutProjectInput[]
@@ -22318,10 +22380,6 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
-  }
-
   export type TaskUpdateOneRequiredWithoutCommentsNestedInput = {
     create?: XOR<TaskCreateWithoutCommentsInput, TaskUncheckedCreateWithoutCommentsInput>
     connectOrCreate?: TaskCreateOrConnectWithoutCommentsInput
@@ -22593,6 +22651,17 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
   export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | FloatFieldRefInput<$PrismaModel>
     in?: number[] | ListFloatFieldRefInput<$PrismaModel>
@@ -22632,6 +22701,20 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type NestedEnumRoleFilter<$PrismaModel = never> = {
@@ -22716,31 +22799,6 @@ export namespace Prisma {
     _max?: NestedEnumBudgetStatusFilter<$PrismaModel>
   }
 
-  export type NestedDateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
-  }
-
-  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
   export type NestedEnumActivityActionFilter<$PrismaModel = never> = {
     equals?: $Enums.ActivityAction | EnumActivityActionFieldRefInput<$PrismaModel>
     in?: $Enums.ActivityAction[] | ListEnumActivityActionFieldRefInput<$PrismaModel>
@@ -22811,6 +22869,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -22835,6 +22894,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -23090,6 +23150,7 @@ export namespace Prisma {
     startDate?: DateTimeNullableFilter<"Task"> | Date | string | null
     endDate?: DateTimeNullableFilter<"Task"> | Date | string | null
     createdById?: StringNullableFilter<"Task"> | string | null
+    updatedAt?: DateTimeFilter<"Task"> | Date | string
   }
 
   export type FileUpsertWithWhereUniqueWithoutUploaderInput = {
@@ -23308,6 +23369,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -23333,6 +23395,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -23413,6 +23476,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -23438,6 +23502,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -23499,6 +23564,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
     assignedUsers?: TaskAssignmentCreateNestedManyWithoutTaskInput
@@ -23523,6 +23589,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -23729,6 +23796,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     tags?: ProjectTagCreateNestedManyWithoutProjectInput
     tasks?: TaskCreateNestedManyWithoutProjectInput
     files?: FileCreateNestedManyWithoutProjectInput
@@ -23744,6 +23812,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     tags?: ProjectTagUncheckedCreateNestedManyWithoutProjectInput
     tasks?: TaskUncheckedCreateNestedManyWithoutProjectInput
     files?: FileUncheckedCreateNestedManyWithoutProjectInput
@@ -23820,6 +23889,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     tags?: ProjectTagUpdateManyWithoutProjectNestedInput
     tasks?: TaskUpdateManyWithoutProjectNestedInput
     files?: FileUpdateManyWithoutProjectNestedInput
@@ -23835,6 +23905,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     tags?: ProjectTagUncheckedUpdateManyWithoutProjectNestedInput
     tasks?: TaskUncheckedUpdateManyWithoutProjectNestedInput
     files?: FileUncheckedUpdateManyWithoutProjectNestedInput
@@ -23850,6 +23921,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleCreateNestedManyWithoutProjectInput
     tags?: ProjectTagCreateNestedManyWithoutProjectInput
     files?: FileCreateNestedManyWithoutProjectInput
@@ -23865,6 +23937,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleUncheckedCreateNestedManyWithoutProjectInput
     tags?: ProjectTagUncheckedCreateNestedManyWithoutProjectInput
     files?: FileUncheckedCreateNestedManyWithoutProjectInput
@@ -23887,6 +23960,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentCreateNestedManyWithoutTaskInput
@@ -23911,6 +23985,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -23941,6 +24016,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
     assignedUsers?: TaskAssignmentCreateNestedManyWithoutTaskInput
@@ -23966,6 +24042,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
     activities?: ActivityUncheckedCreateNestedManyWithoutTaskInput
@@ -24184,6 +24261,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUpdateManyWithoutProjectNestedInput
     files?: FileUpdateManyWithoutProjectNestedInput
@@ -24199,6 +24277,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUncheckedUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUncheckedUpdateManyWithoutProjectNestedInput
     files?: FileUncheckedUpdateManyWithoutProjectNestedInput
@@ -24243,6 +24322,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
     assignedUsers?: TaskAssignmentUpdateManyWithoutTaskNestedInput
@@ -24268,6 +24348,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
     activities?: ActivityUncheckedUpdateManyWithoutTaskNestedInput
@@ -24437,6 +24518,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -24462,6 +24544,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
     activities?: ActivityUncheckedCreateNestedManyWithoutTaskInput
@@ -24536,6 +24619,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -24561,6 +24645,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
     activities?: ActivityUncheckedUpdateManyWithoutTaskNestedInput
@@ -24697,6 +24782,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -24722,6 +24808,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     activities?: ActivityUncheckedCreateNestedManyWithoutTaskInput
@@ -24796,6 +24883,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -24821,6 +24909,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     activities?: ActivityUncheckedUpdateManyWithoutTaskNestedInput
@@ -24885,6 +24974,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -24910,6 +25000,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -24984,6 +25075,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -25009,6 +25101,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -25073,6 +25166,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -25098,6 +25192,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -25120,6 +25215,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleCreateNestedManyWithoutProjectInput
     tags?: ProjectTagCreateNestedManyWithoutProjectInput
     tasks?: TaskCreateNestedManyWithoutProjectInput
@@ -25135,6 +25231,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleUncheckedCreateNestedManyWithoutProjectInput
     tags?: ProjectTagUncheckedCreateNestedManyWithoutProjectInput
     tasks?: TaskUncheckedCreateNestedManyWithoutProjectInput
@@ -25207,6 +25304,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -25232,6 +25330,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -25260,6 +25359,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUpdateManyWithoutProjectNestedInput
     tasks?: TaskUpdateManyWithoutProjectNestedInput
@@ -25275,6 +25375,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUncheckedUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUncheckedUpdateManyWithoutProjectNestedInput
     tasks?: TaskUncheckedUpdateManyWithoutProjectNestedInput
@@ -25421,6 +25522,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutTasksInput
     subTasks?: TaskCreateNestedManyWithoutParentTaskInput
     parentTask?: TaskCreateNestedOneWithoutSubTasksInput
@@ -25446,6 +25548,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
     subTasks?: TaskUncheckedCreateNestedManyWithoutParentTaskInput
     assignedUsers?: TaskAssignmentUncheckedCreateNestedManyWithoutTaskInput
     comments?: CommentUncheckedCreateNestedManyWithoutTaskInput
@@ -25500,6 +25603,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -25525,6 +25629,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -25567,6 +25672,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleCreateNestedManyWithoutProjectInput
     tasks?: TaskCreateNestedManyWithoutProjectInput
     files?: FileCreateNestedManyWithoutProjectInput
@@ -25582,6 +25688,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleUncheckedCreateNestedManyWithoutProjectInput
     tasks?: TaskUncheckedCreateNestedManyWithoutProjectInput
     files?: FileUncheckedCreateNestedManyWithoutProjectInput
@@ -25632,6 +25739,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUpdateManyWithoutProjectNestedInput
     tasks?: TaskUpdateManyWithoutProjectNestedInput
     files?: FileUpdateManyWithoutProjectNestedInput
@@ -25647,6 +25755,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUncheckedUpdateManyWithoutProjectNestedInput
     tasks?: TaskUncheckedUpdateManyWithoutProjectNestedInput
     files?: FileUncheckedUpdateManyWithoutProjectNestedInput
@@ -25726,6 +25835,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleCreateNestedManyWithoutProjectInput
     tags?: ProjectTagCreateNestedManyWithoutProjectInput
     tasks?: TaskCreateNestedManyWithoutProjectInput
@@ -25741,6 +25851,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
     projectRoles?: ProjectRoleUncheckedCreateNestedManyWithoutProjectInput
     tags?: ProjectTagUncheckedCreateNestedManyWithoutProjectInput
     tasks?: TaskUncheckedCreateNestedManyWithoutProjectInput
@@ -25817,6 +25928,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUpdateManyWithoutProjectNestedInput
     tasks?: TaskUpdateManyWithoutProjectNestedInput
@@ -25832,6 +25944,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     projectRoles?: ProjectRoleUncheckedUpdateManyWithoutProjectNestedInput
     tags?: ProjectTagUncheckedUpdateManyWithoutProjectNestedInput
     tasks?: TaskUncheckedUpdateManyWithoutProjectNestedInput
@@ -25862,6 +25975,7 @@ export namespace Prisma {
     expense: number
     startDate?: Date | string | null
     endDate?: Date | string | null
+    updatedAt?: Date | string
   }
 
   export type FileCreateManyUploaderInput = {
@@ -25954,6 +26068,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
@@ -25978,6 +26093,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -26000,6 +26116,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type FileUpdateWithoutUploaderInput = {
@@ -26164,6 +26281,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
   }
 
   export type FileCreateManyProjectInput = {
@@ -26225,6 +26343,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     parentTask?: TaskUpdateOneWithoutSubTasksNestedInput
     assignedUsers?: TaskAssignmentUpdateManyWithoutTaskNestedInput
@@ -26249,6 +26368,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -26271,6 +26391,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type FileUpdateWithoutProjectInput = {
@@ -26331,6 +26452,7 @@ export namespace Prisma {
     startDate?: Date | string | null
     endDate?: Date | string | null
     createdById?: string | null
+    updatedAt?: Date | string
   }
 
   export type TaskAssignmentCreateManyTaskInput = {
@@ -26387,6 +26509,7 @@ export namespace Prisma {
     expense?: FloatFieldUpdateOperationsInput | number
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutTasksNestedInput
     subTasks?: TaskUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUpdateManyWithoutTaskNestedInput
@@ -26411,6 +26534,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subTasks?: TaskUncheckedUpdateManyWithoutParentTaskNestedInput
     assignedUsers?: TaskAssignmentUncheckedUpdateManyWithoutTaskNestedInput
     comments?: CommentUncheckedUpdateManyWithoutTaskNestedInput
@@ -26433,6 +26557,7 @@ export namespace Prisma {
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TaskAssignmentUpdateWithoutTaskInput = {
