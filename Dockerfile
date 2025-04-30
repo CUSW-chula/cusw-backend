@@ -16,7 +16,6 @@ RUN bun install
 RUN bunx prisma generate
 
 COPY src ./src
-COPY --from=build /app/generated ./generated
 
 ENV NODE_ENV=production
 RUN bun build \
