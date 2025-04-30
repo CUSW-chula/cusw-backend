@@ -38,7 +38,8 @@ WORKDIR /app
 COPY --from=build /app/server .
 COPY --from=build /app/generated ./generated
 
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/libquery_engine-linux-musl.so.node
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/query-engine-linux-musl-openssl-3.0.x
+
 ENV NODE_ENV=production
 
 CMD ["./server"]
