@@ -29,7 +29,7 @@ RUN bun build \
 # ---------------------------
 # Final Image for musl (Alpine)
 # ---------------------------
-FROM alpine:latest
+FROM oven/bun:alpine AS final
 
 RUN apk add --no-cache openssl libstdc++ libgcc
 
