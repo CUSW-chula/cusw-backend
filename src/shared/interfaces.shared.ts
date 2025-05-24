@@ -28,6 +28,7 @@ export type Task = {
 	description: string;
 	parentTaskId: string | null;
 	projectId: string;
+	position: string | null;
 	startDate: Date | null;
 	endDate: Date | null;
 	expense: number;

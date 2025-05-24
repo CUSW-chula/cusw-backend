@@ -427,13 +427,19 @@ export class TaskService extends BaseService<Task> {
 		templateTask: Task[],
 		userId: string,
 		projectId: string,
+		parentPosition?: string, // Add parent position for hierarchical numbering
 	): Promise<Task[]> {
 		const newTasks: Task[] = [];
-		for (const task of templateTask) {
+		for (let i = 0; i < templateTask.length; i++) {
+			const task = templateTask[i];
+			const position = parentPosition
+				? `${parentPosition}.${i + 1}`
+				: `${i + 1}`;
 			const newTask = await this.createTaskFromTemplate(
 				task,
 				userId,
 				projectId,
+				position, // Pass the calculated position
 			);
 			await this.invalidateAllCache("tasks");
 			newTasks.push(newTask);
@@ -442,6 +448,7 @@ export class TaskService extends BaseService<Task> {
 					task.subtasks,
 					userId,
 					projectId,
+					position, // Pass current task's position as parent position for subtasks
 				);
 				await this.invalidateAllCache("tasks");
 				for (const subtask of subtasks) {
@@ -465,6 +472,7 @@ export class TaskService extends BaseService<Task> {
 		templateTask: Task,
 		userId: string,
 		projectId: string,
+		position: string, // Add position parameter
 	): Promise<Task> {
 		const newTask: Partial<Task> = {
 			title: templateTask.title,
@@ -479,6 +487,7 @@ export class TaskService extends BaseService<Task> {
 			expense: 0,
 			subtasks: templateTask.subtasks,
 			projectId: projectId,
+			position: position, // Add position to the new task
 		};
 
 		const response = await this.createTask(newTask);
