@@ -167,6 +167,7 @@ export class TaskService extends BaseService<Task> {
 				endDate: task.endDate,
 				status: task.status,
 				parentTaskId: task.parentTaskId !== "" ? task.parentTaskId : undefined,
+				position: task.position,
 				budget: task.budget,
 				advance: task.advance,
 				expense: task.expense,
@@ -441,6 +442,7 @@ export class TaskService extends BaseService<Task> {
 				projectId,
 				position, // Pass the calculated position
 			);
+			
 			await this.invalidateAllCache("tasks");
 			newTasks.push(newTask);
 			if (task.subtasks) {

@@ -48,6 +48,7 @@ export class TasksModel extends BaseModel<Task> {
 				expense: data.expense ?? 0.0,
 				status: data.status ?? TaskStatus.Unassigned,
 				parentTaskId: data.parentTaskId,
+				position: data.position,
 				projectId: data.projectId ?? "",
 				createdById: data.createdById ?? "",
 				startDate: data.startDate,
