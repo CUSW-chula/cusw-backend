@@ -355,7 +355,7 @@ export class TaskService extends BaseService<Task> {
 			}
 		}
 
-		await this.invalidateAllCache("tasks");
+		await this.invalidateAllCache("tasks","projects");
 
 		const finalTask = await this.getTaskById(updatedTask.id);
 		return finalTask;
@@ -420,7 +420,7 @@ export class TaskService extends BaseService<Task> {
 			startDate: startDate,
 			endDate: endDate,
 		});
-		await this.invalidateAllCache("tasks");
+		await this.invalidateAllCache("tasks","projects");
 		return this.getTaskById(updatedTask.id);
 	}
 
