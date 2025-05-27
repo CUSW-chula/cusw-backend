@@ -459,6 +459,45 @@ export class TaskService extends BaseService<Task> {
 					});
 				}
 			}
+		}
+		return newTasks;
+	}
+
+	async createTaskForDuplicate(
+		templateTask: Task[],
+		userId: string,
+		projectId: string,
+		parentPosition?: string, // Add parent position for hierarchical numbering
+	): Promise<Task[]> {
+		const newTasks: Task[] = [];
+		for (let i = 0; i < templateTask.length; i++) {
+			const task = templateTask[i];
+			const position = parentPosition
+				? `${parentPosition}.${i + 1}`
+				: `${i + 1}`;
+			const newTask = await this.createTaskFromTemplate(
+				task,
+				userId,
+				projectId,
+				position, // Pass the calculated position
+			);
+			
+			await this.invalidateAllCache("tasks");
+			newTasks.push(newTask);
+			if (task.subtasks) {
+				const subtasks = await this.createTaskForDuplicate(
+					task.subtasks,
+					userId,
+					projectId,
+					position, // Pass current task's position as parent position for subtasks
+				);
+				await this.invalidateAllCache("tasks");
+				for (const subtask of subtasks) {
+					await this.taskModel.update(subtask.id, {
+						parentTaskId: newTask.id,
+					});
+				}
+			}
 			//in case duplicate task
 			if (templateTask.length === 1 && templateTask[0].parentTaskId) {
 				const parentTask = newTasks[0];

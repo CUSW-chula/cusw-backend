@@ -254,7 +254,7 @@ export const TaskController = new Elysia({
 		}) => {
 			const taskService = new TaskService(db, redis);
 			const userId = session.value;
-			const task = await taskService.createTaskWithSubTaskRecursive(
+			const task = await taskService.createTaskForDuplicate(
 				body,
 				userId,
 				projectId,
