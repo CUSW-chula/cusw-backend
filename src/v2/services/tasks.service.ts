@@ -349,19 +349,23 @@ export class TaskService extends BaseService<Task> {
 		});
 
 		if (newTaskStatus === TaskStatus.Done) {
+			const doneAt = new Date();
+			await this.taskModel.update(taskId, { doneAt });
 			const parentTask = await this.taskModel.findParentTask(taskId);
 			if (parentTask) {
 				await this.recursiveDoneParentTask(isTaskExist.id, newTaskStatus);
 			}
 		}
 
-		await this.invalidateAllCache("tasks","projects");
+		await this.invalidateAllCache("tasks", "projects");
 
 		const finalTask = await this.getTaskById(updatedTask.id);
 		return finalTask;
 	}
 
 	async recursiveDoneParentTask(taskId: string, newTaskStatus: TaskStatus) {
+		const doneAt = new Date();
+		await this.taskModel.update(taskId, { doneAt });
 		const parentTask = await this.taskModel.findParentTask(taskId);
 		if (parentTask) {
 			const friendTask = await this.taskModel.findSubTask(parentTask.id);
@@ -420,7 +424,7 @@ export class TaskService extends BaseService<Task> {
 			startDate: startDate,
 			endDate: endDate,
 		});
-		await this.invalidateAllCache("tasks","projects");
+		await this.invalidateAllCache("tasks", "projects");
 		return this.getTaskById(updatedTask.id);
 	}
 
@@ -442,7 +446,7 @@ export class TaskService extends BaseService<Task> {
 				projectId,
 				position, // Pass the calculated position
 			);
-			
+
 			await this.invalidateAllCache("tasks");
 			newTasks.push(newTask);
 			if (task.subtasks) {
@@ -481,7 +485,7 @@ export class TaskService extends BaseService<Task> {
 				projectId,
 				position, // Pass the calculated position
 			);
-			
+
 			await this.invalidateAllCache("tasks");
 			newTasks.push(newTask);
 			if (task.subtasks) {
