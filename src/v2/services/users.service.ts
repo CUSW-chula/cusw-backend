@@ -97,6 +97,9 @@ export class UserService extends BaseService<User> {
 	async createNewUser(userData: {
 		name: string;
 		email: string;
+		organization: string;
+		position: string;
+		isOutsource: boolean;
 	}): Promise<User> {
 		if (!this.validateEmail(userData.email)) {
 			throw new ValidationException("Invalid email format");
