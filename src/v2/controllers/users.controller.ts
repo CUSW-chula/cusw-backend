@@ -139,4 +139,30 @@ export const UserController = new Elysia({
 				isActive: t.Boolean(),
 			}),
 		},
+	)
+	.patch(
+		"/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: { organization: string; position: string; isOutsource: boolean };
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.updateUser(userid, {
+				organization: body.organization,
+				position: body.position,
+				isOutsource: body.isOutsource,
+			});
+		},
+		{
+			body: t.Object({
+				organization: t.Optional(t.String()),
+				position: t.Optional(t.String()),
+				isOutsource: t.Optional(t.Boolean()),
+			}),
+		},
 	);
