@@ -148,11 +148,17 @@ export const UserController = new Elysia({
 			db,
 			redis,
 		}: Context & {
-			body: { organization: string; position: string; isOutsource: boolean };
+			body: {
+				name: string;
+				organization: string;
+				position: string;
+				isOutsource: boolean;
+			};
 			params: { userid: string };
 		}) => {
 			const userService = new UserService(db, redis);
 			return await userService.updateUser(userid, {
+				name: body.name,
 				organization: body.organization,
 				position: body.position,
 				isOutsource: body.isOutsource,
@@ -160,6 +166,7 @@ export const UserController = new Elysia({
 		},
 		{
 			body: t.Object({
+				name: t.Optional(t.String()),
 				organization: t.Optional(t.String()),
 				position: t.Optional(t.String()),
 				isOutsource: t.Optional(t.Boolean()),

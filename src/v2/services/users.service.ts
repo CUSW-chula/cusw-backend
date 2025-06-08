@@ -67,7 +67,15 @@ export class UserService extends BaseService<User> {
 		return activatedUser;
 	}
 
-	async updateUser(userId: string, userData: Partial<{ organization: string; position: string; isOutsource: boolean }>): Promise<User> {
+	async updateUser(
+		userId: string,
+		userData: Partial<{
+			name: string;
+			organization: string;
+			position: string;
+			isOutsource: boolean;
+		}>,
+	): Promise<User> {
 		const updatedUser = await this.userModel.update(userId, userData);
 		if (!updatedUser) throw new NotFoundException("User not found");
 		await this.invalidateAllCache("users");
