@@ -23,6 +23,7 @@ import {
 import { Project, Emoji, Task } from "../../shared/interfaces.shared";
 import { TagModel } from "../models/tag.model";
 import { TagService } from "../services/tag.service";
+import { sortTasks } from "../../shared/utils/task.utils";
 
 export class TaskService extends BaseService<Task> {
 	private readonly taskModel: TasksModel;
@@ -159,6 +160,9 @@ export class TaskService extends BaseService<Task> {
 					statusBudget = BudgetStatus.ParentTaskAdded;
 				}
 			}
+
+			const position = (await this.taskModel.findByProjectId(task.projectId))
+				.length;
 			const newTask = {
 				title: task.title,
 				description: task.description,
@@ -167,7 +171,7 @@ export class TaskService extends BaseService<Task> {
 				endDate: task.endDate,
 				status: task.status,
 				parentTaskId: task.parentTaskId !== "" ? task.parentTaskId : undefined,
-				position: task.position,
+				position: position,
 				budget: task.budget,
 				advance: task.advance,
 				expense: task.expense,
@@ -219,7 +223,8 @@ export class TaskService extends BaseService<Task> {
 				return await this.getTaskById(task.id);
 			}),
 		);
-		return tasksWithDetail;
+		const sortedTasks = sortTasks(tasksWithDetail);
+		return sortedTasks;
 	}
 
 	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
@@ -269,6 +274,7 @@ export class TaskService extends BaseService<Task> {
 					}),
 				)
 			: [];
+		const sortedSubtasks = sortTasks(subtasks);
 		const _emojis = await this.emojiModel.findAllByTaskId(task.id);
 		const emojis: Emoji[] = await Promise.all(
 			_emojis.flat().map(async (emoji) => {
@@ -286,7 +292,7 @@ export class TaskService extends BaseService<Task> {
 			owner,
 			members,
 			tags,
-			subtasks,
+			subtasks: sortedSubtasks,
 			emojis,
 		};
 		await this.setToCache(cacheKey, taskWithDetail);
@@ -432,19 +438,16 @@ export class TaskService extends BaseService<Task> {
 		templateTask: Task[],
 		userId: string,
 		projectId: string,
-		parentPosition?: string, // Add parent position for hierarchical numbering
 	): Promise<Task[]> {
 		const newTasks: Task[] = [];
 		for (let i = 0; i < templateTask.length; i++) {
 			const task = templateTask[i];
-			const position = parentPosition
-				? `${parentPosition}.${i + 1}`
-				: `${i + 1}`;
+			const position = i;
 			const newTask = await this.createTaskFromTemplate(
 				task,
 				userId,
 				projectId,
-				position, // Pass the calculated position
+				position,
 			);
 
 			await this.invalidateAllCache("tasks");
@@ -454,7 +457,6 @@ export class TaskService extends BaseService<Task> {
 					task.subtasks,
 					userId,
 					projectId,
-					position, // Pass current task's position as parent position for subtasks
 				);
 				await this.invalidateAllCache("tasks");
 				for (const subtask of subtasks) {
@@ -471,19 +473,16 @@ export class TaskService extends BaseService<Task> {
 		templateTask: Task[],
 		userId: string,
 		projectId: string,
-		parentPosition?: string, // Add parent position for hierarchical numbering
 	): Promise<Task[]> {
 		const newTasks: Task[] = [];
 		for (let i = 0; i < templateTask.length; i++) {
 			const task = templateTask[i];
-			const position = parentPosition
-				? `${parentPosition}.${i + 1}`
-				: `${i + 1}`;
+			const position = i;
 			const newTask = await this.createTaskFromTemplate(
 				task,
 				userId,
 				projectId,
-				position, // Pass the calculated position
+				position,
 			);
 
 			await this.invalidateAllCache("tasks");
@@ -493,7 +492,6 @@ export class TaskService extends BaseService<Task> {
 					task.subtasks,
 					userId,
 					projectId,
-					position, // Pass current task's position as parent position for subtasks
 				);
 				await this.invalidateAllCache("tasks");
 				for (const subtask of subtasks) {
@@ -505,8 +503,11 @@ export class TaskService extends BaseService<Task> {
 			//in case duplicate task
 			if (templateTask.length === 1 && templateTask[0].parentTaskId) {
 				const parentTask = newTasks[0];
+				const position = (await this.getTaskById(templateTask[0].parentTaskId))
+					.subtasks.length;
 				await this.taskModel.update(parentTask.id, {
 					parentTaskId: templateTask[0].parentTaskId,
+					position: position,
 				});
 			}
 		}
@@ -517,7 +518,7 @@ export class TaskService extends BaseService<Task> {
 		templateTask: Task,
 		userId: string,
 		projectId: string,
-		position: string, // Add position parameter
+		position: number,
 	): Promise<Task> {
 		const newTask: Partial<Task> = {
 			title: templateTask.title,
@@ -532,7 +533,7 @@ export class TaskService extends BaseService<Task> {
 			expense: 0,
 			subtasks: templateTask.subtasks,
 			projectId: projectId,
-			position: position, // Add position to the new task
+			position: position,
 		};
 
 		const response = await this.createTask(newTask);

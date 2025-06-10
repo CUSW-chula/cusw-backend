@@ -113,24 +113,6 @@ export class ProjectService extends BaseService<Project> {
 				)
 			: [];
 		const tasks = await this.taskService.getTaskByProjectId(projectId);
-		tasks.sort((a, b) => {
-			// Split positions into arrays of numbers for comparison
-			const posA = a.position?.split(".").map(Number);
-			const posB = b.position?.split(".").map(Number);
-			if (!posA || !posB) {
-				// If either position is null or undefined, sort by task ID
-				return 0;
-			}
-			// Compare each level of the position
-			for (let i = 0; i < Math.min(posA.length, posB.length); i++) {
-				if (posA[i] !== posB[i]) {
-					return posA[i] - posB[i];
-				}
-			}
-
-			// If one position is more specific than the other (e.g., "1" vs "1.1")
-			return posA.length - posB.length;
-		});
 		const isPinned = await this.pinProject.findByUserIdAndProjectId(
 			userId,
 			projectId,

@@ -85,7 +85,7 @@ model Task {
   subTasks       Task[]       @relation("SubTasks") 
   parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
   parentTaskId   String?
-  position       String?
+  position       Float
   statusBudgets  BudgetStatus 
   budget         Float 
   advance        Float 
