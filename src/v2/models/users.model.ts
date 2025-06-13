@@ -22,6 +22,9 @@ export class UserModel extends BaseModel<User> {
 			data: {
 				name: data.name ?? "",
 				email: data.email ?? "",
+				organization: data.organization ?? "",
+				position: data.position ?? "",
+				isOutsource: data.isOutsource ?? false,
 			},
 		});
 		return createdUser;

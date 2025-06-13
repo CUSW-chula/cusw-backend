@@ -67,6 +67,21 @@ export class UserService extends BaseService<User> {
 		return activatedUser;
 	}
 
+	async updateUser(
+		userId: string,
+		userData: Partial<{
+			name: string;
+			organization: string;
+			position: string;
+			isOutsource: boolean;
+		}>,
+	): Promise<User> {
+		const updatedUser = await this.userModel.update(userId, userData);
+		if (!updatedUser) throw new NotFoundException("User not found");
+		await this.invalidateAllCache("users");
+		return updatedUser;
+	}
+
 	async changeAdmin(userId: string, isAdmin: boolean): Promise<User> {
 		const updatedUser = await this.userModel.update(userId, { admin: isAdmin });
 		if (!updatedUser) throw new NotFoundException("User not found");
@@ -97,6 +112,9 @@ export class UserService extends BaseService<User> {
 	async createNewUser(userData: {
 		name: string;
 		email: string;
+		organization: string;
+		position: string;
+		isOutsource: boolean;
 	}): Promise<User> {
 		if (!this.validateEmail(userData.email)) {
 			throw new ValidationException("Invalid email format");

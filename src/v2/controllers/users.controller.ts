@@ -52,17 +52,31 @@ export const UserController = new Elysia({
 			body,
 			db,
 			redis,
-		}: Context & { body: { name: string; email: string } }) => {
+		}: Context & {
+			body: {
+				name: string;
+				email: string;
+				organization: string;
+				position: string;
+				isOutsource: boolean;
+			};
+		}) => {
 			const userService = new UserService(db, redis);
 			return await userService.createNewUser({
 				email: body.email,
 				name: body.name,
+				organization: body.organization,
+				position: body.position,
+				isOutsource: body.isOutsource,
 			});
 		},
 		{
 			body: t.Object({
 				name: t.String(),
 				email: t.String(),
+				organization: t.String(),
+				position: t.String(),
+				isOutsource: t.Boolean(),
 			}),
 		},
 	)
@@ -123,6 +137,39 @@ export const UserController = new Elysia({
 		{
 			body: t.Object({
 				isActive: t.Boolean(),
+			}),
+		},
+	)
+	.patch(
+		"/:userid",
+		async ({
+			params: { userid },
+			body,
+			db,
+			redis,
+		}: Context & {
+			body: {
+				name: string;
+				organization: string;
+				position: string;
+				isOutsource: boolean;
+			};
+			params: { userid: string };
+		}) => {
+			const userService = new UserService(db, redis);
+			return await userService.updateUser(userid, {
+				name: body.name,
+				organization: body.organization,
+				position: body.position,
+				isOutsource: body.isOutsource,
+			});
+		},
+		{
+			body: t.Object({
+				name: t.Optional(t.String()),
+				organization: t.Optional(t.String()),
+				position: t.Optional(t.String()),
+				isOutsource: t.Optional(t.Boolean()),
 			}),
 		},
 	);
