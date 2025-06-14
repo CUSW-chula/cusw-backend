@@ -15,8 +15,8 @@ model User {
   name          String 
   email         String           @unique 
   organization  String           @default("")
-  position      String.          @default("")
-  isOutsource   Boolean.         @default(false)
+  position      String          @default("")
+  isOutsource   Boolean         @default(false)
   projectRoles  ProjectRole[]   
   admin       Boolean          @default(false)
   head        Boolean          @default(false)
