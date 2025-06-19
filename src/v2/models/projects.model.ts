@@ -95,4 +95,46 @@ export class ProjectModel extends BaseModel<Project> {
 		// Delete the project
 		await tx.project.delete({ where: { id: projectId } });
 	}
+
+	async findProjectWithTags(): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+				};
+			}[];
+		})[]
+	> {
+		return await this.getModel().project.findMany({
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+			},
+		});
+	}
+
+	async findProjectWithTagsByProjectId(projectId: string): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+				};
+			}[];
+		})[]
+	> {
+		const project = await this.getModel().project.findUnique({
+			where: { id: projectId },
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+			},
+		});
+		return project ? [project] : [];
+	}
 }

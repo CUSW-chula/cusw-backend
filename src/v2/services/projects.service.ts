@@ -410,4 +410,78 @@ export class ProjectService extends BaseService<Project> {
 		await this.invalidateAllCache("projects", "tasks");
 		return this.getProjectById(userId, projectId);
 	}
+	async getSummaryByTag(): Promise<{
+		projects: { projectTag: string; budget: number; expense: number }[];
+		sumBudget: number;
+		sumExpense: number;
+	}> {
+		const projects = await this.projectModel.findProjectWithTags();
+
+		const tagMap = new Map<string, { budget: number; expense: number }>();
+
+		for (const project of projects) {
+			for (const projectTag of project.tags) {
+				const tagName = projectTag.tag.name;
+
+				if (!tagMap.has(tagName)) {
+					tagMap.set(tagName, { budget: 0, expense: 0 });
+				}
+
+				const current = tagMap.get(tagName)!;
+				current.budget += project.budget;
+				current.expense += project.expense;
+			}
+		}
+
+		const result = Array.from(tagMap.entries()).map(([tag, amounts]) => ({
+			projectTag: tag,
+			budget: amounts.budget,
+			expense: amounts.expense,
+		}));
+
+		const sumBudget = result.reduce((acc, p) => acc + p.budget, 0);
+		const sumExpense = result.reduce((acc, p) => acc + p.expense, 0);
+
+		return {
+			projects: result,
+			sumBudget,
+			sumExpense,
+		};
+	}
+
+	async getSummaryByTagWithProjectId(projectId: string): Promise<{
+		projects: { projectTag: string; budget: number; expense: number }[];
+		sumBudget: number;
+		sumExpense: number;
+	}> {
+		const projects =
+			await this.projectModel.findProjectWithTagsByProjectId(projectId);
+
+		const projectTagList: {
+			projectTag: string;
+			budget: number;
+			expense: number;
+		}[] = [];
+
+		for (const project of projects) {
+			for (const projectTag of project.tags) {
+				const tagName = projectTag.tag.name;
+
+				projectTagList.push({
+					projectTag: tagName,
+					budget: project.budget,
+					expense: project.expense,
+				});
+			}
+		}
+
+		const sumBudget = projectTagList.reduce((acc, p) => acc + p.budget, 0);
+		const sumExpense = projectTagList.reduce((acc, p) => acc + p.expense, 0);
+
+		return {
+			projects: projectTagList,
+			sumBudget,
+			sumExpense,
+		};
+	}
 }
