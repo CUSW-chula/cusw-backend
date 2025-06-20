@@ -1,131 +1,77 @@
-import { TaskStatus, BudgetStatus, type Task } from "../../../generated";
+import type { TaskTag } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
-export class TasksModel extends BaseModel<Task> {
-	async findAll(): Promise<Task[]> {
-		const tasks = await this.getModel().task.findMany();
-		return tasks;
+export class TaskTagModel extends BaseModel<TaskTag> {
+	async findAll(): Promise<TaskTag[]> {
+		const taskTags = await this.getModel().taskTag.findMany();
+		return taskTags;
 	}
-
-	async findById(id: string): Promise<Task | null> {
-		const task = await this.getModel().task.findUnique({ where: { id } });
-		return task;
-	}
-
-	async findSubTask(id: string): Promise<Task[] | null> {
-		const tasks = await this.getModel().task.findUnique({
-			where: {
-				id: id,
-			},
-			include: {
-				subTasks: true,
-			},
+	async findById(id: string): Promise<TaskTag | null> {
+		const taskTags = await this.getModel().taskTag.findUnique({
+			where: { id },
 		});
-		if (tasks) return tasks.subTasks;
-		return null;
+		return taskTags;
 	}
-	async findParentTask(id: string): Promise<Task | null> {
-		const tasks = await this.getModel().task.findUnique({
-			where: {
-				id: id,
-			},
-			include: {
-				parentTask: true,
-			},
-		});
-		if (tasks) return tasks.parentTask;
-		return null;
-	}
-
-	async create(data: Partial<Task>): Promise<Task> {
-		const createdProject = await this.getModel().task.create({
+	async create(data: Partial<TaskTag>): Promise<TaskTag> {
+		const createdTaskTags = await this.getModel().taskTag.create({
 			data: {
-				title: data.title ?? "",
-				description: data.description ?? "",
-				statusBudgets: data.statusBudgets ?? BudgetStatus.Initial,
-				budget: data.budget ?? 0.0,
-				advance: data.advance ?? 0.0,
-				expense: data.expense ?? 0.0,
-				status: data.status ?? TaskStatus.Unassigned,
-				parentTaskId: data.parentTaskId,
-				position: data.position ?? 0,
-				projectId: data.projectId ?? "",
-				createdById: data.createdById ?? "",
-				startDate: data.startDate,
-				endDate: data.endDate,
+				taskId: data.taskId ?? "",
+				tagId: data.tagId ?? "",
 			},
 		});
-		return createdProject;
+		return createdTaskTags;
 	}
-
-	async update(id: string, data: Partial<Task>): Promise<Task> {
-		const updatedTask = await this.getModel().task.update({
+	async update(
+		id: string,
+		data: Partial<{ name: string; id: string }>,
+	): Promise<TaskTag> {
+		const updatedTaskTag = await this.getModel().taskTag.update({
 			where: {
 				id: id,
 			},
 			data: data,
 		});
-		return updatedTask;
+		return updatedTaskTag;
 	}
 
-	async delete(id: string): Promise<Task> {
-		const deletedTask = await this.getModel().task.delete({
+	async delete(id: string): Promise<TaskTag> {
+		const deletedTaskTag = await this.getModel().taskTag.delete({
 			where: { id },
 		});
-		return deletedTask;
+		return deletedTaskTag;
 	}
 
-	async loadNestedSubtasks(taskId: string): Promise<Task> {
-		const task = await this.getModel().task.findUnique({
-			where: { id: taskId },
-			include: { subTasks: true },
+	async deleteByTaskId(taskId: string): Promise<number> {
+		const deletedTaskTag = await this.getModel().taskTag.deleteMany({
+			where: { taskId: taskId },
 		});
-
-		if (!task) throw new Error("Task not found");
-
-		// Recursively fetch subtasks for each subTask
-		if (task.subTasks && task.subTasks.length > 0) {
-			task.subTasks = await Promise.all(
-				task.subTasks.map(async (subTask) => {
-					return await this.loadNestedSubtasks.call(this, subTask.id);
-				}),
-			);
-		}
-		return task;
+		return deletedTaskTag.count;
 	}
 
-	async findByProjectId(projectId: string): Promise<Task[]> {
-		// Retrieve only top-level tasks (those without a parentId)
-		const topLevelTasks = await this.getModel().task.findMany({
-			where: { projectId: projectId, parentTaskId: null },
-			include: { subTasks: true },
+	async findByTagId(id: string): Promise<TaskTag[] | null> {
+		const taskTags = await this.getModel().taskTag.findMany({
+			where: { tagId: id },
 		});
-
-		// Load nested subtasks for each top-level task
-		const tasksWithNestedSubtasks = await Promise.all(
-			topLevelTasks.map(
-				async (task) => await this.loadNestedSubtasks.call(this, task.id),
-			),
-		);
-
-		return tasksWithNestedSubtasks;
+		return taskTags;
 	}
 
-	async findByParentTaskId(parentTaskId: string): Promise<Task[]> {
-		const tasks = await this.getModel().task.findMany({
+	async findByTaskId(id: string): Promise<TaskTag[] | null> {
+		const taskTags = await this.getModel().taskTag.findMany({
+			where: { taskId: id },
+		});
+		return taskTags;
+	}
+
+	async findByTaskIdAndTagId(
+		taskId: string,
+		tagId: string,
+	): Promise<TaskTag | null> {
+		const taskTag = await this.getModel().taskTag.findFirst({
 			where: {
-				parentTaskId: parentTaskId,
-			},
-			include: {
-				subTasks: true,
+				taskId: taskId,
+				tagId: tagId,
 			},
 		});
-
-		const tasksWithNestedSubtasks = await Promise.all(
-			tasks.map(
-				async (task) => await this.loadNestedSubtasks.call(this, task.id),
-			),
-		);
-		return tasksWithNestedSubtasks;
+		return taskTag;
 	}
 }
