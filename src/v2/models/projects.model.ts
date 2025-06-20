@@ -1,4 +1,4 @@
-import { $Enums, Project, ProjectTag } from "../../../generated";
+import { $Enums, Project, ProjectTag, Task } from "../../../generated";
 import type { Prisma, ProjectRole } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
@@ -94,5 +94,79 @@ export class ProjectModel extends BaseModel<Project> {
 
 		// Delete the project
 		await tx.project.delete({ where: { id: projectId } });
+	}
+
+	async findProjectWithTags(): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+				};
+			}[];
+		})[]
+	> {
+		return await this.getModel().project.findMany({
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+			},
+		});
+	}
+
+	async findProjectWithTagsByProjectId(projectId: string): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+				};
+			}[];
+		})[]
+	> {
+		const project = await this.getModel().project.findUnique({
+			where: { id: projectId },
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+			},
+		});
+		return project ? [project] : [];
+	}
+
+	async findProjectWithTagsAndTasks(): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+				};
+			}[];
+			tasks: Task[];
+		})[]
+	> {
+		const projects = await this.getModel().project.findMany({
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+				tasks: {
+					include: {
+						subTasks: {
+							include: {
+								subTasks: true,
+							},
+						},
+					},
+				},
+			},
+		});
+
+		return projects;
 	}
 }
