@@ -128,28 +128,4 @@ export class TasksModel extends BaseModel<Task> {
 		);
 		return tasksWithNestedSubtasks;
 	}
-
-	async findTaskWithTagsAndSubTasksByProjectId(projectId: string): Promise<
-		(Task & {
-			tags: {
-				tag: {
-					name: string;
-				};
-			}[];
-			subTasks: Task[];
-		})[]
-	> {
-		const tasks = await this.getModel().task.findMany({
-			where: { projectId },
-			include: {
-				tags: {
-					include: {
-						tag: true,
-					},
-				},
-				subTasks: true,
-			},
-		});
-		return tasks;
-	}
 }

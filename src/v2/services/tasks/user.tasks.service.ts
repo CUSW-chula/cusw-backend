@@ -35,7 +35,7 @@ export class UserTaskClassService extends TaskService {
 		);
 
 		// Filter out any null results (users not found)
-		return usersInTask.filter((user: null) => user !== null) as User[];
+		return usersInTask.filter((user) => user !== null) as User[];
 	}
 
 	async assigningTaskToUser(
