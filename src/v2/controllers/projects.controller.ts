@@ -2,6 +2,7 @@ import { type Cookie, Elysia, t } from "elysia";
 import { ProjectService } from "../services/projects.service";
 import { Project, type Context } from "../../shared/interfaces.shared";
 import { WebSocket as WebSocket } from "../../shared/utils/websocket.utils";
+import { UserService } from "../services/users.service";
 import { PermissionException } from "../../core/exception.core";
 
 export const ProjectController = new Elysia({
@@ -361,7 +362,6 @@ export const ProjectController = new Elysia({
 			},
 		},
 	);
-
 // .get(
 // 	"/pin/:userId",
 // 	async ({
