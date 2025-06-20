@@ -416,37 +416,7 @@ export class ProjectService extends BaseService<Project> {
 		sumExpense: number;
 	}> {
 		const projects = await this.projectModel.findProjectWithTags();
-
-		const tagMap = new Map<string, { budget: number; expense: number }>();
-
-		for (const project of projects) {
-			for (const projectTag of project.tags) {
-				const tagName = projectTag.tag.name;
-
-				if (!tagMap.has(tagName)) {
-					tagMap.set(tagName, { budget: 0, expense: 0 });
-				}
-
-				const current = tagMap.get(tagName)!;
-				current.budget += project.budget;
-				current.expense += project.expense;
-			}
-		}
-
-		const result = Array.from(tagMap.entries()).map(([tag, amounts]) => ({
-			projectTag: tag,
-			budget: amounts.budget,
-			expense: amounts.expense,
-		}));
-
-		const sumBudget = result.reduce((acc, p) => acc + p.budget, 0);
-		const sumExpense = result.reduce((acc, p) => acc + p.expense, 0);
-
-		return {
-			projects: result,
-			sumBudget,
-			sumExpense,
-		};
+		return this.aggregateProjectTags(projects);
 	}
 
 	async getSummaryByTagWithProjectId(projectId: string): Promise<{
