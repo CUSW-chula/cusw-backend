@@ -502,10 +502,10 @@ export class ProjectService extends BaseService<Project> {
 
 	async getganttdata(): Promise<
 		{
-			projectId: string;
-			title: string;
-			startDate: Date | null;
-			endDate: Date | null;
+			id: string; //id
+			text: string; //title
+			start: Date | null; //start
+			end: Date | null; //end
 			duration: number;
 			tag: string;
 			progress: number;
@@ -533,10 +533,10 @@ export class ProjectService extends BaseService<Project> {
 					: 0;
 
 			results.push({
-				projectId: project.id,
-				title: project.title,
-				startDate: project.startDate,
-				endDate: project.endDate,
+				id: project.id,
+				text: project.title,
+				start: project.startDate,
+				end: project.endDate,
 				duration:
 					project.startDate && project.endDate
 						? Math.ceil(
@@ -555,10 +555,10 @@ export class ProjectService extends BaseService<Project> {
 
 	async getGanttChartDataByProjectId(projectId: string): Promise<
 		{
-			taskId: string;
-			title: string;
-			startDate: Date | null;
-			endDate: Date | null;
+			id: string;
+			text: string;
+			start: Date | null;
+			end: Date | null;
 			duration: number;
 			tags: string[];
 			subtask: boolean;
@@ -584,10 +584,10 @@ export class ProjectService extends BaseService<Project> {
 				const progress = await this.calculateTaskProgress(fullTask);
 
 				return {
-					taskId: task.id,
-					title: task.title,
-					startDate: task.startDate,
-					endDate: task.endDate,
+					id: task.id,
+					text: task.title,
+					start: task.startDate,
+					end: task.endDate,
 					duration,
 					tags: task.tags.map((t) => t.tag.name),
 					subtask: task.subTasks.length > 0,
