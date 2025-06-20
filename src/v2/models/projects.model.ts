@@ -1,4 +1,4 @@
-import { $Enums, Project, ProjectTag } from "../../../generated";
+import { $Enums, Project, ProjectTag, Task } from "../../../generated";
 import type { Prisma, ProjectRole } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
@@ -136,5 +136,37 @@ export class ProjectModel extends BaseModel<Project> {
 			},
 		});
 		return project ? [project] : [];
+	}
+
+	async findProjectWithTagsAndTasks(): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+				};
+			}[];
+			tasks: Task[];
+		})[]
+	> {
+		const projects = await this.getModel().project.findMany({
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+				tasks: {
+					include: {
+						subTasks: {
+							include: {
+								subTasks: true,
+							},
+						},
+					},
+				},
+			},
+		});
+
+		return projects;
 	}
 }

@@ -484,4 +484,120 @@ export class ProjectService extends BaseService<Project> {
 			sumExpense,
 		};
 	}
+
+	private async calculateTaskProgress(task: Task): Promise<number> {
+		if (!task.subtasks || task.subtasks.length === 0) {
+			return task.status === "Done" ? 100 : 0;
+		}
+
+		const subTaskProgresses = await Promise.all(
+			task.subtasks.map((subTask) => this.calculateTaskProgress(subTask)),
+		);
+
+		return (
+			subTaskProgresses.reduce((acc, val) => acc + val, 0) /
+			subTaskProgresses.length
+		);
+	}
+
+	async getganttdata(): Promise<
+		{
+			projectId: string;
+			title: string;
+			startDate: Date | null;
+			endDate: Date | null;
+			duration: number;
+			tag: string;
+			progress: number;
+		}[]
+	> {
+		const projects = await this.projectModel.findProjectWithTagsAndTasks();
+		const results = [];
+
+		for (const project of projects) {
+			const summaryTasks = project.tasks.filter(
+				(task) => task.parentTaskId === null,
+			);
+
+			const fullSummaryTasks = await Promise.all(
+				summaryTasks.map((task) => this.taskService.getTaskById(task.id)),
+			);
+
+			const progressValues = await Promise.all(
+				fullSummaryTasks.map((task) => this.calculateTaskProgress(task)),
+			);
+
+			const progress =
+				progressValues.length > 0
+					? progressValues.reduce((a, b) => a + b, 0) / progressValues.length
+					: 0;
+
+			results.push({
+				projectId: project.id,
+				title: project.title,
+				startDate: project.startDate,
+				endDate: project.endDate,
+				duration:
+					project.startDate && project.endDate
+						? Math.ceil(
+								(new Date(project.endDate).getTime() -
+									new Date(project.startDate).getTime()) /
+									(1000 * 60 * 60 * 24),
+							)
+						: 0,
+				tag: project.tags[0]?.tag.name ?? "untagged",
+				progress: parseFloat(progress.toFixed(2)),
+			});
+		}
+
+		return results;
+	}
+
+	async getGanttChartDataByProjectId(projectId: string): Promise<
+		{
+			taskId: string;
+			title: string;
+			startDate: Date | null;
+			endDate: Date | null;
+			duration: number;
+			tags: string[];
+			subtask: boolean;
+			progress: number;
+			type: "summary" | "task";
+			parentId: string | null;
+		}[]
+	> {
+		const tasks =
+			await this.taskModel.findTaskWithTagsAndSubTasksByProjectId(projectId);
+		const result = await Promise.all(
+			tasks.map(async (task) => {
+				const duration =
+					task.startDate && task.endDate
+						? Math.ceil(
+								(new Date(task.endDate).getTime() -
+									new Date(task.startDate).getTime()) /
+									(1000 * 60 * 60 * 24),
+							)
+						: 0;
+
+				const fullTask = await this.taskService.getTaskById(task.id);
+				const progress = await this.calculateTaskProgress(fullTask);
+
+				return {
+					taskId: task.id,
+					title: task.title,
+					startDate: task.startDate,
+					endDate: task.endDate,
+					duration,
+					tags: task.tags.map((t) => t.tag.name),
+					subtask: task.subTasks.length > 0,
+					progress: parseFloat(progress.toFixed(2)),
+					type: task.parentTaskId ? ("task" as const) : ("summary" as const),
+					parentId: task.parentTaskId ?? null,
+				};
+			}),
+		);
+
+		return result;
+	}
 }
