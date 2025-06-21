@@ -8,15 +8,26 @@ import {
 	ValidationException,
 } from "../../core/exception.core";
 import { ProjectRoleModel } from "../models/project-role.model";
+import { TasksModel } from "../models/tasks.model";
+import { ActivityLogsModel } from "../models/activity-logs.model";
+import { ProjectModel } from "../models/projects.model";
 
 export class UserService extends BaseService<User> {
 	private readonly userModel: UserModel;
 	private readonly projectRoleModel: ProjectRoleModel;
+	private readonly taskModel: TasksModel;
+	private readonly activityModel: ActivityLogsModel;
+	private readonly projectModel: ProjectModel;
+	private readonly prisma: PrismaClient;
 
 	constructor(prisma: PrismaClient, redis: Redis) {
 		super(redis, 60); //
+		this.prisma = prisma;
 		this.userModel = new UserModel(prisma);
 		this.projectRoleModel = new ProjectRoleModel(prisma);
+		this.taskModel = new TasksModel(prisma);
+		this.activityModel = new ActivityLogsModel(prisma);
+		this.projectModel = new ProjectModel(prisma);
 	}
 
 	// Email validation method
@@ -147,5 +158,127 @@ export class UserService extends BaseService<User> {
 		if (!deletedUser) throw new ServerErrorException("Failed to delete user");
 		await this.invalidateAllCache("users");
 		return deletedUser;
+	}
+	// Get workload dashboard data for all users
+	async getWorkloadDashboard() {
+		const cacheKey = `workload_dashboard`;
+		const cachedData = await this.redis.get(cacheKey);
+		if (cachedData) return JSON.parse(cachedData);
+
+		// Get all users
+		const users = await this.userModel.findAll();
+
+		const workloadData = await Promise.all(
+			users.map(async (user) => {
+				// Get all tasks assigned to this user
+				const assignedTasks = await this.prisma.taskAssignment.findMany({
+					where: { userId: user.id },
+					include: {
+						task: {
+							include: {
+								project: {
+									include: {
+										tags: {
+											include: {
+												tag: true,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				});
+
+				// Calculate task metrics
+				const tasks = assignedTasks.map((ta) => ta.task);
+				const taskCount = tasks.length;
+
+				// Count tasks by status
+				const assigned = tasks.filter((t) => t.status === "Assigned").length;
+				const inRecheck = tasks.filter((t) => t.status === "InRecheck").length;
+				const underReview = tasks.filter((t) => t.status === "UnderReview").length;
+				const done = tasks.filter((t) => t.status === "Done").length;
+
+				// Calculate percentages
+				const perAssigned = taskCount > 0 ? (assigned / taskCount) * 100 : 0;
+				const perInRecheck = taskCount > 0 ? (inRecheck / taskCount) * 100 : 0;
+				const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
+				const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
+
+				// Count how many times tasks were moved to InRecheck status
+				const recheckActivities = await this.prisma.activity.findMany({
+					where: {
+						taskId: { in: tasks.map((t) => t.id) },
+						detail: { contains: "InRecheck" },
+					},
+				});
+				const rechecked = recheckActivities.length;
+
+				// Group tasks by project
+				const projectsMap = new Map();
+
+				for (const task of tasks) {
+					const project = task.project;
+					if (!projectsMap.has(project.id)) {
+						projectsMap.set(project.id, {
+							id: project.id,
+							title: project.title,
+							startDate: project.startDate,
+							endDate: project.endDate,
+							tags: project.tags.map((pt) => pt.tag.name),
+							tasks: [],
+						});
+					}
+
+					// Determine acceptance status
+					const now = new Date();
+					let acceptanceStatus = "In time";
+					if (task.endDate && now > task.endDate && task.status !== "Done") {
+						acceptanceStatus = "Overdue";
+					}
+
+					// Count recheck for this specific task
+					const taskRecheckCount = await this.prisma.activity.count({
+						where: {
+							taskId: task.id,
+							detail: { contains: "InRecheck" },
+						},
+					});
+
+					projectsMap.get(project.id).tasks.push({
+						taskId: task.id,
+						name: task.title,
+						acceptanceStatus,
+						taskStatus: task.status,
+						rechecked: taskRecheckCount,
+					});
+				}
+
+				const projects = Array.from(projectsMap.values());
+
+				return {
+					userId: user.id,
+					name: user.name,
+					metrics: {
+						taskCount,
+						rechecked,
+						breakdown: {
+							assigned,
+							inRecheck,
+							underReview,
+							done,
+							perAssigned: Math.round(perAssigned * 100) / 100,
+							perInRecheck: Math.round(perInRecheck * 100) / 100,
+							perUnderReview: Math.round(perUnderReview * 100) / 100,
+							perDone: Math.round(perDone * 100) / 100,
+						},
+					},
+					projects,
+				};
+			}),		);
+
+		await this.redis.setex(`workload_dashboard`, 300, JSON.stringify(workloadData)); // Cache for 5 minutes
+		return workloadData;
 	}
 }
