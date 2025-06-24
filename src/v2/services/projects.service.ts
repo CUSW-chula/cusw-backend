@@ -411,20 +411,20 @@ export class ProjectService extends BaseService<Project> {
 		return this.getProjectById(userId, projectId);
 	}
 	async getSummaryByTag(): Promise<{
-		projects: { projectTag: string; budget: number; expense: number }[];
+		projects: { projectTag: string; budget: number; expense: number; startDate: Date | null; endDate: Date | null }[];
 		sumBudget: number;
 		sumExpense: number;
 	}> {
 		const projects = await this.projectModel.findProjectWithTags();
 
-		const tagMap = new Map<string, { budget: number; expense: number }>();
+		const tagMap = new Map<string, { budget: number; expense: number; startDate: Date | null; endDate: Date | null }>();
 
 		for (const project of projects) {
 			for (const projectTag of project.tags) {
 				const tagName = projectTag.tag.name;
 
 				if (!tagMap.has(tagName)) {
-					tagMap.set(tagName, { budget: 0, expense: 0 });
+					tagMap.set(tagName, { budget: 0, expense: 0, startDate: project.startDate, endDate: project.endDate });
 				}
 
 				const current = tagMap.get(tagName)!;
@@ -437,6 +437,8 @@ export class ProjectService extends BaseService<Project> {
 			projectTag: tag,
 			budget: amounts.budget,
 			expense: amounts.expense,
+			startDate: amounts.startDate,
+			endDate: amounts.endDate,
 		}));
 
 		const sumBudget = result.reduce((acc, p) => acc + p.budget, 0);
@@ -450,7 +452,7 @@ export class ProjectService extends BaseService<Project> {
 	}
 
 	async getSummaryByTagWithProjectId(projectId: string): Promise<{
-		projects: { projectTag: string; budget: number; expense: number }[];
+		projects: { projectTag: string; budget: number; expense: number; startDate: Date | null; endDate: Date | null }[];
 		sumBudget: number;
 		sumExpense: number;
 	}> {
@@ -461,6 +463,8 @@ export class ProjectService extends BaseService<Project> {
 			projectTag: string;
 			budget: number;
 			expense: number;
+			startDate: Date | null;
+			endDate: Date | null;
 		}[] = [];
 
 		for (const project of projects) {
@@ -471,6 +475,8 @@ export class ProjectService extends BaseService<Project> {
 					projectTag: tagName,
 					budget: project.budget,
 					expense: project.expense,
+					startDate: project.startDate,
+					endDate: project.endDate,
 				});
 			}
 		}

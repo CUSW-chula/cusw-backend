@@ -75,4 +75,29 @@ export const DashboardController = new Elysia({
 				summary: "Get workload dashboard data for all users",
 			},
 		},
+	)
+	.get(
+		"/workload/:userId",
+		async ({
+			params: { userId },
+			db,
+			redis,
+			cookie: { session },
+		}: Context & {
+			params: { userId: string };
+			cookie: { session: Cookie<string> };
+		}) => {
+			if (!session?.value) throw new PermissionException("Unauthorized");
+
+			const userService = new UserService(db, redis);
+
+			const data = await userService.getWorkloadByUserId(userId);
+
+			return data;
+		},
+		{
+			detail: {
+				summary: "Get workload dashboard data for a specific user by ID",
+			},
+		},
 	);
