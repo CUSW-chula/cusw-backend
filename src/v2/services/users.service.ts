@@ -257,27 +257,27 @@ export class UserService extends BaseService<User> {
 
 				const projects = Array.from(projectsMap.values());
 
-				// Calculate startDateUser and endDateUser from tasks
+				// Calculate startDateUser and endDateUser from projects
 				let startDateUser = null;
 				let endDateUser = null;
 
-				if (tasks.length > 0) {
-					// Get earliest start date from tasks
-					const startDates = tasks
-						.filter(task => task.startDate !== null)
-						.map(task => new Date(task.startDate!));
+				if (projects.length > 0) {
+					// Get earliest start date from projects
+					const projectStartDates = projects
+						.filter(project => project.startDate !== null)
+						.map(project => new Date(project.startDate!));
 					
-					if (startDates.length > 0) {
-						startDateUser = new Date(Math.min(...startDates.map(d => d.getTime())));
+					if (projectStartDates.length > 0) {
+						startDateUser = new Date(Math.min(...projectStartDates.map(d => d.getTime())));
 					}
 
-					// Get latest end date from tasks
-					const endDates = tasks
-						.filter(task => task.endDate !== null)
-						.map(task => new Date(task.endDate!));
+					// Get latest end date from projects
+					const projectEndDates = projects
+						.filter(project => project.endDate !== null)
+						.map(project => new Date(project.endDate!));
 					
-					if (endDates.length > 0) {
-						endDateUser = new Date(Math.max(...endDates.map(d => d.getTime())));
+					if (projectEndDates.length > 0) {
+						endDateUser = new Date(Math.max(...projectEndDates.map(d => d.getTime())));
 					}
 				}
 
@@ -405,27 +405,27 @@ export class UserService extends BaseService<User> {
 
 		const projects = Array.from(projectsMap.values());
 
-		// Calculate startDateUser and endDateUser from tasks
+		// Calculate startDateUser and endDateUser from projects
 		let startDateUser = null;
 		let endDateUser = null;
 
-		if (tasks.length > 0) {
-			// Get earliest start date from tasks
-			const startDates = tasks
-				.filter(task => task.startDate !== null)
-				.map(task => new Date(task.startDate!));
+		if (projects.length > 0) {
+			// Get earliest start date from projects
+			const projectStartDates = projects
+				.filter(project => project.startDate !== null)
+				.map(project => new Date(project.startDate!));
 			
-			if (startDates.length > 0) {
-				startDateUser = new Date(Math.min(...startDates.map(d => d.getTime())));
+			if (projectStartDates.length > 0) {
+				startDateUser = new Date(Math.min(...projectStartDates.map(d => d.getTime())));
 			}
 
-			// Get latest end date from tasks
-			const endDates = tasks
-				.filter(task => task.endDate !== null)
-				.map(task => new Date(task.endDate!));
+			// Get latest end date from projects
+			const projectEndDates = projects
+				.filter(project => project.endDate !== null)
+				.map(project => new Date(project.endDate!));
 			
-			if (endDates.length > 0) {
-				endDateUser = new Date(Math.max(...endDates.map(d => d.getTime())));
+			if (projectEndDates.length > 0) {
+				endDateUser = new Date(Math.max(...projectEndDates.map(d => d.getTime())));
 			}
 		}
 
