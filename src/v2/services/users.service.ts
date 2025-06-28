@@ -257,9 +257,35 @@ export class UserService extends BaseService<User> {
 
 				const projects = Array.from(projectsMap.values());
 
+				// Calculate startDateUser and endDateUser from tasks
+				let startDateUser = null;
+				let endDateUser = null;
+
+				if (tasks.length > 0) {
+					// Get earliest start date from tasks
+					const startDates = tasks
+						.filter(task => task.startDate !== null)
+						.map(task => new Date(task.startDate!));
+					
+					if (startDates.length > 0) {
+						startDateUser = new Date(Math.min(...startDates.map(d => d.getTime())));
+					}
+
+					// Get latest end date from tasks
+					const endDates = tasks
+						.filter(task => task.endDate !== null)
+						.map(task => new Date(task.endDate!));
+					
+					if (endDates.length > 0) {
+						endDateUser = new Date(Math.max(...endDates.map(d => d.getTime())));
+					}
+				}
+
 				return {
 					userId: user.id,
 					name: user.name,
+					startDateUser,
+					endDateUser,
 					metrics: {
 						taskCount,
 						rechecked,
@@ -379,9 +405,35 @@ export class UserService extends BaseService<User> {
 
 		const projects = Array.from(projectsMap.values());
 
+		// Calculate startDateUser and endDateUser from tasks
+		let startDateUser = null;
+		let endDateUser = null;
+
+		if (tasks.length > 0) {
+			// Get earliest start date from tasks
+			const startDates = tasks
+				.filter(task => task.startDate !== null)
+				.map(task => new Date(task.startDate!));
+			
+			if (startDates.length > 0) {
+				startDateUser = new Date(Math.min(...startDates.map(d => d.getTime())));
+			}
+
+			// Get latest end date from tasks
+			const endDates = tasks
+				.filter(task => task.endDate !== null)
+				.map(task => new Date(task.endDate!));
+			
+			if (endDates.length > 0) {
+				endDateUser = new Date(Math.max(...endDates.map(d => d.getTime())));
+			}
+		}
+
 		const workloadData = {
 			userId: user.id,
 			name: user.name,
+			startDateUser,
+			endDateUser,
 			metrics: {
 				taskCount,
 				rechecked,
