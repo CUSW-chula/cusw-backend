@@ -54,7 +54,7 @@ const app = new Elysia()
 		cors({
 			origin: [
 				"http://localhost:3000",
-				"http://localhost:4173"
+				"http://localhost:4173",
 				"https://cusw-workspace.sa.chula.ac.th",
 			],
 			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
