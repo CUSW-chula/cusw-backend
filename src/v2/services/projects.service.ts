@@ -576,7 +576,7 @@ export class ProjectService extends BaseService<Project> {
 									(1000 * 60 * 60 * 24),
 							)
 						: 0,
-				tag: project.tags,
+				tag: project.tags?.map((t) => t.tag.name) || [],
 				progress: parseFloat(progress.toFixed(2)),
 			});
 		}
