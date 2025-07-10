@@ -411,20 +411,39 @@ export class ProjectService extends BaseService<Project> {
 		return this.getProjectById(userId, projectId);
 	}
 	async getSummaryByTag(): Promise<{
-		projects: { projectTag: string; budget: number; expense: number; startDate: Date | null; endDate: Date | null }[];
+		projects: {
+			projectTag: string;
+			budget: number;
+			expense: number;
+			startDate: Date | null;
+			endDate: Date | null;
+		}[];
 		sumBudget: number;
 		sumExpense: number;
 	}> {
 		const projects = await this.projectModel.findProjectWithTags();
 
-		const tagMap = new Map<string, { budget: number; expense: number; startDate: Date | null; endDate: Date | null }>();
+		const tagMap = new Map<
+			string,
+			{
+				budget: number;
+				expense: number;
+				startDate: Date | null;
+				endDate: Date | null;
+			}
+		>();
 
 		for (const project of projects) {
 			for (const projectTag of project.tags) {
 				const tagName = projectTag.tag.name;
 
 				if (!tagMap.has(tagName)) {
-					tagMap.set(tagName, { budget: 0, expense: 0, startDate: project.startDate, endDate: project.endDate });
+					tagMap.set(tagName, {
+						budget: 0,
+						expense: 0,
+						startDate: project.startDate,
+						endDate: project.endDate,
+					});
 				}
 
 				const current = tagMap.get(tagName)!;
@@ -452,7 +471,13 @@ export class ProjectService extends BaseService<Project> {
 	}
 
 	async getSummaryByTagWithProjectId(projectId: string): Promise<{
-		projects: { projectTag: string; budget: number; expense: number; startDate: Date | null; endDate: Date | null }[];
+		projects: {
+			projectTag: string;
+			budget: number;
+			expense: number;
+			startDate: Date | null;
+			endDate: Date | null;
+		}[];
 		sumBudget: number;
 		sumExpense: number;
 	}> {
@@ -513,7 +538,7 @@ export class ProjectService extends BaseService<Project> {
 			start: Date | null; //start
 			end: Date | null; //end
 			duration: number;
-			tag: string;
+			tag: string[];
 			progress: number;
 		}[]
 	> {
@@ -551,7 +576,7 @@ export class ProjectService extends BaseService<Project> {
 									(1000 * 60 * 60 * 24),
 							)
 						: 0,
-				tag: project.tags[0]?.tag.name ?? "untagged",
+				tag: project.tags?.map((t) => t.tag.name) || [],
 				progress: parseFloat(progress.toFixed(2)),
 			});
 		}

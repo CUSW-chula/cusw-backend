@@ -197,13 +197,16 @@ export class UserService extends BaseService<User> {
 				// Count tasks by status
 				const assigned = tasks.filter((t) => t.status === "Assigned").length;
 				const inRecheck = tasks.filter((t) => t.status === "InRecheck").length;
-				const underReview = tasks.filter((t) => t.status === "UnderReview").length;
+				const underReview = tasks.filter(
+					(t) => t.status === "UnderReview",
+				).length;
 				const done = tasks.filter((t) => t.status === "Done").length;
 
 				// Calculate percentages
 				const perAssigned = taskCount > 0 ? (assigned / taskCount) * 100 : 0;
 				const perInRecheck = taskCount > 0 ? (inRecheck / taskCount) * 100 : 0;
-				const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
+				const perUnderReview =
+					taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 				const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
 				// Count how many times tasks were moved to InRecheck status
@@ -264,20 +267,24 @@ export class UserService extends BaseService<User> {
 				if (projects.length > 0) {
 					// Get earliest start date from projects
 					const projectStartDates = projects
-						.filter(project => project.startDate !== null)
-						.map(project => new Date(project.startDate!));
-					
+						.filter((project) => project.startDate !== null)
+						.map((project) => new Date(project.startDate!));
+
 					if (projectStartDates.length > 0) {
-						startDateUser = new Date(Math.min(...projectStartDates.map(d => d.getTime())));
+						startDateUser = new Date(
+							Math.min(...projectStartDates.map((d) => d.getTime())),
+						);
 					}
 
 					// Get latest end date from projects
 					const projectEndDates = projects
-						.filter(project => project.endDate !== null)
-						.map(project => new Date(project.endDate!));
-					
+						.filter((project) => project.endDate !== null)
+						.map((project) => new Date(project.endDate!));
+
 					if (projectEndDates.length > 0) {
-						endDateUser = new Date(Math.max(...projectEndDates.map(d => d.getTime())));
+						endDateUser = new Date(
+							Math.max(...projectEndDates.map((d) => d.getTime())),
+						);
 					}
 				}
 
@@ -302,9 +309,14 @@ export class UserService extends BaseService<User> {
 					},
 					projects,
 				};
-			}),		);
+			}),
+		);
 
-		await this.redis.setex(`workload_dashboard`, 300, JSON.stringify(workloadData)); // Cache for 5 minutes
+		await this.redis.setex(
+			`workload_dashboard`,
+			300,
+			JSON.stringify(workloadData),
+		); // Cache for 5 minutes
 		return workloadData;
 	}
 
@@ -412,20 +424,24 @@ export class UserService extends BaseService<User> {
 		if (projects.length > 0) {
 			// Get earliest start date from projects
 			const projectStartDates = projects
-				.filter(project => project.startDate !== null)
-				.map(project => new Date(project.startDate!));
-			
+				.filter((project) => project.startDate !== null)
+				.map((project) => new Date(project.startDate!));
+
 			if (projectStartDates.length > 0) {
-				startDateUser = new Date(Math.min(...projectStartDates.map(d => d.getTime())));
+				startDateUser = new Date(
+					Math.min(...projectStartDates.map((d) => d.getTime())),
+				);
 			}
 
 			// Get latest end date from projects
 			const projectEndDates = projects
-				.filter(project => project.endDate !== null)
-				.map(project => new Date(project.endDate!));
-			
+				.filter((project) => project.endDate !== null)
+				.map((project) => new Date(project.endDate!));
+
 			if (projectEndDates.length > 0) {
-				endDateUser = new Date(Math.max(...projectEndDates.map(d => d.getTime())));
+				endDateUser = new Date(
+					Math.max(...projectEndDates.map((d) => d.getTime())),
+				);
 			}
 		}
 
