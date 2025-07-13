@@ -213,7 +213,7 @@ export class UserService extends BaseService<User> {
 				const recheckActivities = await this.prisma.activity.findMany({
 					where: {
 						taskId: { in: tasks.map((t) => t.id) },
-						detail: { contains: "InRecheck" },
+						detail: { contains: "inrecheck" },
 					},
 				});
 				const rechecked = recheckActivities.length;
@@ -245,7 +245,7 @@ export class UserService extends BaseService<User> {
 					const taskRecheckCount = await this.prisma.activity.count({
 						where: {
 							taskId: task.id,
-							detail: { contains: "InRecheck" },
+							detail: { contains: "inrecheck" },
 						},
 					});
 
@@ -370,7 +370,7 @@ export class UserService extends BaseService<User> {
 		const recheckActivities = await this.prisma.activity.findMany({
 			where: {
 				taskId: { in: tasks.map((t) => t.id) },
-				detail: { contains: "InRecheck" },
+				detail: { contains: "inrecheck" },
 			},
 		});
 		const rechecked = recheckActivities.length;
@@ -402,7 +402,7 @@ export class UserService extends BaseService<User> {
 			const taskRecheckCount = await this.prisma.activity.count({
 				where: {
 					taskId: task.id,
-					detail: { contains: "InRecheck" },
+					detail: { contains: "inrecheck" },
 				},
 			});
 
