@@ -1,3 +1,11 @@
+// Helper type for project with tags
+type ProjectWithTags = {
+	id: string;
+	title: string;
+	startDate: Date | null;
+	endDate: Date | null;
+	tags?: Array<{ tag: { name: string; isProject: boolean } }>;
+};
 import { UserModel } from "../models/users.model";
 import type { PrismaClient, User } from "../../../generated";
 import { BaseService } from "../../core/service.core";
@@ -159,315 +167,382 @@ export class UserService extends BaseService<User> {
 		await this.invalidateAllCache("users");
 		return deletedUser;
 	}
-	// Get workload dashboard data for all users
-	async getWorkloadDashboard() {
-		const cacheKey = `workload_dashboard`;
-		const cachedData = await this.redis.get(cacheKey);
-		if (cachedData) return JSON.parse(cachedData);
+// Get workload dashboard data for all users
+async getWorkloadDashboard() {
+	const cacheKey = `workload_dashboard`;
+	const cachedData = await this.redis.get(cacheKey);
+	if (cachedData) return JSON.parse(cachedData);
 
-		// Get all users
-		const users = await this.userModel.findAll();
+	// Get all users
+	const users = await this.userModel.findAll();
 
-		const workloadData = await Promise.all(
-			users.map(async (user) => {
-				// Get all tasks assigned to this user
-				const assignedTasks = await this.prisma.taskAssignment.findMany({
-					where: { userId: user.id },
-					include: {
-						task: {
-							include: {
-								project: {
-									include: {
-										tags: {
-											include: {
-												tag: true,
-											},
+	const workloadData = await Promise.all(
+		users.map(async (user) => {
+			// Get all projects where user is a member
+			const userProjects = await this.projectRoleModel.findByUserId(user.id);
+			// Get all tasks assigned to this user
+			const assignedTasks = await this.prisma.taskAssignment.findMany({
+				where: { userId: user.id },
+				include: {
+					task: {
+						include: {
+							project: {
+								include: {
+									tags: {
+										include: {
+											tag: true,
 										},
 									},
 								},
 							},
 						},
 					},
-				});
+				},
+			});
 
-				// Calculate task metrics
-				const tasks = assignedTasks.map((ta) => ta.task);
-				const taskCount = tasks.length;
+			// Calculate task metrics
+			const tasks = assignedTasks.map((ta) => ta.task);
+			const taskCount = tasks.length;
 
-				// Count tasks by status
-				const assigned = tasks.filter((t) => t.status === "Assigned").length;
-				const inRecheck = tasks.filter((t) => t.status === "InRecheck").length;
-				const underReview = tasks.filter(
-					(t) => t.status === "UnderReview",
-				).length;
-				const done = tasks.filter((t) => t.status === "Done").length;
+			// Count tasks by status
+			const assigned = tasks.filter((t) => t.status === "Assigned").length;
+			const inRecheck = tasks.filter((t) => t.status === "InRecheck").length;
+			const underReview = tasks.filter((t) => t.status === "UnderReview").length;
+			const done = tasks.filter((t) => t.status === "Done").length;
 
-				// Calculate percentages
-				const perAssigned = taskCount > 0 ? (assigned / taskCount) * 100 : 0;
-				const perInRecheck = taskCount > 0 ? (inRecheck / taskCount) * 100 : 0;
-				const perUnderReview =
-					taskCount > 0 ? (underReview / taskCount) * 100 : 0;
-				const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
+			// Calculate percentages
+			const perAssigned = taskCount > 0 ? (assigned / taskCount) * 100 : 0;
+			const perInRecheck = taskCount > 0 ? (inRecheck / taskCount) * 100 : 0;
+			const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
+			const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-				// Count how many times tasks were moved to InRecheck status
-				const recheckActivities = await this.prisma.activity.findMany({
-					where: {
-						taskId: { in: tasks.map((t) => t.id) },
-						detail: { contains: "inrecheck" },
-					},
-				});
-				const rechecked = recheckActivities.length;
+			// Count how many times tasks were moved to InRecheck status
+			const recheckActivities = await this.prisma.activity.findMany({
+				where: {
+					taskId: { in: tasks.map((t) => t.id) },
+					detail: { contains: "inrecheck" },
+				},
+			});
+			const rechecked = recheckActivities.length;
 
-				// Group tasks by project
-				const projectsMap = new Map();
+			// Group tasks by project
+			const projectsMap = new Map();
 
-				for (const task of tasks) {
-					const project = task.project;
-					if (!projectsMap.has(project.id)) {
+			// Add all projects where user is a member (even if no tasks assigned)
+			for (const pr of userProjects) {
+				if (!projectsMap.has(pr.projectId)) {
+					// Get project details (from project model)
+					const project = await this.projectModel.findById(pr.projectId) as ProjectWithTags;
+					if (project) {
+						let tags: string[] = [];
+						if (Array.isArray(project.tags)) {
+							tags = project.tags
+								.filter((pt) => pt.tag && pt.tag.isProject === true)
+								.map((pt) => pt.tag.name);
+						}
 						projectsMap.set(project.id, {
 							id: project.id,
 							title: project.title,
 							startDate: project.startDate,
 							endDate: project.endDate,
-							tags: project.tags.map((pt) => pt.tag.name),
+							tags,
 							tasks: [],
 						});
 					}
+				}
+			}
 
-					// Determine acceptance status
-					const now = new Date();
-					let acceptanceStatus = "In time";
-					if (task.endDate && now > task.endDate && task.status !== "Done") {
-						acceptanceStatus = "Overdue";
+			// Add tasks to their projects
+			for (const task of tasks) {
+				const project = task.project as ProjectWithTags;
+				if (!project) continue;
+				if (!projectsMap.has(project.id)) {
+					let tags: string[] = [];
+					if (Array.isArray(project.tags)) {
+						tags = project.tags
+							.filter((pt) => pt.tag && pt.tag.isProject === true)
+							.map((pt) => pt.tag.name);
 					}
-
-					// Count recheck for this specific task
-					const taskRecheckCount = await this.prisma.activity.count({
-						where: {
-							taskId: task.id,
-							detail: { contains: "inrecheck" },
-						},
+					projectsMap.set(project.id, {
+						id: project.id,
+						title: project.title,
+						startDate: project.startDate,
+						endDate: project.endDate,
+						tags,
+						tasks: [],
 					});
+				}
 
-					projectsMap.get(project.id).tasks.push({
+				// Determine acceptance status
+				const now = new Date();
+				let acceptanceStatus = "In time";
+				if (task.endDate && now > task.endDate && task.status !== "Done") {
+					acceptanceStatus = "Overdue";
+				}
+
+				// Count recheck for this specific task
+				const taskRecheckCount = await this.prisma.activity.count({
+					where: {
 						taskId: task.id,
-						name: task.title,
-						acceptanceStatus,
-						taskStatus: task.status,
-						rechecked: taskRecheckCount,
-					});
-				}
-
-				const projects = Array.from(projectsMap.values());
-
-				// Calculate startDateUser and endDateUser from projects
-				let startDateUser = null;
-				let endDateUser = null;
-
-				if (projects.length > 0) {
-					// Get earliest start date from projects
-					const projectStartDates = projects
-						.filter((project) => project.startDate !== null)
-						.map((project) => new Date(project.startDate!));
-
-					if (projectStartDates.length > 0) {
-						startDateUser = new Date(
-							Math.min(...projectStartDates.map((d) => d.getTime())),
-						);
-					}
-
-					// Get latest end date from projects
-					const projectEndDates = projects
-						.filter((project) => project.endDate !== null)
-						.map((project) => new Date(project.endDate!));
-
-					if (projectEndDates.length > 0) {
-						endDateUser = new Date(
-							Math.max(...projectEndDates.map((d) => d.getTime())),
-						);
-					}
-				}
-
-				return {
-					userId: user.id,
-					name: user.name,
-					startDateUser,
-					endDateUser,
-					metrics: {
-						taskCount,
-						rechecked,
-						breakdown: {
-							assigned,
-							inRecheck,
-							underReview,
-							done,
-							perAssigned: Math.round(perAssigned * 100) / 100,
-							perInRecheck: Math.round(perInRecheck * 100) / 100,
-							perUnderReview: Math.round(perUnderReview * 100) / 100,
-							perDone: Math.round(perDone * 100) / 100,
-						},
+						detail: { contains: "inrecheck" },
 					},
-					projects,
-				};
-			}),
-		);
+				});
 
-		await this.redis.setex(
-			`workload_dashboard`,
-			300,
-			JSON.stringify(workloadData),
-		); // Cache for 5 minutes
-		return workloadData;
-	}
+				projectsMap.get(project.id).tasks.push({
+					taskId: task.id,
+					name: task.title,
+					acceptanceStatus,
+					taskStatus: task.status,
+					rechecked: taskRecheckCount,
+				});
+			}
 
-	// Get workload data for a specific user by ID
-	async getWorkloadByUserId(userId: string) {
-		const cacheKey = `workload_user_${userId}`;
-		const cachedData = await this.redis.get(cacheKey);
-		if (cachedData) return JSON.parse(cachedData);
+			const projects = Array.from(projectsMap.values());
 
-		// Get the specific user
-		const user = await this.userModel.findById(userId);
-		if (!user) throw new NotFoundException("User not found");
+			// Calculate startDateUser and endDateUser from projects
+			let startDateUser = null;
+			let endDateUser = null;
 
-		// Get all tasks assigned to this user
-		const assignedTasks = await this.prisma.taskAssignment.findMany({
-			where: { userId: user.id },
-			include: {
-				task: {
-					include: {
-						project: {
-							include: {
-								tags: {
-									include: {
-										tag: true,
-									},
+			if (projects.length > 0) {
+				// Get earliest start date from projects
+				const projectStartDates = projects
+					.filter((project) => project.startDate !== null)
+					.map((project) => new Date(project.startDate!));
+
+				if (projectStartDates.length > 0) {
+					startDateUser = new Date(
+						Math.min(...projectStartDates.map((d) => d.getTime())),
+					);
+				}
+
+				// Get latest end date from projects
+				const projectEndDates = projects
+					.filter((project) => project.endDate !== null)
+					.map((project) => new Date(project.endDate!));
+
+				if (projectEndDates.length > 0) {
+					endDateUser = new Date(
+						Math.max(...projectEndDates.map((d) => d.getTime())),
+					);
+				}
+			}
+
+			return {
+				userId: user.id,
+				name: user.name,
+				startDateUser,
+				endDateUser,
+				metrics: {
+					taskCount,
+					rechecked,
+					breakdown: {
+						assigned,
+						inRecheck,
+						underReview,
+						done,
+						perAssigned: Math.round(perAssigned * 100) / 100,
+						perInRecheck: Math.round(perInRecheck * 100) / 100,
+						perUnderReview: Math.round(perUnderReview * 100) / 100,
+						perDone: Math.round(perDone * 100) / 100,
+					},
+				},
+				projects,
+			};
+		}),
+	);
+
+	await this.redis.setex(
+		`workload_dashboard`,
+		300,
+		JSON.stringify(workloadData),
+	); // Cache for 5 minutes
+	return workloadData;
+}
+
+// Get workload data for a specific user by ID
+async getWorkloadByUserId(userId: string) {
+	const cacheKey = `workload_user_${userId}`;
+	const cachedData = await this.redis.get(cacheKey);
+	if (cachedData) return JSON.parse(cachedData);
+
+	// Get the specific user
+	const user = await this.userModel.findById(userId);
+	if (!user) throw new NotFoundException("User not found");
+
+	// Get all projects where user is a member
+	const userProjects = await this.projectRoleModel.findByUserId(user.id);
+
+	// Get all tasks assigned to this user
+	const assignedTasks = await this.prisma.taskAssignment.findMany({
+		where: { userId: user.id },
+		include: {
+			task: {
+				include: {
+					project: {
+						include: {
+							tags: {
+								include: {
+									tag: true,
 								},
 							},
 						},
 					},
 				},
 			},
-		});
+		},
+	});
 
-		// Calculate task metrics
-		const tasks = assignedTasks.map((ta) => ta.task);
-		const taskCount = tasks.length;
+	// Calculate task metrics
+	const tasks = assignedTasks.map((ta) => ta.task);
+	const taskCount = tasks.length;
 
-		// Count tasks by status
-		const assigned = tasks.filter((t) => t.status === "Assigned").length;
-		const inRecheck = tasks.filter((t) => t.status === "InRecheck").length;
-		const underReview = tasks.filter((t) => t.status === "UnderReview").length;
-		const done = tasks.filter((t) => t.status === "Done").length;
+	// Count tasks by status
+	const assigned = tasks.filter((t) => t.status === "Assigned").length;
+	const inRecheck = tasks.filter((t) => t.status === "InRecheck").length;
+	const underReview = tasks.filter((t) => t.status === "UnderReview").length;
+	const done = tasks.filter((t) => t.status === "Done").length;
 
-		// Calculate percentages
-		const perAssigned = taskCount > 0 ? (assigned / taskCount) * 100 : 0;
-		const perInRecheck = taskCount > 0 ? (inRecheck / taskCount) * 100 : 0;
-		const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
-		const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
+	// Calculate percentages
+	const perAssigned = taskCount > 0 ? (assigned / taskCount) * 100 : 0;
+	const perInRecheck = taskCount > 0 ? (inRecheck / taskCount) * 100 : 0;
+	const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
+	const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-		// Count how many times tasks were moved to InRecheck status
-		const recheckActivities = await this.prisma.activity.findMany({
-			where: {
-				taskId: { in: tasks.map((t) => t.id) },
-				detail: { contains: "inrecheck" },
-			},
-		});
-		const rechecked = recheckActivities.length;
+	// Count how many times tasks were moved to InRecheck status
+	const recheckActivities = await this.prisma.activity.findMany({
+		where: {
+			taskId: { in: tasks.map((t) => t.id) },
+			detail: { contains: "inrecheck" },
+		},
+	});
+	const rechecked = recheckActivities.length;
 
-		// Group tasks by project
-		const projectsMap = new Map();
+	// Group tasks by project
+	const projectsMap = new Map();
 
-		for (const task of tasks) {
-			const project = task.project;
-			if (!projectsMap.has(project.id)) {
+	// Add all projects where user is a member (even if no tasks assigned)
+	for (const pr of userProjects) {
+		if (!projectsMap.has(pr.projectId)) {
+			// Get project details (from project model)
+			const project = await this.projectModel.findById(pr.projectId) as ProjectWithTags;
+			if (project) {
+				let tags: string[] = [];
+				if (Array.isArray(project.tags)) {
+					tags = project.tags
+						.filter((pt) => pt.tag && pt.tag.isProject === true)
+						.map((pt) => pt.tag.name);
+				}
 				projectsMap.set(project.id, {
 					id: project.id,
 					title: project.title,
 					startDate: project.startDate,
 					endDate: project.endDate,
-					tags: project.tags.map((pt) => pt.tag.name),
+					tags,
 					tasks: [],
 				});
 			}
-
-			// Determine acceptance status
-			const now = new Date();
-			let acceptanceStatus = "In time";
-			if (task.endDate && now > task.endDate && task.status !== "Done") {
-				acceptanceStatus = "Overdue";
-			}
-
-			// Count recheck for this specific task
-			const taskRecheckCount = await this.prisma.activity.count({
-				where: {
-					taskId: task.id,
-					detail: { contains: "inrecheck" },
-				},
-			});
-
-			projectsMap.get(project.id).tasks.push({
-				taskId: task.id,
-				name: task.title,
-				acceptanceStatus,
-				taskStatus: task.status,
-				rechecked: taskRecheckCount,
-			});
 		}
-
-		const projects = Array.from(projectsMap.values());
-
-		// Calculate startDateUser and endDateUser from projects
-		let startDateUser = null;
-		let endDateUser = null;
-
-		if (projects.length > 0) {
-			// Get earliest start date from projects
-			const projectStartDates = projects
-				.filter((project) => project.startDate !== null)
-				.map((project) => new Date(project.startDate!));
-
-			if (projectStartDates.length > 0) {
-				startDateUser = new Date(
-					Math.min(...projectStartDates.map((d) => d.getTime())),
-				);
-			}
-
-			// Get latest end date from projects
-			const projectEndDates = projects
-				.filter((project) => project.endDate !== null)
-				.map((project) => new Date(project.endDate!));
-
-			if (projectEndDates.length > 0) {
-				endDateUser = new Date(
-					Math.max(...projectEndDates.map((d) => d.getTime())),
-				);
-			}
-		}
-
-		const workloadData = {
-			userId: user.id,
-			name: user.name,
-			startDateUser,
-			endDateUser,
-			metrics: {
-				taskCount,
-				rechecked,
-				breakdown: {
-					assigned,
-					inRecheck,
-					underReview,
-					done,
-					perAssigned: Math.round(perAssigned * 100) / 100,
-					perInRecheck: Math.round(perInRecheck * 100) / 100,
-					perUnderReview: Math.round(perUnderReview * 100) / 100,
-					perDone: Math.round(perDone * 100) / 100,
-				},
-			},
-			projects,
-		};
-
-		await this.redis.setex(cacheKey, 300, JSON.stringify(workloadData)); // Cache for 5 minutes
-		return workloadData;
 	}
+
+	// Add tasks to their projects
+	for (const task of tasks) {
+		const project = task.project as ProjectWithTags;
+		if (!project) continue;
+		if (!projectsMap.has(project.id)) {
+			let tags: string[] = [];
+			if (Array.isArray(project.tags)) {
+				tags = project.tags
+					.filter((pt) => pt.tag && pt.tag.isProject === true)
+					.map((pt) => pt.tag.name);
+			}
+			projectsMap.set(project.id, {
+				id: project.id,
+				title: project.title,
+				startDate: project.startDate,
+				endDate: project.endDate,
+				tags,
+				tasks: [],
+			});
+		}
+
+		// Determine acceptance status
+		const now = new Date();
+		let acceptanceStatus = "In time";
+		if (task.endDate && now > task.endDate && task.status !== "Done") {
+			acceptanceStatus = "Overdue";
+		}
+
+		// Count recheck for this specific task
+		const taskRecheckCount = await this.prisma.activity.count({
+			where: {
+				taskId: task.id,
+				detail: { contains: "inrecheck" },
+			},
+		});
+
+		projectsMap.get(project.id).tasks.push({
+			taskId: task.id,
+			name: task.title,
+			acceptanceStatus,
+			taskStatus: task.status,
+			rechecked: taskRecheckCount,
+		});
+	}
+
+	const projects = Array.from(projectsMap.values());
+
+	// Calculate startDateUser and endDateUser from projects
+	let startDateUser = null;
+	let endDateUser = null;
+
+	if (projects.length > 0) {
+		// Get earliest start date from projects
+		const projectStartDates = projects
+			.filter((project) => project.startDate !== null)
+			.map((project) => new Date(project.startDate!));
+
+		if (projectStartDates.length > 0) {
+			startDateUser = new Date(
+				Math.min(...projectStartDates.map((d) => d.getTime())),
+			);
+		}
+
+		// Get latest end date from projects
+		const projectEndDates = projects
+			.filter((project) => project.endDate !== null)
+			.map((project) => new Date(project.endDate!));
+
+		if (projectEndDates.length > 0) {
+			endDateUser = new Date(
+				Math.max(...projectEndDates.map((d) => d.getTime())),
+			);
+		}
+	}
+
+	const workloadData = {
+		userId: user.id,
+		name: user.name,
+		startDateUser,
+		endDateUser,
+		metrics: {
+			taskCount,
+			rechecked,
+			breakdown: {
+				assigned,
+				inRecheck,
+				underReview,
+				done,
+				perAssigned: Math.round(perAssigned * 100) / 100,
+				perInRecheck: Math.round(perInRecheck * 100) / 100,
+				perUnderReview: Math.round(perUnderReview * 100) / 100,
+				perDone: Math.round(perDone * 100) / 100,
+			},
+		},
+		projects,
+	};
+
+	await this.redis.setex(cacheKey, 300, JSON.stringify(workloadData)); // Cache for 5 minutes
+	return workloadData;
+}
+
 }

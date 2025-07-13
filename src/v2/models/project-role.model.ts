@@ -98,4 +98,12 @@ export class ProjectRoleModel extends BaseModel<ProjectRole> {
 		});
 		return projectRoles;
 	}
+
+    // Add this method to find project roles by userId
+    async findByUserId(userId: string): Promise<ProjectRole[]> {
+        const projectRoles = await this.getModel().projectRole.findMany({
+            where: { userId },
+        });
+        return projectRoles;
+    }
 }
