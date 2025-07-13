@@ -178,8 +178,17 @@ async getWorkloadDashboard() {
 
 	const workloadData = await Promise.all(
 		users.map(async (user) => {
-			// Get all projects where user is a member
-			const userProjects = await this.projectRoleModel.findByUserId(user.id);
+			// Get all project roles for this user
+			const userProjectRoles = await this.projectRoleModel.findByUserId(user.id);
+			// Get all projectIds from project roles
+			const projectIds = userProjectRoles.map((pr) => pr.projectId);
+			// Fetch all projects for these IDs (with tags)
+			const memberProjects = projectIds.length > 0
+				? await this.prisma.project.findMany({
+					where: { id: { in: projectIds } },
+					include: { tags: { include: { tag: true } } },
+				}) as ProjectWithTags[]
+				: [];
 			// Get all tasks assigned to this user
 			const assignedTasks = await this.prisma.taskAssignment.findMany({
 				where: { userId: user.id },
@@ -229,28 +238,25 @@ async getWorkloadDashboard() {
 			const projectsMap = new Map();
 
 			// Add all projects where user is a member (even if no tasks assigned)
-			for (const pr of userProjects) {
-				if (!projectsMap.has(pr.projectId)) {
-					// Get project details (from project model)
-					const project = await this.projectModel.findById(pr.projectId) as ProjectWithTags;
-					if (project) {
-						let tags: string[] = [];
-						if (Array.isArray(project.tags)) {
-							tags = project.tags
-								.filter((pt) => pt.tag && pt.tag.isProject === true)
-								.map((pt) => pt.tag.name);
-						}
-						projectsMap.set(project.id, {
-							id: project.id,
-							title: project.title,
-							startDate: project.startDate,
-							endDate: project.endDate,
-							tags,
-							tasks: [],
-						});
+			for (const project of memberProjects) {
+				if (!projectsMap.has(project.id)) {
+					let tags: string[] = [];
+					if (Array.isArray(project.tags)) {
+						tags = project.tags
+							.filter((pt: { tag: { name: string; isProject: boolean } }) => pt.tag && pt.tag.isProject === true)
+							.map((pt: { tag: { name: string; isProject: boolean } }) => pt.tag.name);
 					}
+					projectsMap.set(project.id, {
+						id: project.id,
+						title: project.title,
+						startDate: project.startDate,
+						endDate: project.endDate,
+						tags,
+						tasks: [],
+					});
 				}
 			}
+			// ...removed ownedProjects block, all projects are now included via projectRole...
 
 			// Add tasks to their projects
 			for (const task of tasks) {
@@ -277,7 +283,7 @@ async getWorkloadDashboard() {
 				const now = new Date();
 				let acceptanceStatus = "In time";
 				if (task.endDate && now > task.endDate && task.status !== "Done") {
-					acceptanceStatus = "Overdue";
+					acceptanceStatus = "Overdgue";
 				}
 
 				// Count recheck for this specific task
