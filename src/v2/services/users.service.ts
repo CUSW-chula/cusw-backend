@@ -359,7 +359,7 @@ async getWorkloadDashboard() {
 
 	await this.redis.setex(
 		`workload_dashboard`,
-		300,
+		30,
 		JSON.stringify(workloadData),
 	); // Cache for 5 minutes
 	return workloadData;
@@ -547,7 +547,7 @@ async getWorkloadByUserId(userId: string) {
 		projects,
 	};
 
-	await this.redis.setex(cacheKey, 300, JSON.stringify(workloadData)); // Cache for 5 minutes
+	await this.redis.setex(cacheKey, 30, JSON.stringify(workloadData)); // Cache for 5 minutes
 	return workloadData;
 }
 
