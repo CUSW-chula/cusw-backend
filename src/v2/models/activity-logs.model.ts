@@ -83,4 +83,24 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		});
 		return createdActivity;
 	}
+
+	async findRecheckActivitiesByTaskIds(
+		taskIds: string[],
+	): Promise<PrismaActivity[]> {
+		return await this.getModel().activity.findMany({
+			where: {
+				taskId: { in: taskIds },
+				detail: { contains: "inrecheck" },
+			},
+		});
+	}
+
+	async countRecheckActivitiesByTaskId(taskId: string): Promise<number> {
+		return await this.getModel().activity.count({
+			where: {
+				taskId: taskId,
+				detail: { contains: "inrecheck" },
+			},
+		});
+	}
 }

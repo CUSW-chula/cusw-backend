@@ -13,6 +13,52 @@ export class ProjectModel extends BaseModel<Project> {
 		return project;
 	}
 
+	async findByIdWithTags(id: string): Promise<
+		| (Project & {
+				tags: {
+					tag: {
+						name: string;
+						isProject: boolean;
+					};
+				}[];
+		  })
+		| null
+	> {
+		const project = await this.getModel().project.findUnique({
+			where: { id },
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+			},
+		});
+		return project;
+	}
+
+	async findManyByIdsWithTags(ids: string[]): Promise<
+		(Project & {
+			tags: {
+				tag: {
+					name: string;
+					isProject: boolean;
+				};
+			}[];
+		})[]
+	> {
+		return await this.getModel().project.findMany({
+			where: { id: { in: ids } },
+			include: {
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+			},
+		});
+	}
+
 	async findByUserId(userId: string): Promise<Project[]> {
 		const projects = await this.getModel().project.findMany({
 			where: {

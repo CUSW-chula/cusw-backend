@@ -48,7 +48,7 @@ export class TasksModel extends BaseModel<Task> {
 				expense: data.expense ?? 0.0,
 				status: data.status ?? TaskStatus.Unassigned,
 				parentTaskId: data.parentTaskId,
-				position: data.position ?? 0,
+				position: data.position ?? 0.0,
 				projectId: data.projectId ?? "",
 				createdById: data.createdById ?? "",
 				startDate: data.startDate,
@@ -151,5 +151,44 @@ export class TasksModel extends BaseModel<Task> {
 			},
 		});
 		return tasks;
+	}
+
+	async findAssignedTasksByUserId(userId: string): Promise<
+		{
+			task: Task & {
+				project: {
+					id: string;
+					title: string;
+					startDate: Date | null;
+					endDate: Date | null;
+					tags: {
+						tag: {
+							name: string;
+							isProject: boolean;
+						};
+					}[];
+				};
+			};
+		}[]
+	> {
+		const assignedTasks = await this.getModel().taskAssignment.findMany({
+			where: { userId },
+			include: {
+				task: {
+					include: {
+						project: {
+							include: {
+								tags: {
+									include: {
+										tag: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+		return assignedTasks;
 	}
 }
