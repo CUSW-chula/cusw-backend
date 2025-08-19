@@ -46,7 +46,7 @@ export class UserService extends BaseService<User> {
 
 	// Fetch all users with caching
 	async getAllUsers(): Promise<User[]> {
-		const cacheKey = this.getTaskCacheKey("all");
+		const cacheKey = this.getUserCacheKey("all");
 		const cachedUsers = await this.getFromCache(cacheKey);
 		if (cachedUsers) return cachedUsers as User[];
 
