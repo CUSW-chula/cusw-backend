@@ -1,4 +1,3 @@
-// Helper type for project with tags
 type ProjectWithTags = {
 	id: string;
 	title: string;
@@ -520,5 +519,40 @@ export class UserService extends BaseService<User> {
 
 		await this.redis.setex(cacheKey, 30, JSON.stringify(workloadData)); // Cache for 5 minutes
 		return workloadData;
+	}
+	async getProjectsWithRoleAndTasks(userId: string) {
+		const projectRoles = await this.projectRoleModel.findByUserId(userId);
+		if (!projectRoles || projectRoles.length === 0) return [];
+
+		const projectIds = projectRoles.map((pr) => pr.projectId);
+		const projects = await this.projectModel.findManyByIdsWithTags(projectIds);
+		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(userId);
+		const tasksByProject: Record<string, any> = {};
+		for (const ta of assignedTasks) {
+			const projectId = ta.task.project?.id;
+			if (!projectId) continue;
+			if (!tasksByProject[projectId]) tasksByProject[projectId] = [];
+			tasksByProject[projectId].push({
+				taskId: ta.task.id,
+				name: ta.task.title,
+				status: ta.task.status,
+				startDate: ta.task.startDate,
+				endDate: ta.task.endDate,
+			});
+		}
+		return projectRoles.map((pr) => {
+			const project = Array.isArray(projects)
+				? projects.find((p) => p.id === pr.projectId)
+				: null;
+			return {
+				id: pr.projectId,
+				title: project?.title ?? '',
+				role: pr.role,
+				tasks: tasksByProject[pr.projectId] || [],
+				tags: project?.tags || [],
+				startDate: project?.startDate,
+				endDate: project?.endDate,
+			};
+		});
 	}
 }

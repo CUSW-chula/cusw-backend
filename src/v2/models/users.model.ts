@@ -1,4 +1,4 @@
-import type { User } from "../../../../generated";
+import type { User } from "../../../generated";
 import { BaseModel } from "../../core/model.core";
 
 export class UserModel extends BaseModel<User> {
@@ -42,4 +42,6 @@ export class UserModel extends BaseModel<User> {
 		const deletedUser = await this.getModel().user.delete({ where: { id } });
 		return deletedUser;
 	}
+
+	
 }

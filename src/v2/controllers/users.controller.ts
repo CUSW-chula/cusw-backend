@@ -172,4 +172,14 @@ export const UserController = new Elysia({
 				isOutsource: t.Optional(t.Boolean()),
 			}),
 		},
+	)
+	.get("userrole/:userid", async ({ params: { userid }, db, redis }: Context & { params: { userid: string } }) => {
+		const userService = new UserService(db, redis);
+		return await userService.getProjectsWithRoleAndTasks(userid);
+	},
+	{
+			detail: {
+				summary: "Get user with roles ",
+			},
+		},
 	);
