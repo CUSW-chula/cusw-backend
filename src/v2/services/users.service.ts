@@ -527,7 +527,13 @@ export class UserService extends BaseService<User> {
 		const projectIds = projectRoles.map((pr) => pr.projectId);
 		const projects = await this.projectModel.findManyByIdsWithTags(projectIds);
 		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(userId);
-		const tasksByProject: Record<string, any> = {};
+		const tasksByProject: Record<string, Array<{
+			taskId: string;
+			name: string;
+			status: string;
+			startDate: Date | null;
+			endDate: Date | null;
+		}>> = {};
 		for (const ta of assignedTasks) {
 			const projectId = ta.task.project?.id;
 			if (!projectId) continue;
@@ -554,5 +560,18 @@ export class UserService extends BaseService<User> {
 				endDate: project?.endDate,
 			};
 		});
+	}
+
+	// Get current user information
+	async getCurrentUser(userId: string): Promise<User> {
+		const cacheKey = this.getUserCacheKey(userId);
+		const cachedUser = await this.getFromCache(cacheKey);
+		if (cachedUser) return cachedUser as User;
+
+		const user = await this.userModel.findById(userId);
+		if (!user) throw new NotFoundException("User not found");
+		
+		await this.setToCache(cacheKey, user);
+		return user;
 	}
 }

@@ -6,6 +6,11 @@ export interface Context {
 	db: PrismaClient;
 	redis: Redis;
 	minio: Minio.Client;
+	cookie?: {
+		session?: {
+			value: string;
+		};
+	};
 }
 
 export type User = {

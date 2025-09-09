@@ -6,6 +6,15 @@ export const UserController = new Elysia({
 	prefix: "/users",
 	tags: ["Version 2"],
 })
+	// Get current user
+	.get("/me", async ({ db, redis, cookie }: Context) => {
+		const userService = new UserService(db, redis);
+		const userId = cookie?.session?.value;
+		if (!userId) {
+			throw new Error("User session not found");
+		}
+		return await userService.getCurrentUser(userId);
+	})
 	// Get all users
 	.get("/", async ({ db, redis }: Context) => {
 		const userService = new UserService(db, redis);
