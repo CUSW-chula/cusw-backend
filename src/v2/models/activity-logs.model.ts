@@ -103,4 +103,24 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 			},
 		});
 	}
+
+	async findTaskStatusChangeToComplete(taskId: string): Promise<PrismaActivity | null> {
+		return await this.getModel().activity.findFirst({
+			where: {
+				taskId: taskId,
+				// biome-ignore lint/style/useNamingConvention: Prisma OR operator requires uppercase
+				OR: [
+					{ detail: { contains: "done" } },
+					{ detail: { contains: "Done" } },
+					{ detail: { contains: "complete" } },
+					{ detail: { contains: "Complete" } },
+					{ detail: { contains: "finished" } },
+					{ detail: { contains: "Finished" } }
+				]
+			},
+			orderBy: {
+				createdAt: 'desc'
+			}
+		});
+	}
 }

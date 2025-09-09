@@ -275,8 +275,20 @@ export class UserService extends BaseService<User> {
 					// Determine acceptance status
 					const now = new Date();
 					let acceptanceStatus = "On time";
-					if (task.endDate && now > task.endDate && task.status !== "Done") {
-						acceptanceStatus = "Overdue";
+					
+					if (task.endDate) {
+						if (task.status === "Done") {
+							// Check if task was completed after the deadline
+							const doneActivity = await this.activityModel.findTaskStatusChangeToComplete(task.id);
+							if (doneActivity) {
+								const completedDate = new Date(doneActivity.createdAt);
+								if (completedDate > task.endDate) {
+									acceptanceStatus = "Overdue";
+								}
+							}
+						} else if (now > task.endDate) {
+							acceptanceStatus = "Overdue";
+						}
 					}
 
 					// Count recheck for this specific task
@@ -448,8 +460,20 @@ export class UserService extends BaseService<User> {
 			// Determine acceptance status
 			const now = new Date();
 			let acceptanceStatus = "On time";
-			if (task.endDate && now > task.endDate && task.status !== "Done") {
-				acceptanceStatus = "Overdue";
+			
+			if (task.endDate) {
+				if (task.status === "Done") {
+					// Check if task was completed after the deadline
+					const doneActivity = await this.activityModel.findTaskStatusChangeToComplete(task.id);
+					if (doneActivity) {
+						const completedDate = new Date(doneActivity.createdAt);
+						if (completedDate > task.endDate) {
+							acceptanceStatus = "Overdue";
+						}
+					}
+				} else if (now > task.endDate) {
+					acceptanceStatus = "Overdue";
+				}
 			}
 
 			// Count recheck for this specific task
