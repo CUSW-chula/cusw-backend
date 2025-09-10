@@ -191,4 +191,10 @@ export class TasksModel extends BaseModel<Task> {
 		});
 		return assignedTasks;
 	}
+	async findAllWithProjectByCreatedById(userId: string) {
+		return await this.getModel().task.findMany({
+			where: { createdById: userId },
+			include: { project: true },
+		});
+	}
 }
