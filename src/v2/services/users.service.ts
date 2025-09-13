@@ -562,30 +562,47 @@ export class UserService extends BaseService<User> {
 
 		const projectIds = projectRoles.map((pr) => pr.projectId);
 		const projects = await this.projectModel.findManyByIdsWithTags(projectIds);
-		const assignedTasks =
-			await this.taskModel.findAssignedTasksByUserId(userId);
-		const tasksByProject: Record<
-			string,
-			Array<{
-				taskId: string;
-				name: string;
-				status: string;
-				startDate: Date | null;
-				endDate: Date | null;
-			}>
-		> = {};
+		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(userId);
+	
+		const ownedTasks = await this.taskModel.findAllWithProjectByCreatedById(userId);	
+		type TaskWithProject = typeof ownedTasks[number] | typeof assignedTasks[number]['task'];
+		const allTasks: Array<{ task: TaskWithProject; taskRole: 'owner' | 'assignee' }> = [];
+		const assignedTaskIds = new Set<string>();
 		for (const ta of assignedTasks) {
-			const projectId = ta.task.project?.id;
+			assignedTaskIds.add(ta.task.id);
+			allTasks.push({ task: ta.task, taskRole: 'assignee' });
+		}
+		for (const t of ownedTasks) {
+			if (!assignedTaskIds.has(t.id)) {
+				allTasks.push({ task: t, taskRole: 'owner' });
+			}
+		}
+
+		// Group by project
+		const tasksByProject: Record<string, Array<{
+			taskId: string;
+			name: string;
+			status: string;
+			startDate: Date | null;
+			endDate: Date | null;
+			taskRole: 'owner' | 'assignee';
+		}>> = {};
+		for (const { task, taskRole } of allTasks) {
+			const projectId = task.project?.id;
 			if (!projectId) continue;
 			if (!tasksByProject[projectId]) tasksByProject[projectId] = [];
 			tasksByProject[projectId].push({
-				taskId: ta.task.id,
-				name: ta.task.title,
-				status: ta.task.status,
-				startDate: ta.task.startDate,
-				endDate: ta.task.endDate,
+				taskId: task.id,
+				name: task.title,
+				status: task.status,
+				startDate: task.startDate,
+				endDate: task.endDate,
+				taskRole,
 			});
 		}
+		
+		const user = await this.userModel.findById(userId);
+		const isAdmin = !!user?.admin;
 		return projectRoles.map((pr) => {
 			const project = Array.isArray(projects)
 				? projects.find((p) => p.id === pr.projectId)
@@ -595,9 +612,9 @@ export class UserService extends BaseService<User> {
 				title: project?.title ?? "",
 				role: pr.role,
 				tasks: tasksByProject[pr.projectId] || [],
-				tags: project?.tags || [],
 				startDate: project?.startDate,
 				endDate: project?.endDate,
+				isAdmin,
 			};
 		});
 	}
