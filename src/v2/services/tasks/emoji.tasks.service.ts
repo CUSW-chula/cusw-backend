@@ -23,7 +23,6 @@ export class EmojiClassService extends TaskService {
 		const isTaskExist = await this.getTaskModel().findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
-
 		const addEmojiOnTask = await this.getEmojiModel().create({
 			emoji: emoji,
 			taskId: taskId,

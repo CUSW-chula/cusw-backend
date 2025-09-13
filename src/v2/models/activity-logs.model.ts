@@ -104,7 +104,9 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		});
 	}
 
-	async findTaskStatusChangeToComplete(taskId: string): Promise<PrismaActivity | null> {
+	async findTaskStatusChangeToComplete(
+		taskId: string,
+	): Promise<PrismaActivity | null> {
 		return await this.getModel().activity.findFirst({
 			where: {
 				taskId: taskId,
@@ -115,12 +117,38 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 					{ detail: { contains: "complete" } },
 					{ detail: { contains: "Complete" } },
 					{ detail: { contains: "finished" } },
-					{ detail: { contains: "Finished" } }
-				]
+					{ detail: { contains: "Finished" } },
+				],
 			},
 			orderBy: {
-				createdAt: 'desc'
-			}
+				createdAt: "desc",
+			},
+		});
+	}
+
+	async findRecheckActivitiesByUserAndTaskIds(
+		userId: string,
+		taskIds: string[],
+	): Promise<PrismaActivity[]> {
+		return await this.getModel().activity.findMany({
+			where: {
+				userId: userId,
+				taskId: { in: taskIds },
+				detail: { contains: "inrecheck" },
+			},
+		});
+	}
+
+	async countRecheckActivitiesByUserAndTaskId(
+		userId: string,
+		taskId: string,
+	): Promise<number> {
+		return await this.getModel().activity.count({
+			where: {
+				userId: userId,
+				taskId: taskId,
+				detail: { contains: "inrecheck" },
+			},
 		});
 	}
 }

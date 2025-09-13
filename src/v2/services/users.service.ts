@@ -214,9 +214,10 @@ export class UserService extends BaseService<User> {
 					taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 				const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-				// Count how many times tasks were moved to InRecheck status
+				// Count how many times tasks were moved to InRecheck status by this user
 				const recheckActivities =
-					await this.activityModel.findRecheckActivitiesByTaskIds(
+					await this.activityModel.findRecheckActivitiesByUserAndTaskIds(
+						user.id,
 						tasks.map((t) => t.id),
 					);
 				const rechecked = recheckActivities.length;
@@ -275,11 +276,14 @@ export class UserService extends BaseService<User> {
 					// Determine acceptance status
 					const now = new Date();
 					let acceptanceStatus = "On time";
-					
+
 					if (task.endDate) {
 						if (task.status === "Done") {
 							// Check if task was completed after the deadline
-							const doneActivity = await this.activityModel.findTaskStatusChangeToComplete(task.id);
+							const doneActivity =
+								await this.activityModel.findTaskStatusChangeToComplete(
+									task.id,
+								);
 							if (doneActivity) {
 								const completedDate = new Date(doneActivity.createdAt);
 								if (completedDate > task.endDate) {
@@ -291,9 +295,12 @@ export class UserService extends BaseService<User> {
 						}
 					}
 
-					// Count recheck for this specific task
+					// Count recheck for this specific task by this user
 					const taskRecheckCount =
-						await this.activityModel.countRecheckActivitiesByTaskId(task.id);
+						await this.activityModel.countRecheckActivitiesByUserAndTaskId(
+							user.id,
+							task.id,
+						);
 
 					projectsMap.get(project.id).tasks.push({
 						taskId: task.id,
@@ -400,9 +407,10 @@ export class UserService extends BaseService<User> {
 		const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 		const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-		// Count how many times tasks were moved to InRecheck status
+		// Count how many times tasks were moved to InRecheck status by this user
 		const recheckActivities =
-			await this.activityModel.findRecheckActivitiesByTaskIds(
+			await this.activityModel.findRecheckActivitiesByUserAndTaskIds(
+				user.id,
 				tasks.map((t) => t.id),
 			);
 		const rechecked = recheckActivities.length;
@@ -460,11 +468,12 @@ export class UserService extends BaseService<User> {
 			// Determine acceptance status
 			const now = new Date();
 			let acceptanceStatus = "On time";
-			
+
 			if (task.endDate) {
 				if (task.status === "Done") {
 					// Check if task was completed after the deadline
-					const doneActivity = await this.activityModel.findTaskStatusChangeToComplete(task.id);
+					const doneActivity =
+						await this.activityModel.findTaskStatusChangeToComplete(task.id);
 					if (doneActivity) {
 						const completedDate = new Date(doneActivity.createdAt);
 						if (completedDate > task.endDate) {
@@ -476,9 +485,12 @@ export class UserService extends BaseService<User> {
 				}
 			}
 
-			// Count recheck for this specific task
+			// Count recheck for this specific task by this user
 			const taskRecheckCount =
-				await this.activityModel.countRecheckActivitiesByTaskId(task.id);
+				await this.activityModel.countRecheckActivitiesByUserAndTaskId(
+					user.id,
+					task.id,
+				);
 
 			projectsMap.get(project.id).tasks.push({
 				taskId: task.id,
@@ -550,14 +562,18 @@ export class UserService extends BaseService<User> {
 
 		const projectIds = projectRoles.map((pr) => pr.projectId);
 		const projects = await this.projectModel.findManyByIdsWithTags(projectIds);
-		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(userId);
-		const tasksByProject: Record<string, Array<{
-			taskId: string;
-			name: string;
-			status: string;
-			startDate: Date | null;
-			endDate: Date | null;
-		}>> = {};
+		const assignedTasks =
+			await this.taskModel.findAssignedTasksByUserId(userId);
+		const tasksByProject: Record<
+			string,
+			Array<{
+				taskId: string;
+				name: string;
+				status: string;
+				startDate: Date | null;
+				endDate: Date | null;
+			}>
+		> = {};
 		for (const ta of assignedTasks) {
 			const projectId = ta.task.project?.id;
 			if (!projectId) continue;
@@ -576,7 +592,7 @@ export class UserService extends BaseService<User> {
 				: null;
 			return {
 				id: pr.projectId,
-				title: project?.title ?? '',
+				title: project?.title ?? "",
 				role: pr.role,
 				tasks: tasksByProject[pr.projectId] || [],
 				tags: project?.tags || [],
@@ -594,7 +610,7 @@ export class UserService extends BaseService<User> {
 
 		const user = await this.userModel.findById(userId);
 		if (!user) throw new NotFoundException("User not found");
-		
+
 		await this.setToCache(cacheKey, user);
 		return user;
 	}

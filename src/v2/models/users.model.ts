@@ -42,6 +42,4 @@ export class UserModel extends BaseModel<User> {
 		const deletedUser = await this.getModel().user.delete({ where: { id } });
 		return deletedUser;
 	}
-
-	
 }
