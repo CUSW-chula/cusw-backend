@@ -253,12 +253,22 @@ export const TaskController = new Elysia({
 			cookie: { session: Cookie<string> };
 		}) => {
 			const taskService = new TaskService(db, redis);
+			const activityService = new ActivityService(db, redis);
 			const userId = session.value;
 			const task = await taskService.createTaskForDuplicate(
 				body,
 				userId,
 				projectId,
 			);
+			for (const t of task) {
+				const createTaskActivity = await activityService.postActivity(
+					t.id,
+					$Enums.ActivityAction.CREATED,
+					"this task",
+					userId,
+				);
+				WebSocket.broadcast(`activity:${t.id}`, createTaskActivity);
+			}
 			return Response.json(task, { status: 200 });
 		},
 	)
