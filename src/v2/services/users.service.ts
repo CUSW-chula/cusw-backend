@@ -557,8 +557,14 @@ export class UserService extends BaseService<User> {
 		return workloadData;
 	}
 	async getProjectsWithRoleAndTasks(userId: string) {
+		// ดึง isAdmin ของผู้ใช้ก่อน
+		const user = await this.userModel.findById(userId);
+		const isAdmin = !!user?.admin;
+
 		const projectRoles = await this.projectRoleModel.findByUserId(userId);
-		if (!projectRoles || projectRoles.length === 0) return [];
+		if (!projectRoles || projectRoles.length === 0) {
+			return { projects: [], isAdmin };
+		}
 
 		const projectIds = projectRoles.map((pr) => pr.projectId);
 		const projects = await this.projectModel.findManyByIdsWithTags(projectIds);
@@ -601,9 +607,7 @@ export class UserService extends BaseService<User> {
 			});
 		}
 		
-		const user = await this.userModel.findById(userId);
-		const isAdmin = !!user?.admin;
-		return projectRoles.map((pr) => {
+	const projectsArray = projectRoles.map((pr) => {
 			const project = Array.isArray(projects)
 				? projects.find((p) => p.id === pr.projectId)
 				: null;
@@ -614,9 +618,10 @@ export class UserService extends BaseService<User> {
 				tasks: tasksByProject[pr.projectId] || [],
 				startDate: project?.startDate,
 				endDate: project?.endDate,
-				isAdmin,
 			};
-		});
+	});
+
+	return { projects: projectsArray, isAdmin };
 	}
 
 	// Get current user information
