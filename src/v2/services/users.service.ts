@@ -568,31 +568,41 @@ export class UserService extends BaseService<User> {
 
 		const projectIds = projectRoles.map((pr) => pr.projectId);
 		const projects = await this.projectModel.findManyByIdsWithTags(projectIds);
-		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(userId);
-	
-		const ownedTasks = await this.taskModel.findAllWithProjectByCreatedById(userId);	
-		type TaskWithProject = typeof ownedTasks[number] | typeof assignedTasks[number]['task'];
-		const allTasks: Array<{ task: TaskWithProject; taskRole: 'owner' | 'assignee' }> = [];
+		const assignedTasks =
+			await this.taskModel.findAssignedTasksByUserId(userId);
+
+		const ownedTasks =
+			await this.taskModel.findAllWithProjectByCreatedById(userId);
+		type TaskWithProject =
+			| (typeof ownedTasks)[number]
+			| (typeof assignedTasks)[number]["task"];
+		const allTasks: Array<{
+			task: TaskWithProject;
+			taskRole: "owner" | "assignee";
+		}> = [];
 		const assignedTaskIds = new Set<string>();
 		for (const ta of assignedTasks) {
 			assignedTaskIds.add(ta.task.id);
-			allTasks.push({ task: ta.task, taskRole: 'assignee' });
+			allTasks.push({ task: ta.task, taskRole: "assignee" });
 		}
 		for (const t of ownedTasks) {
 			if (!assignedTaskIds.has(t.id)) {
-				allTasks.push({ task: t, taskRole: 'owner' });
+				allTasks.push({ task: t, taskRole: "owner" });
 			}
 		}
 
 		// Group by project
-		const tasksByProject: Record<string, Array<{
-			taskId: string;
-			name: string;
-			status: string;
-			startDate: Date | null;
-			endDate: Date | null;
-			taskRole: 'owner' | 'assignee';
-		}>> = {};
+		const tasksByProject: Record<
+			string,
+			Array<{
+				taskId: string;
+				name: string;
+				status: string;
+				startDate: Date | null;
+				endDate: Date | null;
+				taskRole: "owner" | "assignee";
+			}>
+		> = {};
 		for (const { task, taskRole } of allTasks) {
 			const projectId = task.project?.id;
 			if (!projectId) continue;
@@ -606,8 +616,8 @@ export class UserService extends BaseService<User> {
 				taskRole,
 			});
 		}
-		
-	const projectsArray = projectRoles.map((pr) => {
+
+		const projectsArray = projectRoles.map((pr) => {
 			const project = Array.isArray(projects)
 				? projects.find((p) => p.id === pr.projectId)
 				: null;
@@ -619,9 +629,9 @@ export class UserService extends BaseService<User> {
 				startDate: project?.startDate,
 				endDate: project?.endDate,
 			};
-	});
+		});
 
-	return { projects: projectsArray, isAdmin };
+		return { projects: projectsArray, isAdmin };
 	}
 
 	// Get current user information
