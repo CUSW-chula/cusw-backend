@@ -260,15 +260,17 @@ export const TaskController = new Elysia({
 				userId,
 				projectId,
 			);
-			for (const t of task) {
-				const createTaskActivity = await activityService.postActivity(
-					t.id,
-					$Enums.ActivityAction.CREATED,
-					"this task",
-					userId,
-				);
-				WebSocket.broadcast(`activity:${t.id}`, createTaskActivity);
-			}
+			await Promise.all(
+				task.map(async (t) => {
+					const createTaskActivity = await activityService.postActivity(
+						t.id,
+						$Enums.ActivityAction.CREATED,
+						"this task",
+						userId,
+					);
+					WebSocket.broadcast(`activity:${t.id}`, createTaskActivity);
+				})
+			);
 			return Response.json(task, { status: 200 });
 		},
 	)
