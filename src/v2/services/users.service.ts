@@ -560,10 +560,11 @@ export class UserService extends BaseService<User> {
 		// ดึง isAdmin ของผู้ใช้ก่อน
 		const user = await this.userModel.findById(userId);
 		const isAdmin = !!user?.admin;
+		const isHead = !!user?.head;
 
 		const projectRoles = await this.projectRoleModel.findByUserId(userId);
 		if (!projectRoles || projectRoles.length === 0) {
-			return { projects: [], isAdmin };
+			return { projects: [], isAdmin, isHead };
 		}
 
 		const projectIds = projectRoles.map((pr) => pr.projectId);
@@ -631,7 +632,7 @@ export class UserService extends BaseService<User> {
 			};
 		});
 
-		return { projects: projectsArray, isAdmin };
+		return { projects: projectsArray, isAdmin, isHead };
 	}
 
 	// Get current user information
