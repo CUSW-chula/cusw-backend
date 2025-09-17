@@ -149,57 +149,54 @@ export class TaskService extends BaseService<Task> {
 			throw new NotFoundException("User not found");
 		}
 
-		if (task.title !== null) {
-			let statusBudget: $Enums.BudgetStatus = BudgetStatus.Initial;
-			if (task.parentTaskId) {
-				const parentTask = await this.taskModel.findById(task.parentTaskId);
-				if (
-					parentTask?.statusBudgets === BudgetStatus.Added ||
-					parentTask?.statusBudgets === BudgetStatus.ParentTaskAdded
-				) {
-					statusBudget = BudgetStatus.ParentTaskAdded;
-				}
+		let statusBudget: $Enums.BudgetStatus = BudgetStatus.Initial;
+		if (task.parentTaskId) {
+			const parentTask = await this.taskModel.findById(task.parentTaskId);
+			if (
+				parentTask?.statusBudgets === BudgetStatus.Added ||
+				parentTask?.statusBudgets === BudgetStatus.ParentTaskAdded
+			) {
+				statusBudget = BudgetStatus.ParentTaskAdded;
 			}
-
-			const position = (await this.taskModel.findByProjectId(task.projectId))
-				.length;
-			const newTask = {
-				title: task.title,
-				description: task.description,
-				createdById: task.createdById,
-				startDate: task.startDate,
-				endDate: task.endDate,
-				status: task.status,
-				parentTaskId: task.parentTaskId !== "" ? task.parentTaskId : undefined,
-				position: position,
-				budget: task.budget,
-				advance: task.advance,
-				expense: task.expense,
-				statusBudgets: statusBudget,
-				projectId: task.projectId,
-			};
-			await this.invalidateAllCache("projects", "tasks");
-			const createdTask = await this.taskModel.create(newTask);
-
-			// Update project money
-			const existingProject = await this.projectModel.findById(task.projectId);
-			if (!existingProject) {
-				throw new ValidationException("Project cann't found");
-			}
-			const updatedProject = {
-				...existingProject,
-				budget: existingProject.budget + (task.budget ?? 0),
-				advance: existingProject.advance + (task.advance ?? 0),
-				expense: existingProject.expense + (task.expense ?? 0),
-			};
-			// Invalidate caches
-			await this.invalidateAllCache("projects", "tasks");
-
-			await this.projectModel.update(task.projectId, updatedProject);
-
-			return await this.getTaskById(createdTask.id);
 		}
-		throw new ValidationException("Title cann't be null");
+
+		const position = (await this.taskModel.findByProjectId(task.projectId))
+			.length;
+		const newTask = {
+			title: task.title || "Untitled task",
+			description: task.description,
+			createdById: task.createdById,
+			startDate: task.startDate,
+			endDate: task.endDate,
+			status: task.status,
+			parentTaskId: task.parentTaskId !== "" ? task.parentTaskId : undefined,
+			position: position,
+			budget: task.budget,
+			advance: task.advance,
+			expense: task.expense,
+			statusBudgets: statusBudget,
+			projectId: task.projectId,
+		};
+		await this.invalidateAllCache("projects", "tasks");
+		const createdTask = await this.taskModel.create(newTask);
+
+		// Update project money
+		const existingProject = await this.projectModel.findById(task.projectId);
+		if (!existingProject) {
+			throw new ValidationException("Project cann't found");
+		}
+		const updatedProject = {
+			...existingProject,
+			budget: existingProject.budget + (task.budget ?? 0),
+			advance: existingProject.advance + (task.advance ?? 0),
+			expense: existingProject.expense + (task.expense ?? 0),
+		};
+		// Invalidate caches
+		await this.invalidateAllCache("projects", "tasks");
+
+		await this.projectModel.update(task.projectId, updatedProject);
+
+		return await this.getTaskById(createdTask.id);
 	}
 
 	async getTaskByUserId(userId: string): Promise<Task[]> {
