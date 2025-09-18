@@ -195,8 +195,13 @@ export class UserService extends BaseService<User> {
 					user.id,
 				);
 
+				// Filter tasks to only include those from projects where user is still a member
+				const filteredAssignedTasks = assignedTasks.filter((ta) => 
+					projectIds.includes(ta.task.projectId)
+				);
+
 				// Calculate task metrics
-				const tasks = assignedTasks.map((ta) => ta.task);
+				const tasks = filteredAssignedTasks.map((ta) => ta.task);
 				const taskCount = tasks.length;
 
 				// Count tasks by status
@@ -385,14 +390,20 @@ export class UserService extends BaseService<User> {
 
 		// Get all projects where user is a member
 		const userProjects = await this.projectRoleModel.findByUserId(user.id);
+		const projectIds = userProjects.map(pr => pr.projectId);
 
 		// Get all tasks assigned to this user
 		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(
 			user.id,
 		);
 
+		// Filter tasks to only include those from projects where user is still a member
+		const filteredAssignedTasks = assignedTasks.filter((ta) => 
+			projectIds.includes(ta.task.projectId)
+		);
+
 		// Calculate task metrics
-		const tasks = assignedTasks.map((ta) => ta.task);
+		const tasks = filteredAssignedTasks.map((ta) => ta.task);
 		const taskCount = tasks.length;
 
 		// Count tasks by status
