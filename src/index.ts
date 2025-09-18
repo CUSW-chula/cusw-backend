@@ -9,10 +9,9 @@ import { Exception, UnauthorizedException } from "./core/exception.core";
 
 // Import controllers
 import controllersV2 from "./v2/controllers";
-import { PrismaClient } from "../generated";
+import { prisma } from "./core/prisma.core";
 
 // Initialize services
-const prisma = new PrismaClient();
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
 	retryStrategy: (times) => {
 		const delay = Math.min(times * 100, 3000);
