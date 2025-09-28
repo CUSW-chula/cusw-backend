@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  // Performance optimizations
+  relationMode = "prisma"
 }
 
 model User {
@@ -84,6 +86,7 @@ model ProjectRole {
   project Project @relation(fields: [projectId], references: [id])
 
   @@unique([userId, projectId, role])
+  @@index([projectId])
   @@map("project_roles")
 }
 
@@ -96,7 +99,7 @@ model Task {
   projectId     String
   project       Project          @relation("ProjectTasks", fields: [projectId], references: [id])
   subTasks      Task[]           @relation("SubTasks")
-  parentTask    Task?            @relation("SubTasks", fields: [parentTaskId], references: [id])
+  parentTask    Task?            @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   parentTaskId  String?
   position      Float            @default(0.0)
   statusBudgets BudgetStatus
@@ -138,6 +141,7 @@ model TaskAssignment {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([taskId, userId])
+  @@index([userId])
   @@map("task_assignments")
 }
 
