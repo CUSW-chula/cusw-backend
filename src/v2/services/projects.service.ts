@@ -511,7 +511,7 @@ export class ProjectService extends BaseService<Project> {
 	private async calculateTaskProgress(task: Task): Promise<number> {
 		// Use memoization to avoid recalculating progress for the same task
 		const progressCache = new Map<string, number>();
-		return this.calculateTaskProgressRecursive(task, progressCache);
+		return await this.calculateTaskProgressRecursive(task, progressCache);
 	}
 
 	private async calculateTaskProgressRecursive(task: Task, cache: Map<string, number>): Promise<number> {
