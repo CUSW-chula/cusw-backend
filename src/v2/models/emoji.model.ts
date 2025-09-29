@@ -69,4 +69,18 @@ export class EmojiModel extends BaseModel<EmojiTaskUser> {
 		});
 		return deletedEmoji.count;
 	}
+
+	// Optimized batch delete method
+	async deleteByTaskIds(taskIds: string[]): Promise<number> {
+		if (taskIds.length === 0) return 0;
+
+		const deletedEmojis = await this.getModel().emojiTaskUser.deleteMany({
+			where: {
+				taskId: {
+					in: taskIds,
+				},
+			},
+		});
+		return deletedEmojis.count;
+	}
 }

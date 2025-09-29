@@ -197,4 +197,276 @@ export class TasksModel extends BaseModel<Task> {
 			include: { project: true },
 		});
 	}
+
+	// Optimized methods with includes to reduce N+1 queries
+	async findAllWithIncludes(): Promise<Task[]> {
+		return await this.getModel().task.findMany({
+			include: {
+				createdBy: true,
+				assignedUsers: {
+					include: {
+						user: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+				emojiTaskUsers: {
+					include: {
+						user: true,
+					},
+				},
+				subTasks: {
+					include: {
+						createdBy: true,
+						assignedUsers: {
+							include: {
+								user: true,
+							},
+						},
+						tags: {
+							include: {
+								tag: true,
+							},
+						},
+						emojiTaskUsers: {
+							include: {
+								user: true,
+							},
+						},
+					},
+				},
+			},
+		});
+	}
+
+	async findByIdWithIncludes(id: string): Promise<Task | null> {
+		return await this.getModel().task.findUnique({
+			where: { id },
+			include: {
+				createdBy: true,
+				assignedUsers: {
+					include: {
+						user: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+				emojiTaskUsers: {
+					include: {
+						user: true,
+					},
+				},
+				subTasks: {
+					include: {
+						createdBy: true,
+						assignedUsers: {
+							include: {
+								user: true,
+							},
+						},
+						tags: {
+							include: {
+								tag: true,
+							},
+						},
+						emojiTaskUsers: {
+							include: {
+								user: true,
+							},
+						},
+					},
+				},
+			},
+		});
+	}
+
+	async findByProjectIdWithIncludes(projectId: string): Promise<Task[]> {
+		return await this.getModel().task.findMany({
+			where: {
+				projectId: projectId,
+				parentTaskId: null, // Only top-level tasks
+			},
+			include: {
+				createdBy: true,
+				assignedUsers: {
+					include: {
+						user: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+				emojiTaskUsers: {
+					include: {
+						user: true,
+					},
+				},
+				subTasks: {
+					include: {
+						createdBy: true,
+						assignedUsers: {
+							include: {
+								user: true,
+							},
+						},
+						tags: {
+							include: {
+								tag: true,
+							},
+						},
+						emojiTaskUsers: {
+							include: {
+								user: true,
+							},
+						},
+						subTasks: true, // Nested subtasks
+					},
+				},
+			},
+		});
+	}
+
+	async findByParentTaskIdWithIncludes(parentTaskId: string): Promise<Task[]> {
+		return await this.getModel().task.findMany({
+			where: { parentTaskId },
+			include: {
+				createdBy: true,
+				assignedUsers: {
+					include: {
+						user: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: true,
+					},
+				},
+				emojiTaskUsers: {
+					include: {
+						user: true,
+					},
+				},
+				subTasks: {
+					include: {
+						createdBy: true,
+						assignedUsers: {
+							include: {
+								user: true,
+							},
+						},
+						tags: {
+							include: {
+								tag: true,
+							},
+						},
+						emojiTaskUsers: {
+							include: {
+								user: true,
+							},
+						},
+					},
+				},
+			},
+		});
+	}
+
+	async findByUserIdWithIncludes(userId: string): Promise<Task[]> {
+		const assignments = await this.getModel().taskAssignment.findMany({
+			where: { userId },
+			include: {
+				task: {
+					include: {
+						createdBy: true,
+						assignedUsers: {
+							include: {
+								user: true,
+							},
+						},
+						tags: {
+							include: {
+								tag: true,
+							},
+						},
+						emojiTaskUsers: {
+							include: {
+								user: true,
+							},
+						},
+						subTasks: {
+							include: {
+								createdBy: true,
+								assignedUsers: {
+									include: {
+										user: true,
+									},
+								},
+								tags: {
+									include: {
+										tag: true,
+									},
+								},
+								emojiTaskUsers: {
+									include: {
+										user: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		return assignments.map((assignment) => assignment.task);
+	}
+
+	// Additional optimized methods
+	async getTaskCountByProjectId(projectId: string): Promise<number> {
+		return await this.getModel().task.count({
+			where: { projectId },
+		});
+	}
+
+	async createTaskWithProjectUpdate(
+		taskData: Partial<Task>,
+		projectUpdate: { budget: number; advance: number; expense: number },
+	): Promise<Task> {
+		// Use transaction for atomic operations
+		return await this.getModel().$transaction(async (prisma) => {
+			// Create task
+			const createdTask = await prisma.task.create({
+				data: {
+					title: taskData.title ?? "",
+					description: taskData.description ?? "",
+					statusBudgets: taskData.statusBudgets ?? BudgetStatus.Initial,
+					budget: taskData.budget ?? 0.0,
+					advance: taskData.advance ?? 0.0,
+					expense: taskData.expense ?? 0.0,
+					status: taskData.status ?? TaskStatus.Unassigned,
+					parentTaskId: taskData.parentTaskId,
+					position: taskData.position ?? 0.0,
+					projectId: taskData.projectId ?? "",
+					createdById: taskData.createdById ?? "",
+					startDate: taskData.startDate,
+					endDate: taskData.endDate,
+				},
+			});
+
+			// Update project budget
+			await prisma.project.update({
+				where: { id: taskData.projectId },
+				data: projectUpdate,
+			});
+
+			return createdTask;
+		});
+	}
 }

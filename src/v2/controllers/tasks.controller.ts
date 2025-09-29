@@ -269,7 +269,7 @@ export const TaskController = new Elysia({
 						userId,
 					);
 					WebSocket.broadcast(`activity:${t.id}`, createTaskActivity);
-				})
+				}),
 			);
 			return Response.json(task, { status: 200 });
 		},

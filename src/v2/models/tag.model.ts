@@ -35,4 +35,18 @@ export class TagModel extends BaseModel<Tag> {
 		});
 		return deletedTags;
 	}
+
+	// Optimized batch method to reduce N+1 queries
+	async findByIds(ids: string[]): Promise<Tag[]> {
+		if (ids.length === 0) return [];
+
+		const tags = await this.getModel().tag.findMany({
+			where: {
+				id: {
+					in: ids,
+				},
+			},
+		});
+		return tags;
+	}
 }

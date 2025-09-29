@@ -74,4 +74,18 @@ export class TaskTagModel extends BaseModel<TaskTag> {
 		});
 		return taskTag;
 	}
+
+	// Optimized batch delete method
+	async deleteByTaskIds(taskIds: string[]): Promise<number> {
+		if (taskIds.length === 0) return 0;
+
+		const deletedTaskTags = await this.getModel().taskTag.deleteMany({
+			where: {
+				taskId: {
+					in: taskIds,
+				},
+			},
+		});
+		return deletedTaskTags.count;
+	}
 }

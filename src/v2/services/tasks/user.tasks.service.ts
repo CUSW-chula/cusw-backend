@@ -51,7 +51,6 @@ export class UserTaskClassService extends TaskService {
 		const isTaskExist = await this.getTaskModel().findById(taskId);
 		if (!isTaskExist) throw new NotFoundException("Task not found");
 
-
 		const isUserinProject =
 			await this.projectRoleModel.findByProjectIdAndUserId(
 				isTaskExist.projectId,

@@ -89,4 +89,19 @@ export class TasksAssignmentModel extends BaseModel<TaskAssignment> {
 			});
 		return deletedTaskAssignment.count;
 	}
+
+	// Optimized batch delete method
+	async deleteByTaskIds(taskIds: string[]): Promise<number> {
+		if (taskIds.length === 0) return 0;
+
+		const deletedTaskAssignments =
+			await this.getModel().taskAssignment.deleteMany({
+				where: {
+					taskId: {
+						in: taskIds,
+					},
+				},
+			});
+		return deletedTaskAssignments.count;
+	}
 }

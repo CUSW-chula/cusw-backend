@@ -42,4 +42,18 @@ export class UserModel extends BaseModel<User> {
 		const deletedUser = await this.getModel().user.delete({ where: { id } });
 		return deletedUser;
 	}
+
+	// Optimized batch method to reduce N+1 queries
+	async findByIds(ids: string[]): Promise<User[]> {
+		if (ids.length === 0) return [];
+
+		const users = await this.getModel().user.findMany({
+			where: {
+				id: {
+					in: ids,
+				},
+			},
+		});
+		return users;
+	}
 }

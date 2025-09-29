@@ -66,4 +66,18 @@ export class CommentModel extends BaseModel<PrismaComment> {
 		});
 		return deleteComment.count;
 	}
+
+	// Optimized batch delete method
+	async deleteByTaskIds(taskIds: string[]): Promise<number> {
+		if (taskIds.length === 0) return 0;
+
+		const deletedComments = await this.getModel().comment.deleteMany({
+			where: {
+				taskId: {
+					in: taskIds,
+				},
+			},
+		});
+		return deletedComments.count;
+	}
 }

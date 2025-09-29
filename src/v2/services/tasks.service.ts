@@ -95,12 +95,10 @@ export class TaskService extends BaseService<Task> {
 		const cacheTasks = await this.getFromCache(cacheKey);
 		if (cacheTasks) return cacheTasks as Task[];
 
-		const tasks = await this.taskModel.findAll();
-		const tasksWithDetail = await Promise.all(
-			tasks.map(async (task) => {
-				return await this.getTaskById(task.id);
-			}),
-		);
+		// Optimized: Single query with all includes instead of N+1 queries
+		const tasks = await this.taskModel.findAllWithIncludes();
+		const tasksWithDetail = await this.enrichTasksWithDetails(tasks);
+
 		await this.setToCache(cacheKey, tasksWithDetail);
 		return tasksWithDetail;
 	}
@@ -144,24 +142,36 @@ export class TaskService extends BaseService<Task> {
 			throw new ValidationException("No owner ID provided");
 		if (!task.projectId)
 			throw new ValidationException("No project ID provided");
-		const isUserExist = await this.userModel.findById(task.createdById);
+
+		// Optimized: Batch validation queries
+		const [isUserExist, existingProject, parentTask] = await Promise.all([
+			this.userModel.findById(task.createdById),
+			this.projectModel.findById(task.projectId),
+			task.parentTaskId ? this.taskModel.findById(task.parentTaskId) : null,
+		]);
+
 		if (!isUserExist) {
 			throw new NotFoundException("User not found");
 		}
+		if (!existingProject) {
+			throw new ValidationException("Project can't be found");
+		}
 
 		let statusBudget: $Enums.BudgetStatus = BudgetStatus.Initial;
-		if (task.parentTaskId) {
-			const parentTask = await this.taskModel.findById(task.parentTaskId);
+		if (parentTask) {
 			if (
-				parentTask?.statusBudgets === BudgetStatus.Added ||
-				parentTask?.statusBudgets === BudgetStatus.ParentTaskAdded
+				parentTask.statusBudgets === BudgetStatus.Added ||
+				parentTask.statusBudgets === BudgetStatus.ParentTaskAdded
 			) {
 				statusBudget = BudgetStatus.ParentTaskAdded;
 			}
 		}
 
-		const position = (await this.taskModel.findByProjectId(task.projectId))
-			.length;
+		// Optimized: Get position count without loading all tasks
+		const position = await this.taskModel.getTaskCountByProjectId(
+			task.projectId,
+		);
+
 		const newTask = {
 			title: task.title || "Untitled task",
 			description: task.description,
@@ -177,121 +187,71 @@ export class TaskService extends BaseService<Task> {
 			statusBudgets: statusBudget,
 			projectId: task.projectId,
 		};
-		await this.invalidateAllCache("projects", "tasks");
-		const createdTask = await this.taskModel.create(newTask);
 
-		// Update project money
-		const existingProject = await this.projectModel.findById(task.projectId);
-		if (!existingProject) {
-			throw new ValidationException("Project cann't found");
-		}
-		const updatedProject = {
-			...existingProject,
+		// Use transaction for atomic operations
+		const result = await this.taskModel.createTaskWithProjectUpdate(newTask, {
 			budget: existingProject.budget + (task.budget ?? 0),
 			advance: existingProject.advance + (task.advance ?? 0),
 			expense: existingProject.expense + (task.expense ?? 0),
-		};
-		// Invalidate caches
+		});
+
 		await this.invalidateAllCache("projects", "tasks");
-
-		await this.projectModel.update(task.projectId, updatedProject);
-
-		return await this.getTaskById(createdTask.id);
+		return await this.getTaskById(result.id);
 	}
 
 	async getTaskByUserId(userId: string): Promise<Task[]> {
-		const tasks = await this.taskAssignmentModel.findByUserId(userId);
-		if (!tasks) [];
+		const cacheKey = this.getTaskCacheKey(`user-${userId}`);
+		const cachedTasks = await this.getFromCache(cacheKey);
+		if (cachedTasks) return cachedTasks as Task[];
 
-		const tasksWithDetail = await Promise.all(
-			tasks.map(async (task) => {
-				return await this.getTaskById(task.taskId);
-			}),
-		);
-		// console.info("tasksWithDetail",tasksWithDetail)
+		// Optimized: Single query with joins instead of N+1
+		const tasks = await this.taskModel.findByUserIdWithIncludes(userId);
+		const tasksWithDetail = await this.enrichTasksWithDetails(tasks);
+
+		await this.setToCache(cacheKey, tasksWithDetail);
 		return tasksWithDetail;
 	}
 
-	async getTaskByProjectId(projectIdId: string): Promise<Task[]> {
-		const tasks = await this.taskModel.findByProjectId(projectIdId);
-		if (!tasks) [];
-		const tasksWithDetail = await Promise.all(
-			tasks.map(async (task) => {
-				return await this.getTaskById(task.id);
-			}),
-		);
+	async getTaskByProjectId(projectId: string): Promise<Task[]> {
+		const cacheKey = this.getTaskCacheKey(`project-${projectId}`);
+		const cachedTasks = await this.getFromCache(cacheKey);
+		if (cachedTasks) return cachedTasks as Task[];
+
+		// Optimized: Single query with all includes
+		const tasks = await this.taskModel.findByProjectIdWithIncludes(projectId);
+		const tasksWithDetail = await this.enrichTasksWithDetails(tasks);
 		const sortedTasks = sortTasks(tasksWithDetail);
+
+		await this.setToCache(cacheKey, sortedTasks);
 		return sortedTasks;
 	}
 
 	async getTaskByParentTaskId(parentTaskId: string): Promise<Task[]> {
-		const tasks = await this.taskModel.findByParentTaskId(parentTaskId);
-		if (!tasks) throw new NotFoundException("Task not found");
-		const tasksWithDetail = await Promise.all(
-			tasks.map(async (task) => {
-				return await this.getTaskById(task.id);
-			}),
-		);
+		const cacheKey = this.getTaskCacheKey(`parent-${parentTaskId}`);
+		const cachedTasks = await this.getFromCache(cacheKey);
+		if (cachedTasks) return cachedTasks as Task[];
+
+		// Optimized: Single query with includes
+		const tasks =
+			await this.taskModel.findByParentTaskIdWithIncludes(parentTaskId);
+		if (!tasks || tasks.length === 0)
+			throw new NotFoundException("Task not found");
+
+		const tasksWithDetail = await this.enrichTasksWithDetails(tasks);
+		await this.setToCache(cacheKey, tasksWithDetail);
 		return tasksWithDetail;
 	}
 
 	async getTaskById(taskId: string): Promise<Task> {
-		const cacheKey = this.getTagCacheKey(taskId);
+		const cacheKey = this.getTaskCacheKey(taskId);
 		const cacheTask = await this.getFromCache(cacheKey);
-		if (cacheTask) cacheTask as Task;
+		if (cacheTask) return cacheTask as Task;
 
-		const task = await this.taskModel.findById(taskId);
+		// Optimized: Single query with all includes instead of multiple queries
+		const task = await this.taskModel.findByIdWithIncludes(taskId);
 		if (!task) throw new NotFoundException("Task not found");
 
-		const owner = await this.userModel.findById(task.createdById ?? "");
-		const membersAssignment = await this.taskAssignmentModel.findByTaskId(
-			task.id,
-		);
-		const members = membersAssignment
-			? await Promise.all(
-					membersAssignment.map(async (member) => {
-						return await this.userModel.findById(member.userId);
-					}),
-				)
-			: [];
-		const tagsInTask = await this.taskTagModel.findByTaskId(task.id);
-		const tags = tagsInTask
-			? await Promise.all(
-					tagsInTask.map(async (tag) => {
-						return await this.tagModel.findById(tag.tagId);
-					}),
-				)
-			: [];
-		const _subtasks = await this.taskModel.findSubTask(task.id);
-		const subtasks = _subtasks
-			? await Promise.all(
-					_subtasks.map(async (subtask) => {
-						const task = await this.getTaskById(subtask.id);
-						return task;
-					}),
-				)
-			: [];
-		const sortedSubtasks = sortTasks(subtasks);
-		const _emojis = await this.emojiModel.findAllByTaskId(task.id);
-		const emojis: Emoji[] = await Promise.all(
-			_emojis.flat().map(async (emoji) => {
-				const user = await this.userModel.findById(emoji.userId);
-				return {
-					emoji: emoji.emoji,
-					id: emoji.id,
-					taskId: emoji.taskId,
-					user: user,
-				};
-			}),
-		);
-		const taskWithDetail = {
-			...task,
-			owner,
-			members,
-			tags,
-			subtasks: sortedSubtasks,
-			emojis,
-		};
+		const taskWithDetail = await this.enrichSingleTaskWithDetails(task);
 		await this.setToCache(cacheKey, taskWithDetail);
 		return taskWithDetail;
 	}
@@ -299,48 +259,66 @@ export class TaskService extends BaseService<Task> {
 	async deleteTask(taskId: string): Promise<Task> {
 		const task = await this.taskModel.findById(taskId);
 		if (!task) throw new NotFoundException("Task not found");
-		try {
-			//   Step 1: Find all direct sub-tasks of the current task
-			const subTasks = await this.taskModel.findSubTask(taskId);
 
-			// Step 2: Recursively delete each sub-task (bottom-up)
-			if (subTasks && subTasks.length > 0) {
-				for (const subTask of subTasks) {
-					await this.deleteTask(subTask.id);
-				}
+		try {
+			// Optimized: Collect all task IDs to delete in one traversal
+			const allTaskIds = await this.collectAllSubTaskIds(taskId);
+
+			// Get task details before deletion for project budget update
+			const taskDetails = await this.getTaskById(taskId);
+
+			// Batch delete all related data for all tasks
+			await Promise.all([
+				this.taskAssignmentModel.deleteByTaskIds(allTaskIds),
+				this.taskTagModel.deleteByTaskIds(allTaskIds),
+				this.emojiModel.deleteByTaskIds(allTaskIds),
+				this.fileModel.deleteByTaskIds(allTaskIds),
+				this.activitiesLogsModel.deleteByTaskIds(allTaskIds),
+				this.commentModel.deleteByTaskIds(allTaskIds),
+			]);
+
+			// Delete tasks in reverse order (children first)
+			for (let i = allTaskIds.length - 1; i >= 0; i--) {
+				await this.taskModel.delete(allTaskIds[i]);
 			}
 
-			//   Step 3: Delete the main task after all sub-tasks are deleted
-			await this.taskAssignmentModel.deleteByTaskId(taskId);
-			await this.taskTagModel.deleteByTaskId(taskId);
-			await this.emojiModel.deleteByTaskId(taskId);
-			await this.fileModel.deleteByTaskId(taskId);
-			await this.activitiesLogsModel.deleteByTaskId(taskId);
-			await this.commentModel.deleteByTaskId(taskId);
-			const task = await this.getTaskById(taskId);
-			await this.taskModel.delete(taskId);
 			await this.invalidateAllCache("projects", "tasks");
 
-			// Step 4: update project money
-			const existingProject = await this.projectModel.findById(task.projectId);
-			if (!existingProject)
-				throw new ValidationException("Project cann't found");
+			// Update project money
+			const existingProject = await this.projectModel.findById(
+				taskDetails.projectId,
+			);
+			if (!existingProject) {
+				throw new ValidationException("Project can't be found");
+			}
+
 			const updatedProject = {
 				...existingProject,
-				budget: existingProject.budget - (task.budget ?? 0),
-				advance: existingProject.advance - (task.advance ?? 0),
-				expense: existingProject.expense - (task.expense ?? 0),
+				budget: existingProject.budget - (taskDetails.budget ?? 0),
+				advance: existingProject.advance - (taskDetails.advance ?? 0),
+				expense: existingProject.expense - (taskDetails.expense ?? 0),
 			};
-			// Invalidate caches
 
-			await this.invalidateAllCache("projects", "tasks");
-			// Update Project Money
-			await this.projectModel.update(task.projectId, updatedProject);
-
-			return task;
+			await this.projectModel.update(taskDetails.projectId, updatedProject);
+			return taskDetails;
 		} catch (_error) {
 			throw new ServerErrorException(`Error deleting task with ID ${taskId}:`);
 		}
+	}
+
+	// Helper method to collect all subtask IDs recursively
+	private async collectAllSubTaskIds(taskId: string): Promise<string[]> {
+		const allIds: string[] = [taskId];
+		const subTasks = await this.taskModel.findSubTask(taskId);
+
+		if (subTasks && subTasks.length > 0) {
+			for (const subTask of subTasks) {
+				const subTaskIds = await this.collectAllSubTaskIds(subTask.id);
+				allIds.push(...subTaskIds);
+			}
+		}
+
+		return allIds;
 	}
 
 	async changeStatus(taskId: string, newTaskStatus: TaskStatus): Promise<Task> {
@@ -387,20 +365,33 @@ export class TaskService extends BaseService<Task> {
 	}
 
 	async getRecursiveParentTaskList(taskId: string): Promise<Task[]> {
-		const taskList: Task[] = [];
-		const task = await this.getTaskById(taskId);
-		if (!task) throw new NotFoundException("Task not found");
+		const cacheKey = this.getTaskCacheKey(`parents-${taskId}`);
+		const cachedList = await this.getFromCache(cacheKey);
+		if (cachedList) return cachedList as Task[];
 
-		let currentTask = task;
-		taskList.push(currentTask);
-		while (currentTask.parentTaskId) {
-			const parentTask = await this.getTaskById(currentTask.parentTaskId);
-			if (!parentTask) break;
-			taskList.push(parentTask);
-			currentTask = parentTask;
+		// Optimized: Collect all parent IDs first, then batch fetch
+		const parentIds: string[] = [];
+		let currentTaskId = taskId;
+
+		// First, collect all parent task IDs in a single traversal
+		while (currentTaskId) {
+			parentIds.push(currentTaskId);
+			const task = await this.taskModel.findById(currentTaskId);
+			if (!task || !task.parentTaskId) break;
+			currentTaskId = task.parentTaskId;
 		}
 
-		return taskList.reverse();
+		// Batch fetch all tasks with includes
+		const tasks = await Promise.all(
+			parentIds.map((id) => this.taskModel.findByIdWithIncludes(id)),
+		);
+
+		const validTasks = tasks.filter(Boolean) as any[];
+		const enrichedTasks = await this.enrichTasksWithDetails(validTasks);
+
+		const result = enrichedTasks.reverse();
+		await this.setToCache(cacheKey, result);
+		return result;
 	}
 
 	async getParentTask(taskId: string): Promise<Task | string> {
@@ -542,5 +533,99 @@ export class TaskService extends BaseService<Task> {
 		}
 
 		return response;
+	}
+
+	// Optimized helper methods for batch processing
+	private async enrichTasksWithDetails(tasks: any[]): Promise<Task[]> {
+		if (!tasks || tasks.length === 0) return [];
+
+		// Batch collect all IDs for efficient querying
+		const taskIds = tasks.map((task) => task.id);
+		const userIds = new Set<string>();
+		const tagIds = new Set<string>();
+
+		// Collect all related IDs
+		tasks.forEach((task) => {
+			if (task.createdById) userIds.add(task.createdById);
+			if (task.assignedUsers) {
+				task.assignedUsers.forEach((assignment: any) =>
+					userIds.add(assignment.userId),
+				);
+			}
+			if (task.tags) {
+				task.tags.forEach((taskTag: any) => tagIds.add(taskTag.tagId));
+			}
+			if (task.emojiTaskUsers) {
+				task.emojiTaskUsers.forEach((emoji: any) => userIds.add(emoji.userId));
+			}
+		});
+
+		// Batch fetch all related data
+		const [users, tags] = await Promise.all([
+			userIds.size > 0 ? this.userModel.findByIds(Array.from(userIds)) : [],
+			tagIds.size > 0 ? this.tagModel.findByIds(Array.from(tagIds)) : [],
+		]);
+
+		// Create lookup maps for O(1) access
+		const userMap = new Map(users.map((user) => [user.id, user]));
+		const tagMap = new Map(tags.map((tag) => [tag.id, tag]));
+
+		// Enrich tasks with related data
+		return tasks.map((task) =>
+			this.mapTaskWithRelations(task, userMap, tagMap),
+		);
+	}
+
+	private async enrichSingleTaskWithDetails(task: any): Promise<Task> {
+		const enrichedTasks = await this.enrichTasksWithDetails([task]);
+		return enrichedTasks[0];
+	}
+
+	private mapTaskWithRelations(
+		task: any,
+		userMap: Map<string, any>,
+		tagMap: Map<string, any>,
+	): Task {
+		// Map owner
+		const owner = task.createdById ? userMap.get(task.createdById) : null;
+
+		// Map members
+		const members =
+			task.assignedUsers
+				?.map((assignment: any) => userMap.get(assignment.userId))
+				.filter(Boolean) || [];
+
+		// Map tags
+		const tags =
+			task.tags
+				?.map((taskTag: any) => tagMap.get(taskTag.tagId))
+				.filter(Boolean) || [];
+
+		// Map emojis with users
+		const emojis =
+			task.emojiTaskUsers?.map((emoji: any) => ({
+				emoji: emoji.emoji,
+				id: emoji.id,
+				taskId: emoji.taskId,
+				user: userMap.get(emoji.userId),
+			})) || [];
+
+		// Handle subtasks recursively if they exist
+		const subtasks = task.subTasks
+			? sortTasks(
+					task.subTasks.map((subtask: any) =>
+						this.mapTaskWithRelations(subtask, userMap, tagMap),
+					),
+				)
+			: [];
+
+		return {
+			...task,
+			owner,
+			members,
+			tags,
+			subtasks,
+			emojis,
+		};
 	}
 }

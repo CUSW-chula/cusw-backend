@@ -196,8 +196,8 @@ export class UserService extends BaseService<User> {
 				);
 
 				// Filter tasks to only include those from projects where user is still a member
-				const filteredAssignedTasks = assignedTasks.filter((ta) => 
-					projectIds.includes(ta.task.projectId)
+				const filteredAssignedTasks = assignedTasks.filter((ta) =>
+					projectIds.includes(ta.task.projectId),
 				);
 
 				// Calculate task metrics
@@ -390,7 +390,7 @@ export class UserService extends BaseService<User> {
 
 		// Get all projects where user is a member
 		const userProjects = await this.projectRoleModel.findByUserId(user.id);
-		const projectIds = userProjects.map(pr => pr.projectId);
+		const projectIds = userProjects.map((pr) => pr.projectId);
 
 		// Get all tasks assigned to this user
 		const assignedTasks = await this.taskModel.findAssignedTasksByUserId(
@@ -398,8 +398,8 @@ export class UserService extends BaseService<User> {
 		);
 
 		// Filter tasks to only include those from projects where user is still a member
-		const filteredAssignedTasks = assignedTasks.filter((ta) => 
-			projectIds.includes(ta.task.projectId)
+		const filteredAssignedTasks = assignedTasks.filter((ta) =>
+			projectIds.includes(ta.task.projectId),
 		);
 
 		// Calculate task metrics

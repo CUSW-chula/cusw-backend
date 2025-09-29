@@ -151,4 +151,18 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 			},
 		});
 	}
+
+	// Optimized batch delete method
+	async deleteByTaskIds(taskIds: string[]): Promise<number> {
+		if (taskIds.length === 0) return 0;
+
+		const deletedActivities = await this.getModel().activity.deleteMany({
+			where: {
+				taskId: {
+					in: taskIds,
+				},
+			},
+		});
+		return deletedActivities.count;
+	}
 }

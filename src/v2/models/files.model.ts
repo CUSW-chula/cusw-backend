@@ -57,4 +57,18 @@ export class FilesModel extends BaseModel<File> {
 		});
 		return deletedComment;
 	}
+
+	// Optimized batch delete method
+	async deleteByTaskIds(taskIds: string[]): Promise<number> {
+		if (taskIds.length === 0) return 0;
+
+		const deletedFiles = await this.getModel().file.deleteMany({
+			where: {
+				taskId: {
+					in: taskIds,
+				},
+			},
+		});
+		return deletedFiles.count;
+	}
 }
