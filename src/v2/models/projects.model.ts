@@ -215,4 +215,180 @@ export class ProjectModel extends BaseModel<Project> {
 
 		return projects;
 	}
+
+	// Optimized methods with includes to reduce N+1 queries
+	async findAllWithIncludes(): Promise<
+		(Project & {
+			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			tags: { tag: { id: string; name: string; isProject: boolean } }[];
+			pinnedProject: { userId: string }[];
+		})[]
+	> {
+		return await this.getModel().project.findMany({
+			include: {
+				projectRoles: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+								organization: true,
+								position: true,
+								isOutsource: true,
+								admin: true,
+								head: true,
+								activated: true
+							}
+						}
+					}
+				},
+				tags: {
+					include: {
+						tag: true
+					}
+				},
+				pinnedProject: {
+					select: {
+						userId: true
+					}
+				}
+			}
+		});
+	}
+
+	async findByIdWithIncludes(id: string): Promise<
+		(Project & {
+			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			tags: { tag: { id: string; name: string; isProject: boolean } }[];
+			pinnedProject: { userId: string }[];
+		}) | null
+	> {
+		return await this.getModel().project.findUnique({
+			where: { id },
+			include: {
+				projectRoles: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+								organization: true,
+								position: true,
+								isOutsource: true,
+								admin: true,
+								head: true,
+								activated: true
+							}
+						}
+					}
+				},
+				tags: {
+					include: {
+						tag: true
+					}
+				},
+				pinnedProject: {
+					select: {
+						userId: true
+					}
+				}
+			}
+		});
+	}
+
+	async findByUserIdWithIncludes(userId: string): Promise<
+		(Project & {
+			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			tags: { tag: { id: string; name: string; isProject: boolean } }[];
+			pinnedProject: { userId: string }[];
+		})[]
+	> {
+		return await this.getModel().project.findMany({
+			where: {
+				projectRoles: {
+					some: {
+						userId: userId,
+					},
+				},
+			},
+			include: {
+				projectRoles: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+								organization: true,
+								position: true,
+								isOutsource: true,
+								admin: true,
+								head: true,
+								activated: true
+							}
+						}
+					}
+				},
+				tags: {
+					include: {
+						tag: true
+					}
+				},
+				pinnedProject: {
+					select: {
+						userId: true
+					}
+				}
+			}
+		});
+	}
+
+	async findByIdsWithIncludes(ids: string[]): Promise<
+		(Project & {
+			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			tags: { tag: { id: string; name: string; isProject: boolean } }[];
+			pinnedProject: { userId: string }[];
+		})[]
+	> {
+		if (ids.length === 0) return [];
+		
+		return await this.getModel().project.findMany({
+			where: {
+				id: {
+					in: ids
+				}
+			},
+			include: {
+				projectRoles: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+								organization: true,
+								position: true,
+								isOutsource: true,
+								admin: true,
+								head: true,
+								activated: true
+							}
+						}
+					}
+				},
+				tags: {
+					include: {
+						tag: true
+					}
+				},
+				pinnedProject: {
+					select: {
+						userId: true
+					}
+				}
+			}
+		});
+	}
 }

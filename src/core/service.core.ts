@@ -49,8 +49,22 @@ export abstract class BaseService<T> {
 		return null;
 	}
 
+	// Generic cache methods for any data type
+	protected async getFromCacheGeneric<U>(cacheKey: string): Promise<U | null> {
+		const cachedData = await this.redis.get(cacheKey);
+		if (cachedData !== null) {
+			return JSON.parse(cachedData) as U;
+		}
+		return null;
+	}
+
 	// Save data to cache
 	protected async setToCache(cacheKey: string, data: T | T[]): Promise<void> {
+		await this.redis.set(cacheKey, JSON.stringify(data), "EX", this.cacheTTL);
+	}
+
+	// Generic cache setter for any data type
+	protected async setToCacheGeneric<U>(cacheKey: string, data: U): Promise<void> {
 		await this.redis.set(cacheKey, JSON.stringify(data), "EX", this.cacheTTL);
 	}
 
