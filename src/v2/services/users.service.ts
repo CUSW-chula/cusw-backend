@@ -219,12 +219,12 @@ export class UserService extends BaseService<User> {
 					taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 				const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-				// Count how many times tasks were moved to InRecheck status (all users)
-				const recheckActivities =
-					await this.activityModel.findRecheckActivitiesByTaskIds(
-						tasks.map((t) => t.id),
-					);
-				const rechecked = recheckActivities.length;
+				// Count how many times tasks were moved to InRecheck status after user assignments
+				let rechecked = 0;
+				for (const task of tasks) {
+					const taskRecheckCount = await this.countRecheckAfterUserAssignment(user.id, task.id);
+					rechecked += taskRecheckCount;
+				}
 
 				// Group tasks by project
 				const projectsMap = new Map();
@@ -299,11 +299,8 @@ export class UserService extends BaseService<User> {
 						}
 					}
 
-					// Count recheck for this specific task (all users)
-					const taskRecheckCount =
-						await this.activityModel.countRecheckActivitiesByTaskId(
-							task.id,
-						);
+					// Count recheck for this specific task after user assignment
+					const taskRecheckCount = await this.countRecheckAfterUserAssignment(user.id, task.id);
 
 					projectsMap.get(project.id).tasks.push({
 						taskId: task.id,
@@ -416,12 +413,12 @@ export class UserService extends BaseService<User> {
 		const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 		const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-		// Count how many times tasks were moved to InRecheck status (all users)
-		const recheckActivities =
-			await this.activityModel.findRecheckActivitiesByTaskIds(
-				tasks.map((t) => t.id),
-			);
-		const rechecked = recheckActivities.length;
+		// Count how many times tasks were moved to InRecheck status after user assignments
+		let rechecked = 0;
+		for (const task of tasks) {
+			const taskRecheckCount = await this.countRecheckAfterUserAssignment(user.id, task.id);
+			rechecked += taskRecheckCount;
+		}
 
 		// Group tasks by project
 		const projectsMap = new Map();
@@ -493,11 +490,8 @@ export class UserService extends BaseService<User> {
 				}
 			}
 
-			// Count recheck for this specific task (all users)
-			const taskRecheckCount =
-				await this.activityModel.countRecheckActivitiesByTaskId(
-					task.id,
-				);
+			// Count recheck for this specific task after user assignment
+			const taskRecheckCount = await this.countRecheckAfterUserAssignment(user.id, task.id);
 
 			projectsMap.get(project.id).tasks.push({
 				taskId: task.id,
@@ -653,5 +647,26 @@ export class UserService extends BaseService<User> {
 
 		await this.setToCache(cacheKey, user);
 		return user;
+	}
+
+	// Helper method to count recheck activities after user assignment
+	private async countRecheckAfterUserAssignment(userId: string, taskId: string): Promise<number> {
+		// Use the existing method in ActivityLogsModel
+		const count = await this.activityModel.countRecheckActivitiesByUserInAssignmentPeriod(userId, taskId);
+		
+		// Fallback: if count is 0, check if there are any recheck activities for this task
+		if (count === 0) {
+			const allRecheckActivities = await this.activityModel.findAllRecheckActivitiesByTaskId(taskId);
+			const assignmentActivities = await this.activityModel.findAssignmentActivitiesDebug(userId, taskId);
+			
+			if (allRecheckActivities.length > 0 && assignmentActivities.length === 0) {
+				// If there are recheck activities but no assignment found, 
+				// user might have been assigned before activity logging started
+				// Return count of all recheck activities for this task
+				return allRecheckActivities.length;
+			}
+		}
+		
+		return count;
 	}
 }

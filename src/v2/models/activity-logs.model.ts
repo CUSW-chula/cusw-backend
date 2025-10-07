@@ -197,7 +197,7 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		});
 	}
 
-	// Count recheck activities for a user within their assignment periods for a specific task
+		// Count recheck activities for a user within their assignment periods for a specific task
 	async countRecheckActivitiesByUserInAssignmentPeriod(
 		userId: string,
 		taskId: string,
@@ -212,26 +212,56 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 			return 0;
 		}
 
-		// Find when user was first assigned to this task
-		const firstAssignment = await this.getModel().activity.findFirst({
-			where: {
-				taskId: taskId,
-				action: "ASSIGNED",
-				detail: { contains: `this task to ${user.name}` },
-			},
-			orderBy: {
-				createdAt: "asc",
-			},
-		});
+		// Try multiple patterns to find when user was assigned to this task
+		const assignmentPatterns = [
+			`this task to ${user.name}`,
+			`task to ${user.name}`,
+			user.name,
+		];
 
+		let firstAssignment = null;
+
+		for (const pattern of assignmentPatterns) {
+			firstAssignment = await this.getModel().activity.findFirst({
+				where: {
+					taskId: taskId,
+					action: "ASSIGNED",
+					detail: { contains: pattern },
+				},
+				orderBy: {
+					createdAt: "asc",
+				},
+			});
+
+			if (firstAssignment) break;
+		}
+
+		// If no assignment found, check if user is currently assigned to the task
 		if (!firstAssignment) {
-			return 0;
+			const isCurrentlyAssigned = await this.getModel().taskAssignment.findFirst({
+				where: {
+					taskId: taskId,
+					userId: userId,
+				},
+			});
+
+			if (!isCurrentlyAssigned) {
+				return 0; // User never assigned to this task
+			}
+
+			// If assigned but no assignment activity found, count all recheck activities
+			return await this.getModel().activity.count({
+				where: {
+					taskId: taskId,
+					action: "ADDED",
+					detail: { contains: "this task to inrecheck" },
+				},
+			});
 		}
 
 		// Count recheck activities from the assignment date onwards
 		return await this.getModel().activity.count({
 			where: {
-				userId: userId,
 				taskId: taskId,
 				action: "ADDED",
 				detail: { contains: "this task to inrecheck" },
@@ -318,6 +348,40 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 					{ detail: { contains: "Recheck" } },
 					{ detail: { contains: "InRecheck" } },
 					{ detail: { contains: "inrecheck" } },
+				],
+			},
+			orderBy: {
+				createdAt: "asc",
+			},
+		});
+	}
+
+	// Debug method to find assignment activities for a user
+	async findAssignmentActivitiesDebug(userId: string, taskId: string): Promise<PrismaActivity[]> {
+		const user = await this.getModel().user.findUnique({
+			where: { id: userId },
+			select: { name: true },
+		});
+
+		if (!user) return [];
+
+		return await this.getModel().activity.findMany({
+			where: {
+				taskId: taskId,
+				// biome-ignore lint/style/useNamingConvention: Prisma OR operator requires uppercase
+				OR: [
+					{
+						action: "ASSIGNED",
+						detail: { contains: user.name },
+					},
+					{
+						action: "ASSIGNED",
+						detail: { contains: `this task to ${user.name}` },
+					},
+					{
+						action: "ASSIGNED",
+						detail: { contains: `task to ${user.name}` },
+					},
 				],
 			},
 			orderBy: {
