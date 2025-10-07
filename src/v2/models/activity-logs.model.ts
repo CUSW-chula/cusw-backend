@@ -165,4 +165,160 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		});
 		return deletedActivities.count;
 	}
+
+	// Find assignment activities for user and task
+	async findAssignmentActivitiesByUserAndTaskId(
+		userId: string,
+		taskId: string,
+	): Promise<PrismaActivity[]> {
+		return await this.getModel().activity.findMany({
+			where: {
+				taskId: taskId,
+				// biome-ignore lint/style/useNamingConvention: Prisma OR operator requires uppercase
+				OR: [
+					{
+						action: "ASSIGNED",
+						detail: { contains: userId },
+					},
+					{
+						action: "UNASSIGNED", 
+						detail: { contains: userId },
+					},
+				],
+			},
+			orderBy: {
+				createdAt: "asc",
+			},
+		});
+	}
+
+	// Count recheck activities for a user within their assignment periods for a specific task
+	async countRecheckActivitiesByUserInAssignmentPeriod(
+		userId: string,
+		taskId: string,
+	): Promise<number> {
+		// Get all assignment and unassignment activities for this user and task
+		const assignmentActivities = await this.findAssignmentActivitiesByUserAndTaskId(userId, taskId);
+		
+		if (assignmentActivities.length === 0) {
+			return 0;
+		}
+
+		// Build time ranges when user was assigned to this task
+		const assignmentPeriods: { start: Date; end: Date | null }[] = [];
+		let currentAssignmentStart: Date | null = null;
+
+		for (const activity of assignmentActivities) {
+			if (activity.action === "ASSIGNED" && activity.detail?.includes(userId)) {
+				currentAssignmentStart = activity.createdAt;
+			} else if (activity.action === "UNASSIGNED" && activity.detail?.includes(userId) && currentAssignmentStart) {
+				assignmentPeriods.push({
+					start: currentAssignmentStart,
+					end: activity.createdAt,
+				});
+				currentAssignmentStart = null;
+			}
+		}
+
+		// If still assigned (no unassignment found), add current period
+		if (currentAssignmentStart) {
+			assignmentPeriods.push({
+				start: currentAssignmentStart,
+				end: null, // Still assigned
+			});
+		}
+
+		if (assignmentPeriods.length === 0) {
+			return 0;
+		}
+
+		// Count recheck activities that occurred during assignment periods
+		let recheckCount = 0;
+
+		for (const period of assignmentPeriods) {
+			const whereCondition = {
+				userId: userId,
+				taskId: taskId,
+				detail: { contains: "inrecheck" },
+				createdAt: period.end ? {
+					gte: period.start,
+					lte: period.end,
+				} : {
+					gte: period.start,
+				},
+			};
+
+			const periodRecheckCount = await this.getModel().activity.count({
+				where: whereCondition,
+			});
+
+			recheckCount += periodRecheckCount;
+		}
+
+		return recheckCount;
+	}
+
+	// Find recheck activities for multiple tasks within assignment periods
+	async findRecheckActivitiesByUserInAssignmentPeriods(
+		userId: string,
+		taskIds: string[],
+	): Promise<PrismaActivity[]> {
+		const allRecheckActivities: PrismaActivity[] = [];
+
+		for (const taskId of taskIds) {
+			// Get assignment periods for this task
+			const assignmentActivities = await this.findAssignmentActivitiesByUserAndTaskId(userId, taskId);
+			
+			if (assignmentActivities.length === 0) {
+				continue;
+			}
+
+			// Build time ranges when user was assigned to this task
+			const assignmentPeriods: { start: Date; end: Date | null }[] = [];
+			let currentAssignmentStart: Date | null = null;
+
+			for (const activity of assignmentActivities) {
+				if (activity.action === "ASSIGNED" && activity.detail?.includes(userId)) {
+					currentAssignmentStart = activity.createdAt;
+				} else if (activity.action === "UNASSIGNED" && activity.detail?.includes(userId) && currentAssignmentStart) {
+					assignmentPeriods.push({
+						start: currentAssignmentStart,
+						end: activity.createdAt,
+					});
+					currentAssignmentStart = null;
+				}
+			}
+
+			// If still assigned (no unassignment found), add current period
+			if (currentAssignmentStart) {
+				assignmentPeriods.push({
+					start: currentAssignmentStart,
+					end: null, // Still assigned
+				});
+			}
+
+			// Get recheck activities within assignment periods
+			for (const period of assignmentPeriods) {
+				const whereCondition = {
+					userId: userId,
+					taskId: taskId,
+					detail: { contains: "inrecheck" },
+					createdAt: period.end ? {
+						gte: period.start,
+						lte: period.end,
+					} : {
+						gte: period.start,
+					},
+				};
+
+				const periodRecheckActivities = await this.getModel().activity.findMany({
+					where: whereCondition,
+				});
+
+				allRecheckActivities.push(...periodRecheckActivities);
+			}
+		}
+
+		return allRecheckActivities;
+	}
 }

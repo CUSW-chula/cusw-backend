@@ -219,9 +219,9 @@ export class UserService extends BaseService<User> {
 					taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 				const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-				// Count how many times tasks were moved to InRecheck status by this user
+				// Count how many times tasks were moved to InRecheck status by this user within their assignment periods
 				const recheckActivities =
-					await this.activityModel.findRecheckActivitiesByUserAndTaskIds(
+					await this.activityModel.findRecheckActivitiesByUserInAssignmentPeriods(
 						user.id,
 						tasks.map((t) => t.id),
 					);
@@ -300,9 +300,9 @@ export class UserService extends BaseService<User> {
 						}
 					}
 
-					// Count recheck for this specific task by this user
+					// Count recheck for this specific task by this user within their assignment period
 					const taskRecheckCount =
-						await this.activityModel.countRecheckActivitiesByUserAndTaskId(
+						await this.activityModel.countRecheckActivitiesByUserInAssignmentPeriod(
 							user.id,
 							task.id,
 						);
@@ -418,9 +418,9 @@ export class UserService extends BaseService<User> {
 		const perUnderReview = taskCount > 0 ? (underReview / taskCount) * 100 : 0;
 		const perDone = taskCount > 0 ? (done / taskCount) * 100 : 0;
 
-		// Count how many times tasks were moved to InRecheck status by this user
+		// Count how many times tasks were moved to InRecheck status by this user within their assignment periods
 		const recheckActivities =
-			await this.activityModel.findRecheckActivitiesByUserAndTaskIds(
+			await this.activityModel.findRecheckActivitiesByUserInAssignmentPeriods(
 				user.id,
 				tasks.map((t) => t.id),
 			);
@@ -496,9 +496,9 @@ export class UserService extends BaseService<User> {
 				}
 			}
 
-			// Count recheck for this specific task by this user
+			// Count recheck for this specific task by this user within their assignment period
 			const taskRecheckCount =
-				await this.activityModel.countRecheckActivitiesByUserAndTaskId(
+				await this.activityModel.countRecheckActivitiesByUserInAssignmentPeriod(
 					user.id,
 					task.id,
 				);
