@@ -90,7 +90,8 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		return await this.getModel().activity.findMany({
 			where: {
 				taskId: { in: taskIds },
-				detail: { contains: "inrecheck" },
+				action: "ADDED",
+				detail: { contains: "this task to inrecheck" },
 			},
 		});
 	}
@@ -99,7 +100,8 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		return await this.getModel().activity.count({
 			where: {
 				taskId: taskId,
-				detail: { contains: "inrecheck" },
+				action: "ADDED",
+				detail: { contains: "this task to inrecheck" },
 			},
 		});
 	}
@@ -134,7 +136,8 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 			where: {
 				userId: userId,
 				taskId: { in: taskIds },
-				detail: { contains: "inrecheck" },
+				action: "ADDED",
+				detail: { contains: "this task to inrecheck" },
 			},
 		});
 	}
@@ -147,7 +150,8 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 			where: {
 				userId: userId,
 				taskId: taskId,
-				detail: { contains: "inrecheck" },
+				action: "ADDED",
+				detail: { contains: "this task to inrecheck" },
 			},
 		});
 	}
@@ -171,20 +175,21 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		userId: string,
 		taskId: string,
 	): Promise<PrismaActivity[]> {
+		// First get user name to search in detail
+		const user = await this.getModel().user.findUnique({
+			where: { id: userId },
+			select: { name: true },
+		});
+
+		if (!user) {
+			return [];
+		}
+
 		return await this.getModel().activity.findMany({
 			where: {
 				taskId: taskId,
-				// biome-ignore lint/style/useNamingConvention: Prisma OR operator requires uppercase
-				OR: [
-					{
-						action: "ASSIGNED",
-						detail: { contains: userId },
-					},
-					{
-						action: "UNASSIGNED", 
-						detail: { contains: userId },
-					},
-				],
+				action: "ASSIGNED",
+				detail: { contains: `this task to ${user.name}` },
 			},
 			orderBy: {
 				createdAt: "asc",
@@ -197,65 +202,44 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		userId: string,
 		taskId: string,
 	): Promise<number> {
-		// Get all assignment and unassignment activities for this user and task
-		const assignmentActivities = await this.findAssignmentActivitiesByUserAndTaskId(userId, taskId);
-		
-		if (assignmentActivities.length === 0) {
+		// Get user name to search in detail
+		const user = await this.getModel().user.findUnique({
+			where: { id: userId },
+			select: { name: true },
+		});
+
+		if (!user) {
 			return 0;
 		}
 
-		// Build time ranges when user was assigned to this task
-		const assignmentPeriods: { start: Date; end: Date | null }[] = [];
-		let currentAssignmentStart: Date | null = null;
+		// Find when user was first assigned to this task
+		const firstAssignment = await this.getModel().activity.findFirst({
+			where: {
+				taskId: taskId,
+				action: "ASSIGNED",
+				detail: { contains: `this task to ${user.name}` },
+			},
+			orderBy: {
+				createdAt: "asc",
+			},
+		});
 
-		for (const activity of assignmentActivities) {
-			if (activity.action === "ASSIGNED" && activity.detail?.includes(userId)) {
-				currentAssignmentStart = activity.createdAt;
-			} else if (activity.action === "UNASSIGNED" && activity.detail?.includes(userId) && currentAssignmentStart) {
-				assignmentPeriods.push({
-					start: currentAssignmentStart,
-					end: activity.createdAt,
-				});
-				currentAssignmentStart = null;
-			}
-		}
-
-		// If still assigned (no unassignment found), add current period
-		if (currentAssignmentStart) {
-			assignmentPeriods.push({
-				start: currentAssignmentStart,
-				end: null, // Still assigned
-			});
-		}
-
-		if (assignmentPeriods.length === 0) {
+		if (!firstAssignment) {
 			return 0;
 		}
 
-		// Count recheck activities that occurred during assignment periods
-		let recheckCount = 0;
-
-		for (const period of assignmentPeriods) {
-			const whereCondition = {
+		// Count recheck activities from the assignment date onwards
+		return await this.getModel().activity.count({
+			where: {
 				userId: userId,
 				taskId: taskId,
-				detail: { contains: "inrecheck" },
-				createdAt: period.end ? {
-					gte: period.start,
-					lte: period.end,
-				} : {
-					gte: period.start,
+				action: "ADDED",
+				detail: { contains: "this task to inrecheck" },
+				createdAt: {
+					gte: firstAssignment.createdAt,
 				},
-			};
-
-			const periodRecheckCount = await this.getModel().activity.count({
-				where: whereCondition,
-			});
-
-			recheckCount += periodRecheckCount;
-		}
-
-		return recheckCount;
+			},
+		});
 	}
 
 	// Find recheck activities for multiple tasks within assignment periods
@@ -263,62 +247,82 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		userId: string,
 		taskIds: string[],
 	): Promise<PrismaActivity[]> {
+		// Get user name to search in detail
+		const user = await this.getModel().user.findUnique({
+			where: { id: userId },
+			select: { name: true },
+		});
+
+		if (!user) {
+			return [];
+		}
+
 		const allRecheckActivities: PrismaActivity[] = [];
 
 		for (const taskId of taskIds) {
-			// Get assignment periods for this task
-			const assignmentActivities = await this.findAssignmentActivitiesByUserAndTaskId(userId, taskId);
-			
-			if (assignmentActivities.length === 0) {
+			// Find when user was first assigned to this task
+			const firstAssignment = await this.getModel().activity.findFirst({
+				where: {
+					taskId: taskId,
+					action: "ASSIGNED",
+					detail: { contains: `this task to ${user.name}` },
+				},
+				orderBy: {
+					createdAt: "asc",
+				},
+			});
+
+			if (!firstAssignment) {
 				continue;
 			}
 
-			// Build time ranges when user was assigned to this task
-			const assignmentPeriods: { start: Date; end: Date | null }[] = [];
-			let currentAssignmentStart: Date | null = null;
-
-			for (const activity of assignmentActivities) {
-				if (activity.action === "ASSIGNED" && activity.detail?.includes(userId)) {
-					currentAssignmentStart = activity.createdAt;
-				} else if (activity.action === "UNASSIGNED" && activity.detail?.includes(userId) && currentAssignmentStart) {
-					assignmentPeriods.push({
-						start: currentAssignmentStart,
-						end: activity.createdAt,
-					});
-					currentAssignmentStart = null;
-				}
-			}
-
-			// If still assigned (no unassignment found), add current period
-			if (currentAssignmentStart) {
-				assignmentPeriods.push({
-					start: currentAssignmentStart,
-					end: null, // Still assigned
-				});
-			}
-
-			// Get recheck activities within assignment periods
-			for (const period of assignmentPeriods) {
-				const whereCondition = {
+			// Get recheck activities from the assignment date onwards
+			const recheckActivities = await this.getModel().activity.findMany({
+				where: {
 					userId: userId,
 					taskId: taskId,
-					detail: { contains: "inrecheck" },
-					createdAt: period.end ? {
-						gte: period.start,
-						lte: period.end,
-					} : {
-						gte: period.start,
+					action: "ADDED",
+					detail: { contains: "this task to inrecheck" },
+					createdAt: {
+						gte: firstAssignment.createdAt,
 					},
-				};
+				},
+			});
 
-				const periodRecheckActivities = await this.getModel().activity.findMany({
-					where: whereCondition,
-				});
-
-				allRecheckActivities.push(...periodRecheckActivities);
-			}
+			allRecheckActivities.push(...recheckActivities);
 		}
 
 		return allRecheckActivities;
+	}
+
+	// Debug method to find all activities for a task
+	async findAllActivitiesByTaskId(taskId: string): Promise<PrismaActivity[]> {
+		return await this.getModel().activity.findMany({
+			where: {
+				taskId: taskId,
+			},
+			orderBy: {
+				createdAt: "asc",
+			},
+		});
+	}
+
+	// Debug method to find all activities with "recheck" in detail
+	async findAllRecheckActivitiesByTaskId(taskId: string): Promise<PrismaActivity[]> {
+		return await this.getModel().activity.findMany({
+			where: {
+				taskId: taskId,
+				// biome-ignore lint/style/useNamingConvention: Prisma OR operator requires uppercase
+				OR: [
+					{ detail: { contains: "recheck" } },
+					{ detail: { contains: "Recheck" } },
+					{ detail: { contains: "InRecheck" } },
+					{ detail: { contains: "inrecheck" } },
+				],
+			},
+			orderBy: {
+				createdAt: "asc",
+			},
+		});
 	}
 }
