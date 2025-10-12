@@ -1,26 +1,42 @@
-generator client { 
+generator client {
   provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "../generated"
+  engineType    = "binary"
 }
 
-datasource db { 
-  provider = "postgresql" 
-  url      = env("DATABASE_URL") 
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  // Performance optimizations
+  relationMode = "prisma"
 }
 
-model User { 
-  id            String           @id @default(cuid()) 
-  name          String 
-  email         String           @unique 
-  projectRoles  ProjectRole[]    
-  assignedTasks TaskAssignment[] 
-  createdTasks  Task[]           @relation("CreatedTasks") 
-  uploadedFiles File[]           @relation("UploadedFiles") 
-  comments      Comment[] 
-  activities    Activity[]
+model User {
+  id            String           @id @default(cuid())
+  name          String
+  email         String           @unique
+  organization  String           @default("")
+  position      String           @default("")
+  isOutsource   Boolean          @default(false)
+  projectRoles  ProjectRole[]
+  admin         Boolean          @default(false)
+  head          Boolean          @default(false)
+  activated     Boolean          @default(true)
+  assignedTasks TaskAssignment[]
+  createdTasks  Task[]           @relation("CreatedTasks")
+  uploadedFiles File[]           @relation("UploadedFiles")
+  templateFiles Template[]       @relation("TemplateFiles")
+
+  comments       Comment[]
+  activities     Activity[]
   emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
+  pinnedProject  PinProject[]
 
-
-  @@map("users") 
+  @@index([activated])
+  @@index([organization])
+  @@index([isOutsource])
+  @@map("users")
 }
 
 model EmojiTaskUser {
@@ -32,170 +48,255 @@ model EmojiTaskUser {
   user User @relation(fields: [userId], references: [id])
   task Task @relation(fields: [taskId], references: [id])
 
+  @@unique([userId, taskId])
+  @@index([taskId])
   @@map("emoji_task_users")
 }
 
-model Project { 
-  id             String           @id @default(cuid()) 
-  title          String 
-  description    String 
-  expectedBudget Float
-  realBudget     Float
-  usedBudget     Float
-  startDate      DateTime
-  endDate        DateTime
-  projectRoles   ProjectRole[]    
-  tasks          Task[]           @relation("ProjectTasks") 
-  files          File[]           @relation("ProjectFiles") 
-  
-  @@map("projects") 
+model Project {
+  id            String        @id @default(cuid())
+  title         String
+  description   String
+  budget        Float
+  advance       Float
+  expense       Float
+  startDate     DateTime?
+  endDate       DateTime?
+  projectRoles  ProjectRole[]
+  tags          ProjectTag[]
+  tasks         Task[]        @relation("ProjectTasks")
+  files         File[]        @relation("ProjectFiles")
+  pinnedProject PinProject[]
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  @@index([startDate])
+  @@index([endDate])
+  @@index([updatedAt])
+  @@index([title])
+  @@map("projects")
 }
 
-model ProjectRole { 
-  id         String   @id @default(cuid()) 
-  role       Role 
-  userId     String 
-  projectId  String 
+model ProjectRole {
+  id        String @id @default(cuid())
+  role      Role
+  userId    String
+  projectId String
 
-  user       User     @relation(fields: [userId], references: [id]) 
-  project    Project  @relation(fields: [projectId], references: [id]) 
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
 
-  @@unique([userId, projectId, role]) 
-  @@map("project_roles") 
+  @@unique([userId, projectId, role])
+  @@index([projectId])
+  @@map("project_roles")
 }
 
-model Task { 
-  id             String           @id @default(cuid()) 
-  title          String 
-  description    String 
-  status         TaskStatus 
-  projectId      String       
-  project        Project      @relation("ProjectTasks", fields: [projectId], references: [id]) 
-  subTasks       Task[]       @relation("SubTasks") 
-  parentTask     Task?        @relation("SubTasks", fields: [parentTaskId], references: [id]) 
-  parentTaskId   String?
-  statusBudgets  BudgetStatus 
-  budget         Float 
-  advance        Float 
-  expense        Float
-  startDate      DateTime?
-  endDate        DateTime?
-  assignedUsers  TaskAssignment[] 
-  createdById    String? 
-  createdBy      User?          @relation("CreatedTasks", fields: [createdById], references: [id]) 
-  comments       Comment[] 
-  activities     Activity[] 
-  files          File[]         @relation("TaskFiles") 
-  tags           TaskTag[]
+model Task {
+  id            String           @id @default(cuid())
+  title         String
+  description   String
+  status        TaskStatus
+  doneAt        DateTime?
+  projectId     String
+  project       Project          @relation("ProjectTasks", fields: [projectId], references: [id])
+  subTasks      Task[]           @relation("SubTasks")
+  parentTask    Task?            @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  parentTaskId  String?
+  position      Float            @default(0.0)
+  statusBudgets BudgetStatus
+  budget        Float
+  advance       Float
+  expense       Float
+  startDate     DateTime?
+  endDate       DateTime?
+  assignedUsers TaskAssignment[]
+  createdById   String?
+  createdBy     User?            @relation("CreatedTasks", fields: [createdById], references: [id])
+  comments      Comment[]
+  activities    Activity[]
+  files         File[]           @relation("TaskFiles")
+  tags          TaskTag[]
+
   emojiTaskUsers EmojiTaskUser[] // Added relation field for EmojiTaskUser
+  updatedAt      DateTime        @default(now()) @updatedAt
 
-  @@map("tasks") 
+  @@index([projectId])
+  @@index([status])
+  @@index([parentTaskId])
+  @@index([createdById])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([doneAt])
+  @@index([updatedAt])
+  @@index([projectId, status])
+  @@index([position])
+  @@map("tasks")
 }
 
-model TaskAssignment { 
-  id        String @id @default(cuid()) 
-  taskId    String 
-  userId    String 
+model TaskAssignment {
+  id     String @id @default(cuid())
+  taskId String
+  userId String
 
-  task      Task   @relation(fields: [taskId], references: [id]) 
-  user      User   @relation(fields: [userId], references: [id]) 
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@unique([taskId, userId])
-  @@map("task_assignments") 
+  @@index([userId])
+  @@map("task_assignments")
 }
 
-model Tag { 
-  id     String  @id @default(cuid()) 
-  name   String  @unique 
-  tasks  TaskTag[]
+model Tag {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  isProject Boolean      @default(false)
+  tasks     TaskTag[]
+  projects  ProjectTag[]
 
-  @@map("tags") 
+  @@map("tags")
 }
 
-model Comment { 
-  id        String    @id @default(cuid()) 
-  content   String 
-  taskId    String 
-  authorId  String 
-  createdAt DateTime  @default(now()) 
+model Comment {
+  id        String    @id @default(cuid())
+  content   String
+  taskId    String
+  authorId  String
+  createdAt DateTime  @default(now())
   isDelete  Boolean   @default(false)
   editTime  DateTime?
 
-  task      Task   @relation(fields: [taskId], references: [id]) 
-  author    User   @relation(fields: [authorId], references: [id]) 
+  task   Task @relation(fields: [taskId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
 
-  @@map("comments") 
+  @@index([taskId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isDelete])
+  @@map("comments")
 }
 
-model Activity { 
-  id        String      @id @default(cuid()) 
-  action    ActivityAction 
+model Activity {
+  id        String         @id @default(cuid())
+  action    ActivityAction
   detail    String?
-  taskId    String? 
-  userId    String 
-  createdAt DateTime     @default(now()) 
+  taskId    String?
+  userId    String
+  createdAt DateTime       @default(now())
 
-  task      Task?       @relation(fields: [taskId], references: [id]) 
-  user      User        @relation(fields: [userId], references: [id]) 
+  task Task? @relation(fields: [taskId], references: [id])
+  user User  @relation(fields: [userId], references: [id])
 
-  @@map("activities") 
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("activities")
 }
 
-model File { 
-  id         String  @id @default(cuid()) 
-  filePath   String 
-  fileSize   Float   
-  taskId     String? 
+model File {
+  id         String   @id @default(cuid())
+  filePath   String
+  fileSize   Float
+  taskId     String?
   fileName   String
-  projectId  String? 
-  uploadedBy String 
-  createdAt  DateTime  @default(now()) 
+  projectId  String?
+  uploadedBy String
+  createdAt  DateTime @default(now())
 
-  task       Task?    @relation("TaskFiles", fields: [taskId], references: [id]) 
-  project    Project? @relation("ProjectFiles", fields: [projectId], references: [id]) 
-  uploader   User     @relation("UploadedFiles", fields: [uploadedBy], references: [id]) 
+  task     Task?    @relation("TaskFiles", fields: [taskId], references: [id])
+  project  Project? @relation("ProjectFiles", fields: [projectId], references: [id])
+  uploader User     @relation("UploadedFiles", fields: [uploadedBy], references: [id])
 
-  @@map("files") 
+  @@index([taskId])
+  @@index([projectId])
+  @@index([uploadedBy])
+  @@index([createdAt])
+  @@index([fileName])
+  @@map("files")
+}
+
+model Template {
+  id         String   @id @default(cuid())
+  filePath   String
+  fileSize   Float
+  fileName   String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  uploader User @relation("TemplateFiles", fields: [uploadedBy], references: [id])
+
+  @@index([uploadedBy])
+  @@index([createdAt])
+  @@index([fileName])
+  @@map("template")
 }
 
 // Join table for many-to-many relationship between Task and Tag
-model TaskTag { 
-  id       String @id @default(cuid()) 
-  taskId   String 
-  tagId    String 
+model TaskTag {
+  id     String @id @default(cuid())
+  taskId String
+  tagId  String
 
-  task     Task   @relation(fields: [taskId], references: [id]) 
-  tag      Tag    @relation(fields: [tagId], references: [id]) 
+  task Task @relation(fields: [taskId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
 
-  @@map("task_tags") 
+  @@unique([taskId, tagId])
+  @@index([taskId])
+  @@index([tagId])
+  @@map("task_tags")
 }
 
-enum Role { 
-  Admin 
-  Director 
-  ProjectOwner 
-  Member 
+model ProjectTag {
+  id        String @id @default(cuid())
+  projectId String
+  tagId     String
+
+  project Project @relation(fields: [projectId], references: [id])
+  tag     Tag     @relation(fields: [tagId], references: [id])
+
+  @@unique([projectId, tagId])
+  @@index([projectId])
+  @@index([tagId])
+  @@map("project_tags")
+}
+
+model PinProject {
+  id        String @id @default(cuid())
+  userId    String
+  projectId String
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@index([projectId])
+  @@map("pins_project")
+}
+
+enum Role {
+  ProjectOwner
+  Member
 }
 
 enum TaskStatus {
-  Unassigned 
-  Assigned 
-  UnderReview 
-  InRecheck 
-  Done 
+  Unassigned
+  Assigned
+  UnderReview
+  InRecheck
+  Done
 }
 
-enum BudgetStatus { 
+enum BudgetStatus {
   Initial
   Added
   SubTasksAdded
   ParentTaskAdded
 }
 
-enum ActivityAction { 
+enum ActivityAction {
   CREATED
-  ASSIGNED 
-  DELETED 
+  ASSIGNED
+  DELETED
   UPLOADED
   UNASSIGNED
   ADDED

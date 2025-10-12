@@ -1,8 +1,8 @@
-version: "3.8"
+version: "3.9"
 
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgres
     restart: always
     env_file:
@@ -33,6 +33,17 @@ services:
       - "9000:9000"  # MinIO service port
       - "9001:9001"  # MinIO Console port
     command: server /data --console-address ":9001"
+
+  y-sweet-auth:
+    image: bunnybunbun37204/y-sweet-auth  # Your Docker image
+    container_name: y-sweet-auth
+    restart: always
+    ports:
+      - "4001:4001"  # Expose the container's 4001 port to the host
+    depends_on:
+      - postgres  # Make sure postgres is available before starting the service
+      - redis     # Ensure redis is available before starting the service
+      - minio     # Ensure minio is available before starting the service
 
 volumes:
   postgres_data:

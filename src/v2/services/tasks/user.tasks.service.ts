@@ -1,0 +1,119 @@
+import { PrismaClient } from "../../../../generated";
+import { TaskService } from "../tasks.service";
+import Redis from "ioredis";
+import {
+	NotFoundException,
+	ValidationException,
+} from "../../../core/exception.core";
+import { TaskAssignment, User } from "../../../shared/interfaces.shared";
+import { ProjectRoleModel } from "../../models/project-role.model";
+
+export class UserTaskClassService extends TaskService {
+	private readonly projectRoleModel: ProjectRoleModel;
+	constructor(prisma: PrismaClient, redis: Redis) {
+		super(prisma, redis);
+		this.projectRoleModel = new ProjectRoleModel(prisma);
+	}
+
+	async getAsignUserInTaskByTaskId(taskId: string): Promise<User[]> {
+		// Check if task exists
+		const isTaskExist = await this.getTaskModel().findById(taskId);
+		if (!isTaskExist) throw new NotFoundException("Task not found");
+
+		// Retrieve task assignments
+		const taskAssignments =
+			await this.getTaskAssignmentModel().findByTaskId(taskId);
+		if (!taskAssignments || taskAssignments.length === 0)
+			throw new NotFoundException("Did not assigned");
+
+		// Get all users assigned to the task concurrently
+		const usersInTask = await Promise.all(
+			taskAssignments.map(async (taskAssignment) => {
+				const user = await this.getUserModel().findById(taskAssignment.userId);
+				return user || null; // Return null if user not found
+			}),
+		);
+
+		// Filter out any null results (users not found)
+		return usersInTask.filter((user: null) => user !== null) as User[];
+	}
+
+	async assigningTaskToUser(
+		taskId: string,
+		userId: string,
+	): Promise<TaskAssignment> {
+		const cacheKey = this.getTaskCacheKey(taskId);
+		// First step check if user exists
+		const isUserExist = await this.getUserModel().findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		// Second step check if task exists
+		const isTaskExist = await this.getTaskModel().findById(taskId);
+		if (!isTaskExist) throw new NotFoundException("Task not found");
+
+		const isUserinProject =
+			await this.projectRoleModel.findByProjectIdAndUserId(
+				isTaskExist.projectId,
+				userId,
+			);
+		if (!isUserinProject)
+			throw new ValidationException("User is not in the project");
+
+		const isTaskHasBeenAssigned =
+			await this.getTaskAssignmentModel().findByTaskId(taskId);
+		if (
+			isTaskHasBeenAssigned?.length === 0 &&
+			isTaskExist.status === "Unassigned"
+		)
+			await this.getTaskModel().update(taskId, {
+				status: "Assigned",
+			});
+
+		// Assigning userTaskAssignment
+		await this.getTaskAssignmentModel().create({
+			taskId: taskId,
+			userId: userId,
+		});
+		await this.invalidateAllCache("tasks", "projects");
+		const task = await this.getTaskById(taskId);
+		const tasksAssigment = { user: isUserExist, task: task };
+		return tasksAssigment;
+	}
+
+	async unAssigningTaskToUser(
+		taskId: string,
+		userId: string,
+	): Promise<TaskAssignment> {
+		const cacheKey = this.getTaskCacheKey(taskId);
+		// First step check if user exists
+		const isUserExist = await this.getUserModel().findById(userId);
+		if (!isUserExist) throw new NotFoundException("User not found");
+
+		// Second step check if task exists
+		const isTaskExist = await this.getTaskModel().findById(taskId);
+		if (!isTaskExist) throw new NotFoundException("Task not found");
+
+		// Assigning userTaskAssignment
+		const taskAssignment =
+			await this.getTaskAssignmentModel().findByTaskIdAndUserId(taskId, userId);
+		if (!taskAssignment)
+			throw new NotFoundException(
+				"Unexpected error tasks assignment not found",
+			);
+		await this.getTaskAssignmentModel().delete(taskAssignment.id);
+		const isTaskHasBeenAssigned =
+			await this.getTaskAssignmentModel().findByTaskId(taskId);
+		if (
+			isTaskHasBeenAssigned?.length === 0 &&
+			isTaskExist.status === "Assigned"
+		)
+			await this.getTaskModel().update(taskId, {
+				status: "Unassigned",
+			});
+
+		await this.invalidateAllCache("tasks", "projects");
+		const task = await this.getTaskById(taskId);
+		const unAssigningTaskToUser = { user: isUserExist, task: task };
+		return unAssigningTaskToUser;
+	}
+}

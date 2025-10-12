@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/generated/
 /.pnp
 .pnp.js
 
@@ -44,4 +45,5 @@ bun.lockb
 package-lock.json
 **/*.bun
 
-bun.lockb
+server
+server.exe

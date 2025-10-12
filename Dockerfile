@@ -1,31 +1,46 @@
-# Use a specific version of the Bun image
-FROM oven/bun:1.1.30
+# --- Dockerfile ---
 
-# Set the working directory
+FROM oven/bun:alpine AS build
+
+# Install build dependencies
+RUN apk add --no-cache openssl
+
+
 WORKDIR /app
 
-# Copy the Prisma schema and other initial files for better caching
-COPY package.json ./
-COPY tsconfig.json ./
+COPY package.json bun.lock ./
 COPY prisma ./prisma
 
-# Install dependencies (will only re-run if package.json or lock files change)
+# Install dependencies and generate Prisma Client
 RUN bun install
-
-# Generate Prisma client
 RUN bunx prisma generate
 
-# Install OpenSSL (required by some libraries)
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-
-# Copy the rest of the application files
 COPY src ./src
 
-# Uncomment if you have public assets to include
-# COPY public ./public
+ENV NODE_ENV=production
+RUN bun build \
+    --compile \
+    --minify-whitespace \
+    --minify-syntax \
+    --target bun \
+    --outfile server \
+    ./src/index.ts
 
-# Expose the application port
+# ---------------------------
+# Final Image for musl (Alpine)
+# ---------------------------
+FROM oven/bun:alpine AS final
+
+RUN apk add --no-cache openssl libstdc++ libgcc
+
+WORKDIR /app
+
+COPY --from=build /app/server .
+COPY --from=build /app/generated ./generated
+
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/generated/query-engine-linux-musl-openssl-3.0.x
+
+ENV NODE_ENV=production
+
+CMD ["./server"]
 EXPOSE 4000
-
-# Command to run the application
-CMD ["bun", "run", "src/index.ts"]
