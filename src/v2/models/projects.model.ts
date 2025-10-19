@@ -134,19 +134,21 @@ export class ProjectModel extends BaseModel<Project> {
 		await tx.file.deleteMany({ where: { projectId } });
 
 		// Delete tasks carefully due to SubTasks relation (self-referential)
-		// First, delete all subtasks (tasks with parentTaskId)
-		await tx.task.deleteMany({
+		// First, remove all parent-child relationships by setting parentTaskId to null
+		await tx.task.updateMany({
 			where: {
 				projectId,
 				parentTaskId: { not: null },
 			},
+			data: {
+				parentTaskId: null,
+			},
 		});
 
-		// Then delete parent tasks (tasks without parentTaskId)
+		// Then delete all tasks (now there are no foreign key constraints)
 		await tx.task.deleteMany({
 			where: {
 				projectId,
-				parentTaskId: null,
 			},
 		});
 
