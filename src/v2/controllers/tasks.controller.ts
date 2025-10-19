@@ -638,7 +638,7 @@ export const TaskController = new Elysia({
 				body.startDate,
 				body.endDate,
 			);
-			WebSocket.broadcast("date", updateDate);
+			WebSocket.broadcast(`date:${taskId}`, updateDate);
 			return Response.json("Success", { status: 200 });
 		},
 		{
