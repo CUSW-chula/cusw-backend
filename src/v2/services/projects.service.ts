@@ -286,6 +286,9 @@ export class ProjectService extends BaseService<Project> {
 			// Call Model to delete
 			await this.projectModel.deleteProjectData(projectId, tx);
 		});
+
+		// Invalidate all related caches after successful deletion
+		await this.invalidateAllCache("projects", "tasks");
 	}
 
 	async assigningPinToProject(
