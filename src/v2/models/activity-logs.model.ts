@@ -197,7 +197,7 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 		});
 	}
 
-		// Count recheck activities for a user within their assignment periods for a specific task
+	// Count recheck activities for a user within their assignment periods for a specific task
 	async countRecheckActivitiesByUserInAssignmentPeriod(
 		userId: string,
 		taskId: string,
@@ -238,12 +238,13 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 
 		// If no assignment found, check if user is currently assigned to the task
 		if (!firstAssignment) {
-			const isCurrentlyAssigned = await this.getModel().taskAssignment.findFirst({
-				where: {
-					taskId: taskId,
-					userId: userId,
-				},
-			});
+			const isCurrentlyAssigned =
+				await this.getModel().taskAssignment.findFirst({
+					where: {
+						taskId: taskId,
+						userId: userId,
+					},
+				});
 
 			if (!isCurrentlyAssigned) {
 				return 0; // User never assigned to this task
@@ -338,7 +339,9 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 	}
 
 	// Debug method to find all activities with "recheck" in detail
-	async findAllRecheckActivitiesByTaskId(taskId: string): Promise<PrismaActivity[]> {
+	async findAllRecheckActivitiesByTaskId(
+		taskId: string,
+	): Promise<PrismaActivity[]> {
 		return await this.getModel().activity.findMany({
 			where: {
 				taskId: taskId,
@@ -357,7 +360,10 @@ export class ActivityLogsModel extends BaseModel<PrismaActivity> {
 	}
 
 	// Debug method to find assignment activities for a user
-	async findAssignmentActivitiesDebug(userId: string, taskId: string): Promise<PrismaActivity[]> {
+	async findAssignmentActivitiesDebug(
+		userId: string,
+		taskId: string,
+	): Promise<PrismaActivity[]> {
 		const user = await this.getModel().user.findUnique({
 			where: { id: userId },
 			select: { name: true },

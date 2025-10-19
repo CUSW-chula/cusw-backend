@@ -91,7 +91,10 @@ export class ProjectService extends BaseService<Project> {
 		}
 
 		// Optimized: Batch enrich projects with tasks
-		const projects = await this.enrichProjectsWithDetails(projectsFromDB, userId);
+		const projects = await this.enrichProjectsWithDetails(
+			projectsFromDB,
+			userId,
+		);
 
 		await this.setToCache(cacheKey, projects);
 		return projects;
@@ -108,7 +111,10 @@ export class ProjectService extends BaseService<Project> {
 		if (!project) throw new NotFoundException("Project not found");
 
 		// Optimized: Enrich single project with details
-		const enrichedProjects = await this.enrichProjectsWithDetails([project], userId);
+		const enrichedProjects = await this.enrichProjectsWithDetails(
+			[project],
+			userId,
+		);
 		const projectWithDetails = enrichedProjects[0];
 
 		await this.setToCache(cacheKey, projectWithDetails);
@@ -236,7 +242,7 @@ export class ProjectService extends BaseService<Project> {
 		const [projecttags, user, existingAssignment] = await Promise.all([
 			this.projectTagModel.findByTagId(tagId),
 			this.userModel.findById(userId),
-			this.projectTagModel.findByProjectIdAndTagId(projectId, tagId)
+			this.projectTagModel.findByProjectIdAndTagId(projectId, tagId),
 		]);
 
 		if (!user) throw new NotFoundException("User not found");
@@ -290,7 +296,7 @@ export class ProjectService extends BaseService<Project> {
 		const [isUserExist, isProjectExist, pinProject] = await Promise.all([
 			this.userModel.findById(userId),
 			this.projectModel.findById(projectId),
-			this.pinProject.findByUserIdAndProjectId(userId, projectId)
+			this.pinProject.findByUserIdAndProjectId(userId, projectId),
 		]);
 
 		if (!isUserExist) throw new NotFoundException("User not found");
@@ -317,7 +323,7 @@ export class ProjectService extends BaseService<Project> {
 		const [isUserExist, isProjectExist, pinProjectO] = await Promise.all([
 			this.userModel.findById(userId),
 			this.projectModel.findById(projectId),
-			this.pinProject.findByUserIdAndProjectIdObject(userId, projectId)
+			this.pinProject.findByUserIdAndProjectIdObject(userId, projectId),
 		]);
 
 		if (!isUserExist) throw new NotFoundException("User not found");
@@ -354,7 +360,7 @@ export class ProjectService extends BaseService<Project> {
 		const [isUserExist, isProjectExist, projectRole] = await Promise.all([
 			this.userModel.findById(userId),
 			this.projectModel.findById(projectId),
-			this.projectRoleModel.findByProjectId(projectId)
+			this.projectRoleModel.findByProjectId(projectId),
 		]);
 
 		if (!isUserExist) throw new NotFoundException("User not found");
@@ -514,7 +520,10 @@ export class ProjectService extends BaseService<Project> {
 		return await this.calculateTaskProgressRecursive(task, progressCache);
 	}
 
-	private async calculateTaskProgressRecursive(task: Task, cache: Map<string, number>): Promise<number> {
+	private async calculateTaskProgressRecursive(
+		task: Task,
+		cache: Map<string, number>,
+	): Promise<number> {
 		// Check cache first
 		if (cache.has(task.id)) {
 			return cache.get(task.id)!;
@@ -526,10 +535,14 @@ export class ProjectService extends BaseService<Project> {
 			progress = task.status === "Done" ? 100 : 0;
 		} else {
 			const subTaskProgresses = await Promise.all(
-				task.subtasks.map((subTask) => this.calculateTaskProgressRecursive(subTask, cache)),
+				task.subtasks.map((subTask) =>
+					this.calculateTaskProgressRecursive(subTask, cache),
+				),
 			);
 
-			progress = subTaskProgresses.reduce((acc, val) => acc + val, 0) / subTaskProgresses.length;
+			progress =
+				subTaskProgresses.reduce((acc, val) => acc + val, 0) /
+				subTaskProgresses.length;
 		}
 
 		// Cache the result
@@ -539,23 +552,24 @@ export class ProjectService extends BaseService<Project> {
 
 	async getganttdata(): Promise<GanttProjectData[]> {
 		const cacheKey = this.getProjectCacheKey("gantt-all");
-		const cachedData = await this.getFromCacheGeneric<GanttProjectData[]>(cacheKey);
+		const cachedData =
+			await this.getFromCacheGeneric<GanttProjectData[]>(cacheKey);
 		if (cachedData) return cachedData;
 
 		const projects = await this.projectModel.findProjectWithTagsAndTasks();
 
 		// Optimized: Batch collect all task IDs and fetch them at once
-		const allTaskIds = projects.flatMap(project =>
+		const allTaskIds = projects.flatMap((project) =>
 			project.tasks
-				.filter(task => task.parentTaskId === null)
-				.map(task => task.id)
+				.filter((task) => task.parentTaskId === null)
+				.map((task) => task.id),
 		);
 
 		// Batch fetch all tasks with details
 		const taskDetailsMap = new Map();
 		if (allTaskIds.length > 0) {
 			const taskDetails = await Promise.all(
-				allTaskIds.map(id => this.taskService.getTaskById(id))
+				allTaskIds.map((id) => this.taskService.getTaskById(id)),
 			);
 			allTaskIds.forEach((id, index) => {
 				taskDetailsMap.set(id, taskDetails[index]);
@@ -569,9 +583,9 @@ export class ProjectService extends BaseService<Project> {
 					(task) => task.parentTaskId === null,
 				);
 
-				const fullSummaryTasks = summaryTasks.map(task =>
-					taskDetailsMap.get(task.id)
-				).filter(Boolean);
+				const fullSummaryTasks = summaryTasks
+					.map((task) => taskDetailsMap.get(task.id))
+					.filter(Boolean);
 
 				const progressValues = await Promise.all(
 					fullSummaryTasks.map((task) => this.calculateTaskProgress(task)),
@@ -590,35 +604,39 @@ export class ProjectService extends BaseService<Project> {
 					duration:
 						project.startDate && project.endDate
 							? Math.ceil(
-								(new Date(project.endDate).getTime() -
-									new Date(project.startDate).getTime()) /
-								(1000 * 60 * 60 * 24),
-							)
+									(new Date(project.endDate).getTime() -
+										new Date(project.startDate).getTime()) /
+										(1000 * 60 * 60 * 24),
+								)
 							: 0,
 					tag: project.tags?.map((t) => t.tag.name) || [],
 					progress: parseFloat(progress.toFixed(2)),
 				};
-			})
+			}),
 		);
 
 		await this.setToCacheGeneric(cacheKey, results);
 		return results;
 	}
 
-	async getGanttChartDataByProjectId(projectId: string): Promise<GanttTaskData[]> {
+	async getGanttChartDataByProjectId(
+		projectId: string,
+	): Promise<GanttTaskData[]> {
 		const cacheKey = this.getProjectCacheKey(`gantt-${projectId}`);
-		const cachedData = await this.getFromCacheGeneric<GanttTaskData[]>(cacheKey);
+		const cachedData =
+			await this.getFromCacheGeneric<GanttTaskData[]>(cacheKey);
 		if (cachedData) return cachedData;
 
-		const tasks = await this.taskModel.findTaskWithTagsAndSubTasksByProjectId(projectId);
+		const tasks =
+			await this.taskModel.findTaskWithTagsAndSubTasksByProjectId(projectId);
 
 		// Optimized: Batch fetch all task details at once
-		const taskIds = tasks.map(task => task.id);
+		const taskIds = tasks.map((task) => task.id);
 		const taskDetailsMap = new Map();
 
 		if (taskIds.length > 0) {
 			const taskDetails = await Promise.all(
-				taskIds.map(id => this.taskService.getTaskById(id))
+				taskIds.map((id) => this.taskService.getTaskById(id)),
 			);
 			taskIds.forEach((id, index) => {
 				taskDetailsMap.set(id, taskDetails[index]);
@@ -631,14 +649,16 @@ export class ProjectService extends BaseService<Project> {
 				const duration =
 					task.startDate && task.endDate
 						? Math.ceil(
-							(new Date(task.endDate).getTime() -
-								new Date(task.startDate).getTime()) /
-							(1000 * 60 * 60 * 24),
-						)
+								(new Date(task.endDate).getTime() -
+									new Date(task.startDate).getTime()) /
+									(1000 * 60 * 60 * 24),
+							)
 						: 0;
 
 				const fullTask = taskDetailsMap.get(task.id);
-				const progress = fullTask ? await this.calculateTaskProgress(fullTask) : 0;
+				const progress = fullTask
+					? await this.calculateTaskProgress(fullTask)
+					: 0;
 
 				return {
 					id: task.id,
@@ -660,31 +680,44 @@ export class ProjectService extends BaseService<Project> {
 	}
 
 	// Optimized helper methods for batch processing
-	private async enrichProjectsWithDetails(projects: any[], userId: string): Promise<Project[]> {
+	private async enrichProjectsWithDetails(
+		projects: any[],
+		userId: string,
+	): Promise<Project[]> {
 		if (!projects || projects.length === 0) return [];
 
 		// Batch get tasks for all projects
-		const projectIds = projects.map(p => p.id);
+		const projectIds = projects.map((p) => p.id);
 		const allProjectTasks = await Promise.all(
-			projectIds.map(id => this.taskService.getTaskByProjectId(id))
+			projectIds.map((id) => this.taskService.getTaskByProjectId(id)),
 		);
 
 		// Create tasks lookup map
-		const tasksMap = new Map(projectIds.map((id, index) => [id, allProjectTasks[index]]));
+		const tasksMap = new Map(
+			projectIds.map((id, index) => [id, allProjectTasks[index]]),
+		);
 
 		// Enrich projects with pre-loaded data
-		return projects.map(project => this.mapProjectWithRelations(project, tasksMap, userId));
+		return projects.map((project) =>
+			this.mapProjectWithRelations(project, tasksMap, userId),
+		);
 	}
 
-	private mapProjectWithRelations(project: any, tasksMap: Map<string, any[]>, userId: string): Project {
+	private mapProjectWithRelations(
+		project: any,
+		tasksMap: Map<string, any[]>,
+		userId: string,
+	): Project {
 		// Map owners and members from included data
-		const owner = project.projectRoles
-			?.filter((role: any) => role.role === "ProjectOwner")
-			.map((role: any) => role.user) || [];
+		const owner =
+			project.projectRoles
+				?.filter((role: any) => role.role === "ProjectOwner")
+				.map((role: any) => role.user) || [];
 
-		const members = project.projectRoles
-			?.filter((role: any) => role.role === "Member")
-			.map((role: any) => role.user) || [];
+		const members =
+			project.projectRoles
+				?.filter((role: any) => role.role === "Member")
+				.map((role: any) => role.user) || [];
 
 		// Map tags from included data
 		const tags = project.tags?.map((projectTag: any) => projectTag.tag) || [];
@@ -693,7 +726,8 @@ export class ProjectService extends BaseService<Project> {
 		const tasks = tasksMap.get(project.id) || [];
 
 		// Check if pinned
-		const isPinned = project.pinnedProject?.some((pin: any) => pin.userId === userId) || null;
+		const isPinned =
+			project.pinnedProject?.some((pin: any) => pin.userId === userId) || null;
 
 		return {
 			...project,
@@ -701,22 +735,26 @@ export class ProjectService extends BaseService<Project> {
 			members,
 			tasks,
 			tags,
-			isPinned
+			isPinned,
 		};
 	}
 
 	// Optimized batch operations for common queries
-	private async batchValidateUsers(userIds: string[]): Promise<Map<string, any>> {
+	private async batchValidateUsers(
+		userIds: string[],
+	): Promise<Map<string, any>> {
 		if (userIds.length === 0) return new Map();
 
 		const users = await this.userModel.findByIds(userIds);
-		return new Map(users.map(user => [user.id, user]));
+		return new Map(users.map((user) => [user.id, user]));
 	}
 
-	private async batchValidateProjects(projectIds: string[]): Promise<Map<string, any>> {
+	private async batchValidateProjects(
+		projectIds: string[],
+	): Promise<Map<string, any>> {
 		if (projectIds.length === 0) return new Map();
 
 		const projects = await this.projectModel.findByIdsWithIncludes(projectIds);
-		return new Map(projects.map(project => [project.id, project]));
+		return new Map(projects.map((project) => [project.id, project]));
 	}
 }
