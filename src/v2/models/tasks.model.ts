@@ -64,6 +64,7 @@ export class TasksModel extends BaseModel<Task> {
 				id: id,
 			},
 			data: data,
+			
 		});
 		return updatedTask;
 	}
@@ -76,6 +77,7 @@ export class TasksModel extends BaseModel<Task> {
 			data: {
 				title: title,
 				description: description
+			},
 		});
 		return updatedTask;
 	}
