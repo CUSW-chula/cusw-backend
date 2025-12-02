@@ -130,7 +130,7 @@ export class TaskService extends BaseService<Task> {
 
 		// Update and return the task
 		try {
-			await this.taskModel.update(taskId, updatedTask);
+			await this.taskModel.updateTaskTitleAndDesc(taskId, title, description);
 			return await this.getTaskById(taskId);
 		} catch (_error) {
 			throw new ServerErrorException(`Error updating task with ID ${taskId}:`);
