@@ -68,6 +68,18 @@ export class TasksModel extends BaseModel<Task> {
 		return updatedTask;
 	}
 
+	async updateTaskTitleAndDesc(id: string, title: tring, description: string): Promise<Task> {
+		const updatedTask = await this.getModel().task.update({
+			where: {
+				id: id,
+			},
+			data: {
+				title: title,
+				description: description
+		});
+		return updatedTask;
+	}
+
 	async delete(id: string): Promise<Task> {
 		const deletedTask = await this.getModel().task.delete({
 			where: { id },
