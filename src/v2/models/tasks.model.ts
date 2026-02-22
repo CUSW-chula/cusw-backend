@@ -483,4 +483,41 @@ export class TasksModel extends BaseModel<Task> {
 			return createdTask;
 		});
 	}
+	async updatePosition(taskId: string, newPosition: number): Promise<Task[]> {
+		return await this.getModel().$transaction(async (prisma) => {
+			const task = await prisma.task.findUnique({
+				where: { id: taskId },
+			});
+
+			if (!task) throw new Error("Task not found");
+
+			const siblings = await prisma.task.findMany({
+				where: {
+					projectId: task.projectId,
+					parentTaskId: task.parentTaskId ?? null,
+				},
+				orderBy: { position: "asc" },
+			});
+
+			const filtered = siblings.filter((t) => t.id !== taskId);
+
+			const safeIndex = Math.max(0, Math.min(newPosition, filtered.length));
+
+			filtered.splice(safeIndex, 0, task);
+
+			await Promise.all(
+				filtered.map((t, index) =>
+					prisma.task.update({
+						where: { id: t.id },
+						data: { position: index },
+					}),
+				),
+			);
+
+			return filtered.map((t, index) => ({
+				...t,
+				position: index,
+			}));
+		});
+	}
 }
