@@ -103,7 +103,7 @@ export const ProjectController = new Elysia({
 				id,
 				body,
 			);
-			WebSocket.broadcast("project", updatedProject);
+			WebSocket.broadcast(`project:${id}`, updatedProject);
 			return updatedProject;
 		},
 		{

@@ -55,6 +55,7 @@ const app = new Elysia()
 				"http://localhost:3000",
 				"http://localhost:4173",
 				"https://cusw-workspace.sa.chula.ac.th",
+				"https://dev-cusw-workspace.sa.chula.ac.th",
 			],
 			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
 			credentials: true,
@@ -105,9 +106,20 @@ app.guard(
 					if (!user) {
 						throw new UnauthorizedException("Unauthorized");
 					}
+
+					// Check if user is still active
+					const dbUser = await prisma.user.findUnique({
+						where: { id: user.id as string },
+						select: { activated: true },
+					});
+
+					if (!dbUser || !dbUser.activated) {
+						throw new UnauthorizedException("User account is inactive");
+					}
+
 					set.status = 200;
 					session.set({
-						value: user.id,
+						value: user.id as string,
 						httpOnly: true,
 						path: "/api",
 					});

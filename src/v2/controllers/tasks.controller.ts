@@ -638,7 +638,7 @@ export const TaskController = new Elysia({
 				body.startDate,
 				body.endDate,
 			);
-			WebSocket.broadcast("date", updateDate);
+			WebSocket.broadcast(`date:${taskId}`, updateDate);
 			return Response.json("Success", { status: 200 });
 		},
 		{
@@ -649,6 +649,38 @@ export const TaskController = new Elysia({
 			detail: {
 				tags: ["Date", "Version 2"],
 				summary: "Update task date",
+			},
+		},
+	)
+	.patch(
+		"/position/:taskId",
+		async ({
+			body,
+			params: { taskId },
+			db,
+			redis,
+		}: Context & {
+			body: { newPosition: number };
+			params: { taskId: string };
+		}) => {
+			const taskService = new TaskService(db, redis);
+
+			const reorderedTasks = await taskService.updatePosition(
+				taskId,
+				body.newPosition,
+			);
+
+			WebSocket.broadcast(`update position:${taskId}`, reorderedTasks);
+
+			return Response.json("Success", { status: 200 });
+		},
+		{
+			body: t.Object({
+				newPosition: t.Number(),
+			}),
+			detail: {
+				tags: ["Position", "Version 2"],
+				summary: "Update task position",
 			},
 		},
 	);

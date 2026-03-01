@@ -64,7 +64,10 @@ export abstract class BaseService<T> {
 	}
 
 	// Generic cache setter for any data type
-	protected async setToCacheGeneric<U>(cacheKey: string, data: U): Promise<void> {
+	protected async setToCacheGeneric<U>(
+		cacheKey: string,
+		data: U,
+	): Promise<void> {
 		await this.redis.set(cacheKey, JSON.stringify(data), "EX", this.cacheTTL);
 	}
 

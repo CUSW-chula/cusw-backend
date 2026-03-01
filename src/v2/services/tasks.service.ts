@@ -130,7 +130,7 @@ export class TaskService extends BaseService<Task> {
 
 		// Update and return the task
 		try {
-			await this.taskModel.update(taskId, updatedTask);
+			await this.taskModel.updateTaskTitleAndDesc(taskId, title, description);
 			return await this.getTaskById(taskId);
 		} catch (_error) {
 			throw new ServerErrorException(`Error updating task with ID ${taskId}:`);
@@ -533,6 +533,16 @@ export class TaskService extends BaseService<Task> {
 		}
 
 		return response;
+	}
+
+	async updatePosition(taskId: string, newPosition: number): Promise<Task[]> {
+		const result = await this.taskModel.updatePosition(taskId, newPosition);
+
+		await this.invalidateAllCache("tasks", "projects");
+		const updatedTasks = await Promise.all(
+			result.map((task: any) => this.getTaskById(task.id)),
+		);
+		return updatedTasks;
 	}
 
 	// Optimized helper methods for batch processing

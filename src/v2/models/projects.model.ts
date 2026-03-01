@@ -132,7 +132,25 @@ export class ProjectModel extends BaseModel<Project> {
 		// Delete child entities
 		await tx.taskTag.deleteMany({ where: { task: { projectId } } });
 		await tx.file.deleteMany({ where: { projectId } });
-		await tx.task.deleteMany({ where: { projectId } });
+
+		// Delete tasks carefully due to SubTasks relation (self-referential)
+		// First, remove all parent-child relationships by setting parentTaskId to null
+		await tx.task.updateMany({
+			where: {
+				projectId,
+				parentTaskId: { not: null },
+			},
+			data: {
+				parentTaskId: null,
+			},
+		});
+
+		// Then delete all tasks (now there are no foreign key constraints)
+		await tx.task.deleteMany({
+			where: {
+				projectId,
+			},
+		});
 
 		await tx.projectRole.deleteMany({ where: { projectId } });
 		await tx.projectTag.deleteMany({ where: { projectId } });
@@ -219,7 +237,9 @@ export class ProjectModel extends BaseModel<Project> {
 	// Optimized methods with includes to reduce N+1 queries
 	async findAllWithIncludes(): Promise<
 		(Project & {
-			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			projectRoles: (ProjectRole & {
+				user: { id: string; name: string; email: string };
+			})[];
 			tags: { tag: { id: string; name: string; isProject: boolean } }[];
 			pinnedProject: { userId: string }[];
 		})[]
@@ -238,31 +258,34 @@ export class ProjectModel extends BaseModel<Project> {
 								isOutsource: true,
 								admin: true,
 								head: true,
-								activated: true
-							}
-						}
-					}
+								activated: true,
+							},
+						},
+					},
 				},
 				tags: {
 					include: {
-						tag: true
-					}
+						tag: true,
+					},
 				},
 				pinnedProject: {
 					select: {
-						userId: true
-					}
-				}
-			}
+						userId: true,
+					},
+				},
+			},
 		});
 	}
 
 	async findByIdWithIncludes(id: string): Promise<
-		(Project & {
-			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
-			tags: { tag: { id: string; name: string; isProject: boolean } }[];
-			pinnedProject: { userId: string }[];
-		}) | null
+		| (Project & {
+				projectRoles: (ProjectRole & {
+					user: { id: string; name: string; email: string };
+				})[];
+				tags: { tag: { id: string; name: string; isProject: boolean } }[];
+				pinnedProject: { userId: string }[];
+		  })
+		| null
 	> {
 		return await this.getModel().project.findUnique({
 			where: { id },
@@ -279,28 +302,30 @@ export class ProjectModel extends BaseModel<Project> {
 								isOutsource: true,
 								admin: true,
 								head: true,
-								activated: true
-							}
-						}
-					}
+								activated: true,
+							},
+						},
+					},
 				},
 				tags: {
 					include: {
-						tag: true
-					}
+						tag: true,
+					},
 				},
 				pinnedProject: {
 					select: {
-						userId: true
-					}
-				}
-			}
+						userId: true,
+					},
+				},
+			},
 		});
 	}
 
 	async findByUserIdWithIncludes(userId: string): Promise<
 		(Project & {
-			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			projectRoles: (ProjectRole & {
+				user: { id: string; name: string; email: string };
+			})[];
 			tags: { tag: { id: string; name: string; isProject: boolean } }[];
 			pinnedProject: { userId: string }[];
 		})[]
@@ -326,39 +351,41 @@ export class ProjectModel extends BaseModel<Project> {
 								isOutsource: true,
 								admin: true,
 								head: true,
-								activated: true
-							}
-						}
-					}
+								activated: true,
+							},
+						},
+					},
 				},
 				tags: {
 					include: {
-						tag: true
-					}
+						tag: true,
+					},
 				},
 				pinnedProject: {
 					select: {
-						userId: true
-					}
-				}
-			}
+						userId: true,
+					},
+				},
+			},
 		});
 	}
 
 	async findByIdsWithIncludes(ids: string[]): Promise<
 		(Project & {
-			projectRoles: (ProjectRole & { user: { id: string; name: string; email: string } })[];
+			projectRoles: (ProjectRole & {
+				user: { id: string; name: string; email: string };
+			})[];
 			tags: { tag: { id: string; name: string; isProject: boolean } }[];
 			pinnedProject: { userId: string }[];
 		})[]
 	> {
 		if (ids.length === 0) return [];
-		
+
 		return await this.getModel().project.findMany({
 			where: {
 				id: {
-					in: ids
-				}
+					in: ids,
+				},
 			},
 			include: {
 				projectRoles: {
@@ -373,22 +400,22 @@ export class ProjectModel extends BaseModel<Project> {
 								isOutsource: true,
 								admin: true,
 								head: true,
-								activated: true
-							}
-						}
-					}
+								activated: true,
+							},
+						},
+					},
 				},
 				tags: {
 					include: {
-						tag: true
-					}
+						tag: true,
+					},
 				},
 				pinnedProject: {
 					select: {
-						userId: true
-					}
-				}
-			}
+						userId: true,
+					},
+				},
+			},
 		});
 	}
 }
