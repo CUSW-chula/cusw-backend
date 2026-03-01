@@ -535,6 +535,16 @@ export class TaskService extends BaseService<Task> {
 		return response;
 	}
 
+	async updatePosition(taskId: string, newPosition: number): Promise<Task[]> {
+		const result = await this.taskModel.updatePosition(taskId, newPosition);
+
+		await this.invalidateAllCache("tasks", "projects");
+		const updatedTasks = await Promise.all(
+			result.map((task: any) => this.getTaskById(task.id)),
+		);
+		return updatedTasks;
+	}
+
 	// Optimized helper methods for batch processing
 	private async enrichTasksWithDetails(tasks: any[]): Promise<Task[]> {
 		if (!tasks || tasks.length === 0) return [];
